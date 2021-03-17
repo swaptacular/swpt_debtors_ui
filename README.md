@@ -1,11 +1,9 @@
-# swpt_debtors_ui
-
-UI fot the Swaptacular service that manages debtors
-
-## Get started
+# UI fot the Swaptacular service that manages debtors
 
 *Note that you will need to have [Node.js](https://nodejs.org)
 installed.*
+
+## Get started
 
 Install the dependencies...
 
