@@ -64,7 +64,8 @@ export default {
       sourceMap: !production,
       inlineSources: !production,
 
-      // Manually added. Seems to be needed in some cases.
+      // Manually added. Seems to be needed in some cases
+      // (https://stackoverflow.com/questions/65417201/svelte-imported-typescript-files-not-recognized).
       rootDir: './src'
     }),
 
