@@ -9,6 +9,10 @@
     "noUnusedLocals": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "importHelpers": true
+    "importHelpers": true,
+    "lib": [      
+      "es2019",
+      "dom"
+    ]
   }
 }
