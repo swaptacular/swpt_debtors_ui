@@ -1,7 +1,7 @@
 export type DebtorReservationRequest = {
   /** The type of this object. */
   type?: string;
-};
+}
 
 export type DebtorReservation = {
   /** A number that will be needed in order to activate the debtor. */
@@ -18,7 +18,7 @@ export type DebtorReservation = {
 
   /** The moment at which the reservation was created. */
   createdAt: string;
-};
+}
 
 export type Error = {
   /** Error code */
@@ -32,7 +32,7 @@ export type Error = {
 
   /** Errors */
   errors?: { [key: string]: any };
-};
+}
 
 export type DebtorsList = {
   /** The URI of this object. Can be a relative URI. */
@@ -50,15 +50,14 @@ export type DebtorsList = {
 
   /** The type of the items in the paginated list. */
   itemsType: string;
-};
+}
 
 export type ObjectReference = {
   /** The URI of the object. Can be a relative URI. */
   uri: string;
-};
+}
 
 export type ObjectReferencesPage = {
-
   /** The URI of this object. Can be a relative URI. */
   uri: string;
 
@@ -74,7 +73,7 @@ export type ObjectReferencesPage = {
 
   /** An array of `ObjectReference`s. Can be empty. */
   items: ObjectReference[];
-};
+}
 
 export type DebtorActivationRequest = {
   /** The type of this object. */
@@ -86,7 +85,7 @@ export type DebtorActivationRequest = {
    * try to reserve the debtor ID specified in the path, and activate
    * it at once. */
   reservationId?: BigInt;
-};
+}
 
 export type AccountIdentity = {
   /**
@@ -104,7 +103,7 @@ export type AccountIdentity = {
 
   /** The type of this object. */
   type?: string;
-};
+}
 
 export type DebtorIdentity = {
   /** The information contained in this field must be enough to
@@ -114,7 +113,7 @@ export type DebtorIdentity = {
 
   /** The type of this object. */
   type?: string;
-};
+}
 
 export type DebtorConfig = {
   /** The moment of the latest update on this object. */
@@ -144,7 +143,7 @@ export type DebtorConfig = {
 
   /** The URI of the corresponding `Debtor`. */
   debtor: ObjectReference;
-};
+}
 
 export type Debtor = {
   /** The URI of this object. Can be a relative URI. */
@@ -193,12 +192,12 @@ export type Debtor = {
 
   /** Debtor's `DebtorConfig` settings. */
   config: DebtorConfig;
-};
+}
 
 export type DebtorDeactivationRequest = {
   /** The type of this object. */
   type?: string;
-};
+}
 
 export type TransfersList = {
   /** The URI of this object. Can be a relative URI. */
@@ -220,7 +219,7 @@ export type TransfersList = {
   /** Contains links to all `Transfers` in an array of
    * `ObjectReference`s. */
   items: ObjectReference[];
-};
+}
 
 export type TransferCreationRequest = {
   /** The recipient's `AccountIdentity` information. */
@@ -245,7 +244,7 @@ export type TransferCreationRequest = {
   /** The format used for the `note` field. An empty string signifies
    * unstructured text. */
   noteFormat?: string;
-};
+}
 
 export type TransferError = {
   /**
@@ -285,7 +284,7 @@ export type TransferError = {
    * will contain the total sum secured (locked) for transfers on the
    * account, *after* this transfer has been finalized. */
   totalLockedAmount?: BigInt;
-};
+}
 
 export type TransferResult = {
   /** An error that has occurred during the execution of the
@@ -304,7 +303,7 @@ export type TransferResult = {
    * positive number). If the transfer has been unsuccessful, the
    * value will be zero. */
   committedAmount: BigInt;
-};
+}
 
 export type Transfer = {
   /** The recipient's `AccountIdentity` information. */
@@ -351,9 +350,9 @@ export type Transfer = {
 
   /** The moment at which the transfer was initiated. */
   initiatedAt: string;
-};
+}
 
 export type TransferCancelationRequest = {
   /** The type of this object. */
   type?: string;
-};
+}
