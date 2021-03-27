@@ -80,7 +80,6 @@ export function json_parse(options) {
   var _options = {
     strict: false, // not being strict means do not generate syntax errors for "duplicate key"
     storeAsString: false, // toggles whether the values should be stored as BigInt (default) or a string
-    alwaysParseAsBig: false, // toggles whether all numbers should be Big
     protoAction: 'error',
     constructorAction: 'error',
   };
@@ -93,8 +92,6 @@ export function json_parse(options) {
     if (options.storeAsString === true) {
       _options.storeAsString = true;
     }
-    _options.alwaysParseAsBig =
-      options.alwaysParseAsBig === true ? options.alwaysParseAsBig : false;
 
     if (typeof options.constructorAction !== 'undefined') {
       if (
@@ -166,7 +163,8 @@ export function json_parse(options) {
         // Parse a number value.
 
         var number,
-            string = '';
+            string = '',
+            isFloat = false;
 
         if (ch === '-') {
           string = '-';
@@ -178,12 +176,14 @@ export function json_parse(options) {
         }
         if (ch === '.') {
           string += '.';
+          isFloat = true;
           while (next() && ch >= '0' && ch <= '9') {
             string += ch;
           }
         }
         if (ch === 'e' || ch === 'E') {
           string += ch;
+          isFloat = true;
           next();
           if (ch === '-' || ch === '+') {
             string += ch;
@@ -198,12 +198,10 @@ export function json_parse(options) {
         if (!isFinite(number)) {
           error('Bad number');
         } else {
-          //if (number > 9007199254740992 || number < -9007199254740992)
-          // BigInt has stricter check: everything with length > 15 digits disallowed
-          if (string.length > 15)
-            return _options.storeAsString ? string : BigInt(string);
+          if (isFloat)
+            return number
           else
-            return !_options.alwaysParseAsBig ? number : BigInt(number);
+            return _options.storeAsString ? string : BigInt(string);
         }
       },
       string = function () {

@@ -15,4 +15,6 @@
 
 <h1>{json_stringify(big)}</h1>
 <h1>{json_parse('123456789012345678901234')}</h1>
+<h1>{json_parse('12345678901.2345678901234')}</h1>
+<h1>{json_parse('1e2')}</h1>
 <button on:click={authorize}>Test!</button>
