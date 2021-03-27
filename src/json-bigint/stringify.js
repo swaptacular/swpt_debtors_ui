@@ -46,17 +46,17 @@
   For example, this would serialize Dates as ISO strings.
 
   Date.prototype.toJSON = function (key) {
-  function f(n) {
-  // Format integers to have at least two digits.
-  return n < 10 ? '0' + n : n;
-  }
+    function f(n) {
+      // Format integers to have at least two digits.
+      return n < 10 ? '0' + n : n;
+    }
 
-  return this.getUTCFullYear()   + '-' +
-  f(this.getUTCMonth() + 1) + '-' +
-  f(this.getUTCDate())      + 'T' +
-  f(this.getUTCHours())     + ':' +
-  f(this.getUTCMinutes())   + ':' +
-  f(this.getUTCSeconds())   + 'Z';
+    return this.getUTCFullYear()   + '-' +
+    f(this.getUTCMonth() + 1) + '-' +
+    f(this.getUTCDate())      + 'T' +
+    f(this.getUTCHours())     + ':' +
+    f(this.getUTCMinutes())   + ':' +
+    f(this.getUTCSeconds())   + 'Z';
   };
 
   You can provide an optional replacer method. It will be passed the
@@ -94,8 +94,7 @@
   // text is '[\n\t"e",\n\t{\n\t\t"pluribus": "unum"\n\t}\n]'
 
   text = JSON.stringify([new Date()], function (key, value) {
-  return this[key] instanceof Date ?
-  'Date(' + this[key] + ')' : value;
+    return this[key] instanceof Date ? 'Date(' + this[key] + ')' : value;
   });
   // text is '["Date(---current time---)"]'
 
@@ -116,29 +115,25 @@
   // be converted to Date objects.
 
   myData = JSON.parse(text, function (key, value) {
-  var a;
-  if (typeof value === 'string') {
-  a =
-  /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}(?:\.\d*)?)Z$/.exec(value);
-  if (a) {
-  return new Date(Date.UTC(+a[1], +a[2] - 1, +a[3], +a[4],
-  +a[5], +a[6]));
-  }
-  }
-  return value;
+    var a;
+    if (typeof value === 'string') {
+      a = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}(?:\.\d*)?)Z$/.exec(value);
+      if (a) {
+        return new Date(Date.UTC(+a[1], +a[2] - 1, +a[3], +a[4], +a[5], +a[6]));
+      }
+    }
+    return value;
   });
 
   myData = JSON.parse('["Date(09/09/2001)"]', function (key, value) {
-  var d;
-  if (typeof value === 'string' &&
-  value.slice(0, 5) === 'Date(' &&
-  value.slice(-1) === ')') {
-  d = new Date(value.slice(5, -1));
-  if (d) {
-  return d;
-  }
-  }
-  return value;
+    var d;
+    if (typeof value === 'string' && value.slice(0, 5) === 'Date(' && value.slice(-1) === ')') {
+      d = new Date(value.slice(5, -1));
+      if (d) {
+        return d;
+      }
+    }
+    return value;
   });
 
 

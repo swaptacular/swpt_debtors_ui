@@ -41,16 +41,14 @@ const suspectConstructorRx = /(?:c|\\u0063)(?:o|\\u006[Ff])(?:n|\\u006[Ee])(?:s|
   // be converted to Date objects.
 
   myData = json_parse(text, function (key, value) {
-  var a;
-  if (typeof value === 'string') {
-  a =
-  /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}(?:\.\d*)?)Z$/.exec(value);
-  if (a) {
-  return new Date(Date.UTC(+a[1], +a[2] - 1, +a[3], +a[4],
-  +a[5], +a[6]));
-  }
-  }
-  return value;
+    var a;
+    if (typeof value === 'string') {
+      a = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}(?:\.\d*)?)Z$/.exec(value);
+      if (a) {
+        return new Date(Date.UTC(+a[1], +a[2] - 1, +a[3], +a[4], +a[5], +a[6]));
+      }
+    }
+    return value;
   });
 
   This is a reference implementation. You are free to copy, modify, or
