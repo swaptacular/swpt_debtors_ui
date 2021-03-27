@@ -1,5 +1,3 @@
-var BigNumber = null;
-
 // regexpxs extracted from
 // (c) BSD-3-Clause
 // https://github.com/fastify/secure-json-parse/graphs/contributors and https://github.com/hapijs/bourne/graphs/contributors
@@ -69,7 +67,7 @@ const suspectConstructorRx = /(?:c|\\u0063)(?:o|\\u006[Ff])(?:n|\\u006[Ee])(?:s|
     hasOwnProperty, message, n, name, prototype, push, r, t, text
 */
 
-var json_parse = function (options) {
+export function json_parse(options) {
   'use strict';
 
   // This is a function that can parse a JSON text, producing a JavaScript
@@ -83,9 +81,8 @@ var json_parse = function (options) {
   // Default options one can override by passing options to the parse()
   var _options = {
     strict: false, // not being strict means do not generate syntax errors for "duplicate key"
-    storeAsString: false, // toggles whether the values should be stored as BigNumber (default) or a string
+    storeAsString: false, // toggles whether the values should be stored as BigInt (default) or a string
     alwaysParseAsBig: false, // toggles whether all numbers should be Big
-    useNativeBigInt: false, // toggles whether to use native BigInt instead of bignumber.js
     protoAction: 'error',
     constructorAction: 'error',
   };
@@ -100,8 +97,6 @@ var json_parse = function (options) {
     }
     _options.alwaysParseAsBig =
       options.alwaysParseAsBig === true ? options.alwaysParseAsBig : false;
-    _options.useNativeBigInt =
-      options.useNativeBigInt === true ? options.useNativeBigInt : false;
 
     if (typeof options.constructorAction !== 'undefined') {
       if (
@@ -205,21 +200,12 @@ var json_parse = function (options) {
       if (!isFinite(number)) {
         error('Bad number');
       } else {
-        if (BigNumber == null) BigNumber = require('bignumber.js');
         //if (number > 9007199254740992 || number < -9007199254740992)
-        // Bignumber has stricter check: everything with length > 15 digits disallowed
+        // BigInt has stricter check: everything with length > 15 digits disallowed
         if (string.length > 15)
-          return _options.storeAsString
-            ? string
-            : _options.useNativeBigInt
-            ? BigInt(string)
-            : new BigNumber(string);
+          return _options.storeAsString ? string : BigInt(string);
         else
-          return !_options.alwaysParseAsBig
-            ? number
-            : _options.useNativeBigInt
-            ? BigInt(number)
-            : new BigNumber(number);
+          return !_options.alwaysParseAsBig ? number : BigInt(number);
       }
     },
     string = function () {
@@ -439,5 +425,3 @@ var json_parse = function (options) {
       : result;
   };
 };
-
-module.exports = json_parse;

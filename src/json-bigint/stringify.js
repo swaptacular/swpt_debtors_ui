@@ -1,5 +1,3 @@
-var BigNumber = require('bignumber.js');
-
 /*
     json2.js
     2013-05-26
@@ -161,7 +159,7 @@ var BigNumber = require('bignumber.js');
 // Create a JSON object only if one does not already exist. We create the
 // methods in a closure to avoid creating global variables.
 
-var JSON = module.exports;
+var JSON = {};
 
 (function () {
     'use strict';
@@ -214,8 +212,7 @@ var JSON = module.exports;
             length,
             mind = gap,
             partial,
-            value = holder[key],
-            isBigNumber = value != null && (value instanceof BigNumber || BigNumber.isBigNumber(value));
+            value = holder[key];
 
 // If the value has a toJSON method, call it to obtain a replacement value.
 
@@ -235,11 +232,7 @@ var JSON = module.exports;
 
         switch (typeof value) {
         case 'string':
-            if (isBigNumber) {
-                return value;
-            } else {
-                return quote(value);
-            }
+          return quote(value);
 
         case 'number':
 
@@ -382,3 +375,5 @@ var JSON = module.exports;
         };
     }
 }());
+
+export const stringify = JSON.stringify;
