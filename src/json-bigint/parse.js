@@ -6,65 +6,65 @@ const suspectProtoRx = /(?:_|\\u005[Ff])(?:_|\\u005[Ff])(?:p|\\u0070)(?:r|\\u007
 const suspectConstructorRx = /(?:c|\\u0063)(?:o|\\u006[Ff])(?:n|\\u006[Ee])(?:s|\\u0073)(?:t|\\u0074)(?:r|\\u0072)(?:u|\\u0075)(?:c|\\u0063)(?:t|\\u0074)(?:o|\\u006[Ff])(?:r|\\u0072)/;
 
 /*
-    json_parse.js
-    2012-06-20
+  json_parse.js
+  2012-06-20
 
-    Public Domain.
+  Public Domain.
 
-    NO WARRANTY EXPRESSED OR IMPLIED. USE AT YOUR OWN RISK.
+  NO WARRANTY EXPRESSED OR IMPLIED. USE AT YOUR OWN RISK.
 
-    This file creates a json_parse function.
-    During create you can (optionally) specify some behavioural switches
+  This file creates a json_parse function.
+  During create you can (optionally) specify some behavioural switches
 
-        require('json-bigint')(options)
+  require('json-bigint')(options)
 
-            The optional options parameter holds switches that drive certain
-            aspects of the parsing process:
-            * options.strict = true will warn about duplicate-key usage in the json.
-              The default (strict = false) will silently ignore those and overwrite
-              values for keys that are in duplicate use.
+  The optional options parameter holds switches that drive certain
+  aspects of the parsing process:
+  * options.strict = true will warn about duplicate-key usage in the json.
+  The default (strict = false) will silently ignore those and overwrite
+  values for keys that are in duplicate use.
 
-    The resulting function follows this signature:
-        json_parse(text, reviver)
-            This method parses a JSON text to produce an object or array.
-            It can throw a SyntaxError exception.
+  The resulting function follows this signature:
+  json_parse(text, reviver)
+  This method parses a JSON text to produce an object or array.
+  It can throw a SyntaxError exception.
 
-            The optional reviver parameter is a function that can filter and
-            transform the results. It receives each of the keys and values,
-            and its return value is used instead of the original value.
-            If it returns what it received, then the structure is not modified.
-            If it returns undefined then the member is deleted.
+  The optional reviver parameter is a function that can filter and
+  transform the results. It receives each of the keys and values,
+  and its return value is used instead of the original value.
+  If it returns what it received, then the structure is not modified.
+  If it returns undefined then the member is deleted.
 
-            Example:
+  Example:
 
-            // Parse the text. Values that look like ISO date strings will
-            // be converted to Date objects.
+  // Parse the text. Values that look like ISO date strings will
+  // be converted to Date objects.
 
-            myData = json_parse(text, function (key, value) {
-                var a;
-                if (typeof value === 'string') {
-                    a =
-/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}(?:\.\d*)?)Z$/.exec(value);
-                    if (a) {
-                        return new Date(Date.UTC(+a[1], +a[2] - 1, +a[3], +a[4],
-                            +a[5], +a[6]));
-                    }
-                }
-                return value;
-            });
+  myData = json_parse(text, function (key, value) {
+  var a;
+  if (typeof value === 'string') {
+  a =
+  /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}(?:\.\d*)?)Z$/.exec(value);
+  if (a) {
+  return new Date(Date.UTC(+a[1], +a[2] - 1, +a[3], +a[4],
+  +a[5], +a[6]));
+  }
+  }
+  return value;
+  });
 
-    This is a reference implementation. You are free to copy, modify, or
-    redistribute.
+  This is a reference implementation. You are free to copy, modify, or
+  redistribute.
 
-    This code should be minified before deployment.
-    See http://javascript.crockford.com/jsmin.html
+  This code should be minified before deployment.
+  See http://javascript.crockford.com/jsmin.html
 
-    USE YOUR OWN COPY. IT IS EXTREMELY UNWISE TO LOAD CODE FROM SERVERS YOU DO
-    NOT CONTROL.
+  USE YOUR OWN COPY. IT IS EXTREMELY UNWISE TO LOAD CODE FROM SERVERS YOU DO
+  NOT CONTROL.
 */
 
 /*members "", "\"", "\/", "\\", at, b, call, charAt, f, fromCharCode,
-    hasOwnProperty, message, n, name, prototype, push, r, t, text
+  hasOwnProperty, message, n, name, prototype, push, r, t, text
 */
 
 export function json_parse(options) {
@@ -101,8 +101,8 @@ export function json_parse(options) {
     if (typeof options.constructorAction !== 'undefined') {
       if (
         options.constructorAction === 'error' ||
-        options.constructorAction === 'ignore' ||
-        options.constructorAction === 'preserve'
+          options.constructorAction === 'ignore' ||
+          options.constructorAction === 'preserve'
       ) {
         _options.constructorAction = options.constructorAction;
       } else {
@@ -115,8 +115,8 @@ export function json_parse(options) {
     if (typeof options.protoAction !== 'undefined') {
       if (
         options.protoAction === 'error' ||
-        options.protoAction === 'ignore' ||
-        options.protoAction === 'preserve'
+          options.protoAction === 'ignore' ||
+          options.protoAction === 'preserve'
       ) {
         _options.protoAction = options.protoAction;
       } else {
@@ -128,139 +128,139 @@ export function json_parse(options) {
   }
 
   var at, // The index of the current character
-    ch, // The current character
-    escapee = {
-      '"': '"',
-      '\\': '\\',
-      '/': '/',
-      b: '\b',
-      f: '\f',
-      n: '\n',
-      r: '\r',
-      t: '\t',
-    },
-    text,
-    error = function (m) {
-      // Call error when something is wrong.
+      ch, // The current character
+      escapee = {
+        '"': '"',
+        '\\': '\\',
+        '/': '/',
+        b: '\b',
+        f: '\f',
+        n: '\n',
+        r: '\r',
+        t: '\t',
+      },
+      text,
+      error = function (m) {
+        // Call error when something is wrong.
 
-      throw {
-        name: 'SyntaxError',
-        message: m,
-        at: at,
-        text: text,
-      };
-    },
-    next = function (c) {
-      // If a c parameter is provided, verify that it matches the current character.
+        throw {
+          name: 'SyntaxError',
+          message: m,
+          at: at,
+          text: text,
+        };
+      },
+      next = function (c) {
+        // If a c parameter is provided, verify that it matches the current character.
 
-      if (c && c !== ch) {
-        error("Expected '" + c + "' instead of '" + ch + "'");
-      }
-
-      // Get the next character. When there are no more characters,
-      // return the empty string.
-
-      ch = text.charAt(at);
-      at += 1;
-      return ch;
-    },
-    number = function () {
-      // Parse a number value.
-
-      var number,
-        string = '';
-
-      if (ch === '-') {
-        string = '-';
-        next('-');
-      }
-      while (ch >= '0' && ch <= '9') {
-        string += ch;
-        next();
-      }
-      if (ch === '.') {
-        string += '.';
-        while (next() && ch >= '0' && ch <= '9') {
-          string += ch;
+        if (c && c !== ch) {
+          error("Expected '" + c + "' instead of '" + ch + "'");
         }
-      }
-      if (ch === 'e' || ch === 'E') {
-        string += ch;
-        next();
-        if (ch === '-' || ch === '+') {
-          string += ch;
-          next();
+
+        // Get the next character. When there are no more characters,
+        // return the empty string.
+
+        ch = text.charAt(at);
+        at += 1;
+        return ch;
+      },
+      number = function () {
+        // Parse a number value.
+
+        var number,
+            string = '';
+
+        if (ch === '-') {
+          string = '-';
+          next('-');
         }
         while (ch >= '0' && ch <= '9') {
           string += ch;
           next();
         }
-      }
-      number = +string;
-      if (!isFinite(number)) {
-        error('Bad number');
-      } else {
-        //if (number > 9007199254740992 || number < -9007199254740992)
-        // BigInt has stricter check: everything with length > 15 digits disallowed
-        if (string.length > 15)
-          return _options.storeAsString ? string : BigInt(string);
-        else
-          return !_options.alwaysParseAsBig ? number : BigInt(number);
-      }
-    },
-    string = function () {
-      // Parse a string value.
-
-      var hex,
-        i,
-        string = '',
-        uffff;
-
-      // When parsing for string values, we must look for " and \ characters.
-
-      if (ch === '"') {
-        var startAt = at;
-        while (next()) {
-          if (ch === '"') {
-            if (at - 1 > startAt) string += text.substring(startAt, at - 1);
-            next();
-            return string;
-          }
-          if (ch === '\\') {
-            if (at - 1 > startAt) string += text.substring(startAt, at - 1);
-            next();
-            if (ch === 'u') {
-              uffff = 0;
-              for (i = 0; i < 4; i += 1) {
-                hex = parseInt(next(), 16);
-                if (!isFinite(hex)) {
-                  break;
-                }
-                uffff = uffff * 16 + hex;
-              }
-              string += String.fromCharCode(uffff);
-            } else if (typeof escapee[ch] === 'string') {
-              string += escapee[ch];
-            } else {
-              break;
-            }
-            startAt = at;
+        if (ch === '.') {
+          string += '.';
+          while (next() && ch >= '0' && ch <= '9') {
+            string += ch;
           }
         }
-      }
-      error('Bad string');
-    },
-    white = function () {
-      // Skip whitespace.
+        if (ch === 'e' || ch === 'E') {
+          string += ch;
+          next();
+          if (ch === '-' || ch === '+') {
+            string += ch;
+            next();
+          }
+          while (ch >= '0' && ch <= '9') {
+            string += ch;
+            next();
+          }
+        }
+        number = +string;
+        if (!isFinite(number)) {
+          error('Bad number');
+        } else {
+          //if (number > 9007199254740992 || number < -9007199254740992)
+          // BigInt has stricter check: everything with length > 15 digits disallowed
+          if (string.length > 15)
+            return _options.storeAsString ? string : BigInt(string);
+          else
+            return !_options.alwaysParseAsBig ? number : BigInt(number);
+        }
+      },
+      string = function () {
+        // Parse a string value.
 
-      while (ch && ch <= ' ') {
-        next();
-      }
-    },
-    word = function () {
-      // true, false, or null.
+        var hex,
+            i,
+            string = '',
+            uffff;
 
-      switch (ch) {
+        // When parsing for string values, we must look for " and \ characters.
+
+        if (ch === '"') {
+          var startAt = at;
+          while (next()) {
+            if (ch === '"') {
+              if (at - 1 > startAt) string += text.substring(startAt, at - 1);
+              next();
+              return string;
+            }
+            if (ch === '\\') {
+              if (at - 1 > startAt) string += text.substring(startAt, at - 1);
+              next();
+              if (ch === 'u') {
+                uffff = 0;
+                for (i = 0; i < 4; i += 1) {
+                  hex = parseInt(next(), 16);
+                  if (!isFinite(hex)) {
+                    break;
+                  }
+                  uffff = uffff * 16 + hex;
+                }
+                string += String.fromCharCode(uffff);
+              } else if (typeof escapee[ch] === 'string') {
+                string += escapee[ch];
+              } else {
+                break;
+              }
+              startAt = at;
+            }
+          }
+        }
+        error('Bad string');
+      },
+      white = function () {
+        // Skip whitespace.
+
+        while (ch && ch <= ' ') {
+          next();
+        }
+      },
+      word = function () {
+        // true, false, or null.
+
+        switch (ch) {
         case 't':
           next('t');
           next('r');
@@ -280,90 +280,90 @@ export function json_parse(options) {
           next('l');
           next('l');
           return null;
-      }
-      error("Unexpected '" + ch + "'");
-    },
-    value, // Place holder for the value function.
-    array = function () {
-      // Parse an array value.
-
-      var array = [];
-
-      if (ch === '[') {
-        next('[');
-        white();
-        if (ch === ']') {
-          next(']');
-          return array; // empty array
         }
-        while (ch) {
-          array.push(value());
+        error("Unexpected '" + ch + "'");
+      },
+      value, // Place holder for the value function.
+      array = function () {
+        // Parse an array value.
+
+        var array = [];
+
+        if (ch === '[') {
+          next('[');
           white();
           if (ch === ']') {
             next(']');
-            return array;
+            return array; // empty array
           }
-          next(',');
-          white();
-        }
-      }
-      error('Bad array');
-    },
-    object = function () {
-      // Parse an object value.
-
-      var key,
-        object = Object.create(null);
-
-      if (ch === '{') {
-        next('{');
-        white();
-        if (ch === '}') {
-          next('}');
-          return object; // empty object
-        }
-        while (ch) {
-          key = string();
-          white();
-          next(':');
-          if (
-            _options.strict === true &&
-            Object.hasOwnProperty.call(object, key)
-          ) {
-            error('Duplicate key "' + key + '"');
-          }
-
-          if (suspectProtoRx.test(key) === true) {
-            if (_options.protoAction === 'error') {
-              error('Object contains forbidden prototype property');
-            } else if (_options.protoAction === 'ignore') {
-              value();
-            } else {
-              object[key] = value();
+          while (ch) {
+            array.push(value());
+            white();
+            if (ch === ']') {
+              next(']');
+              return array;
             }
-          } else if (suspectConstructorRx.test(key) === true) {
-            if (_options.constructorAction === 'error') {
-              error('Object contains forbidden constructor property');
-            } else if (_options.constructorAction === 'ignore') {
-              value();
-            } else {
-              object[key] = value();
-            }
-          } else {
-            object[key] = value();
+            next(',');
+            white();
           }
+        }
+        error('Bad array');
+      },
+      object = function () {
+        // Parse an object value.
 
+        var key,
+            object = Object.create(null);
+
+        if (ch === '{') {
+          next('{');
           white();
           if (ch === '}') {
             next('}');
-            return object;
+            return object; // empty object
           }
-          next(',');
-          white();
+          while (ch) {
+            key = string();
+            white();
+            next(':');
+            if (
+              _options.strict === true &&
+                Object.hasOwnProperty.call(object, key)
+            ) {
+              error('Duplicate key "' + key + '"');
+            }
+
+            if (suspectProtoRx.test(key) === true) {
+              if (_options.protoAction === 'error') {
+                error('Object contains forbidden prototype property');
+              } else if (_options.protoAction === 'ignore') {
+                value();
+              } else {
+                object[key] = value();
+              }
+            } else if (suspectConstructorRx.test(key) === true) {
+              if (_options.constructorAction === 'error') {
+                error('Object contains forbidden constructor property');
+              } else if (_options.constructorAction === 'ignore') {
+                value();
+              } else {
+                object[key] = value();
+              }
+            } else {
+              object[key] = value();
+            }
+
+            white();
+            if (ch === '}') {
+              next('}');
+              return object;
+            }
+            next(',');
+            white();
+          }
         }
-      }
-      error('Bad object');
-    };
+        error('Bad object');
+      };
 
   value = function () {
     // Parse a JSON value. It could be an object, an array, a string, a number,
@@ -371,16 +371,16 @@ export function json_parse(options) {
 
     white();
     switch (ch) {
-      case '{':
-        return object();
-      case '[':
-        return array();
-      case '"':
-        return string();
-      case '-':
-        return number();
-      default:
-        return ch >= '0' && ch <= '9' ? number() : word();
+    case '{':
+      return object();
+    case '[':
+      return array();
+    case '"':
+      return string();
+    case '-':
+      return number();
+    default:
+      return ch >= '0' && ch <= '9' ? number() : word();
     }
   };
 
@@ -407,21 +407,21 @@ export function json_parse(options) {
 
     return typeof reviver === 'function'
       ? (function walk(holder, key) {
-          var k,
+        var k,
             v,
             value = holder[key];
-          if (value && typeof value === 'object') {
-            Object.keys(value).forEach(function (k) {
-              v = walk(value, k);
-              if (v !== undefined) {
-                value[k] = v;
-              } else {
-                delete value[k];
-              }
-            });
-          }
-          return reviver.call(holder, key, value);
-        })({ '': result }, '')
-      : result;
+        if (value && typeof value === 'object') {
+          Object.keys(value).forEach(function (k) {
+            v = walk(value, k);
+            if (v !== undefined) {
+              value[k] = v;
+            } else {
+              delete value[k];
+            }
+          });
+        }
+        return reviver.call(holder, key, value);
+      })({ '': result }, '')
+    : result;
   };
 };
