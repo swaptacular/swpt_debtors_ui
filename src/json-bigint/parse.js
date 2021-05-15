@@ -6,15 +6,15 @@ const suspectProtoRx = /(?:_|\\u005[Ff])(?:_|\\u005[Ff])(?:p|\\u0070)(?:r|\\u007
 const suspectConstructorRx = /(?:c|\\u0063)(?:o|\\u006[Ff])(?:n|\\u006[Ee])(?:s|\\u0073)(?:t|\\u0074)(?:r|\\u0072)(?:u|\\u0075)(?:c|\\u0063)(?:t|\\u0074)(?:o|\\u006[Ff])(?:r|\\u0072)/;
 
 /*
-  json_parse.js
+  parse.js
   2012-06-20
 
   Public Domain.
 
   NO WARRANTY EXPRESSED OR IMPLIED. USE AT YOUR OWN RISK.
 
-  This file creates a json_parse function.
-  During create you can (optionally) specify some behavioural switches
+  This file creates a create_parser function.  During create you can
+  (optionally) specify some behavioural switches
 
   require('json-bigint')(options)
 
@@ -25,7 +25,7 @@ const suspectConstructorRx = /(?:c|\\u0063)(?:o|\\u006[Ff])(?:n|\\u006[Ee])(?:s|
   values for keys that are in duplicate use.
 
   The resulting function follows this signature:
-  json_parse(text, reviver)
+  create_parser(text, reviver)
   This method parses a JSON text to produce an object or array.
   It can throw a SyntaxError exception.
 
@@ -40,7 +40,7 @@ const suspectConstructorRx = /(?:c|\\u0063)(?:o|\\u006[Ff])(?:n|\\u006[Ee])(?:s|
   // Parse the text. Values that look like ISO date strings will
   // be converted to Date objects.
 
-  myData = json_parse(text, function (key, value) {
+  myData = create_parser(text, function (key, value) {
     var a;
     if (typeof value === 'string') {
       a = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}(?:\.\d*)?)Z$/.exec(value);
@@ -65,7 +65,7 @@ const suspectConstructorRx = /(?:c|\\u0063)(?:o|\\u006[Ff])(?:n|\\u006[Ee])(?:s|
   hasOwnProperty, message, n, name, prototype, push, r, t, text
 */
 
-export function json_parse(options) {
+export function create_parser(options) {
   'use strict';
 
   // This is a function that can parse a JSON text, producing a JavaScript
@@ -380,7 +380,7 @@ export function json_parse(options) {
     }
   };
 
-  // Return the json_parse function. It will have access to all of the above
+  // Return the create_parser function. It will have access to all of the above
   // functions and variables.
 
   return function (source, reviver) {

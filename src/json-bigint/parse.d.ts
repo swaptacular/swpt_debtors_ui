@@ -5,6 +5,6 @@ export type ParseOptions = {
   constructorAction?: "error" | "ignore" | "preserve",
 }
 export type ReviverFunction = (string, any) => any
-export type ParseFunction = (source: string, reviver?: ReviverFunction) => any
+export type JsonParser = (source: string, reviver?: ReviverFunction) => any
 
-export declare function json_parse(options?: ParseOptions): ParseFunction
+export declare function create_parser(options?: ParseOptions): JsonParser
