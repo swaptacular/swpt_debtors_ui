@@ -7,4 +7,4 @@ type ParseOptions = {
 type ReviverFunction = ((string, any) => any)
 type ParseFunction = ((source: string, reviver?: ReviverFunction) => any)
 
-export function json_parse(options?: ParseOptions): ParseFunction;
+export declare function json_parse(options?: ParseOptions): ParseFunction

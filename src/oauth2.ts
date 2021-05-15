@@ -1,4 +1,4 @@
-import { OAuth2AuthCodePKCE } from '@bity/oauth2-auth-code-pkce'
+import { OAuth2AuthCodePKCE } from './oauth2-auth-code-pkce'
 
 export const oauth = new OAuth2AuthCodePKCE({
   extraAuthorizationParams: {},
