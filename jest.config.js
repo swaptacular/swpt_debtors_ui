@@ -3,10 +3,15 @@ module.exports = {
     '^.+\\.svelte$': [
       'svelte-jester',
       {
-        "preprocess": "tests/svelte.config.js"
+        preprocess: "./tests/svelte.config.js"
       }
     ],
-    '^.+\\.[jt]s$': 'babel-jest',
+    '^.+\\.[jt]s$': [
+      'babel-jest',
+      {
+        configFile: "./tests/babel.config.js"
+      }
+    ],
   },
   moduleNameMapper: {
     // This rule removes the ".js" extension from relative paths. It
