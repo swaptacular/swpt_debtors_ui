@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type {DebtorReservationRequest} from './schema'
+  import type {DebtorReservationRequest} from './schema.js'
   import {oauth} from './oauth2'
   import {stringify} from './json-bigint'
   import {parse} from './json-bigint'

@@ -1,4 +1,4 @@
-import { handleOauth2Redirect } from './oauth2'
+import { handleOauth2Redirect } from './oauth2.js'
 import App from './App.svelte'
 
 handleOauth2Redirect().catch(e => {
