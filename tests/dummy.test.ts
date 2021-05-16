@@ -2,8 +2,10 @@ import App from '../src/App.svelte'
 import { stringify, parse } from '../src/json-bigint/index.js'
 
 test("Instantiate svelte app", () => {
+  const el = document.body
+  expect(el).toBeInstanceOf(HTMLElement)
   const app = new App({
-    target: document.body,
+    target: el,
     props: { name: 'world' },
   })
   expect(app).toBeTruthy()
