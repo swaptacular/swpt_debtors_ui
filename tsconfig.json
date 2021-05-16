@@ -1,15 +1,17 @@
 {
   "extends": "@tsconfig/svelte/tsconfig.json",
 
-  "include": ["src/**/*"],
-  "exclude": ["node_modules/*", "__sapper__/*", "public/*"],
-  
+  "include": ["src/**/*", "tests/**/*"],
+  "exclude": ["node_modules/*", "public/*"],
+
   "compilerOptions": {
+    "target": "es2020",
     "strict": true,
     "noUnusedLocals": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "importHelpers": true,
+    "types": ["svelte", "jest"],
     "lib": [      
       "es2020",
       "dom"
