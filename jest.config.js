@@ -22,4 +22,5 @@ module.exports = {
   },
   moduleFileExtensions: ['ts', 'js', 'svelte'],
   roots: ["<rootDir>/src", "<rootDir>/tests"],
+  setupFiles: ["<rootDir>/public/config.js"],
 }

@@ -8,7 +8,8 @@
     "start": "sirv public",
     "validate": "svelte-check",
     "test": "jest",
-    "test-coverage": "jest --coverage"
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "devDependencies": {
     "@babel/core": "^7.14.2",

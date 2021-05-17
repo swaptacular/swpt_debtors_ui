@@ -1,10 +1,12 @@
 import { OAuth2AuthCodePKCE } from './oauth2-auth-code-pkce/index.js'
 
+const { authorizationUrl, tokenUrl, clientId } = appConfig
+
 export const oauth = new OAuth2AuthCodePKCE({
+  authorizationUrl,
+  tokenUrl,
+  clientId,
   extraAuthorizationParams: {},
-  authorizationUrl: 'https://demo.swaptacular.org/debtors-hydra/oauth2/auth',
-  tokenUrl: 'https://demo.swaptacular.org/debtors-hydra/oauth2/token',
-  clientId: 'localhost',
   scopes: ['access'],
   redirectUrl: 'http://localhost:5000/',
   onAccessTokenExpiry(refreshAccessToken) {
