@@ -101,6 +101,7 @@ export class ServerApi {
   async saveDocument(contentType: string, content: string): Promise<Url> {
     const headers = {
       'Content-Type': contentType,
+      'Accept': contentType,
     }
     const response = await this.client.post(
       `${this.debtorId}/documents/`,
