@@ -12,6 +12,11 @@ test("Instantiate svelte app", () => {
   expect(app).toBeTruthy()
 })
 
+test("Stringify non-ASCII", () => {
+  const s = stringify("Кирилица")
+  expect(s).toBe('"Кирилица"')
+})
+
 test("Stringify bigint", () => {
   const s = stringify({ float: 1, int: 1n, bigint: 123456789012345678901234567890n })
   expect(s).toBe('{\"float":1,"int":1,"bigint":123456789012345678901234567890}')
