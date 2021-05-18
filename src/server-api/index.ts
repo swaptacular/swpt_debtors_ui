@@ -95,7 +95,7 @@ export class ServerApi {
   }
 
   async redirectToDebtor(): Promise<Debtor> {
-    return await this.makeRequest(async (client): Promise<Debtor> => {
+    return await this.makeRequest(async (client) => {
       const response = await client.get(`.debtor`)
       if (response.status === 204) {
         throw new ServerApiError('The debtor has not been found.')
@@ -105,35 +105,35 @@ export class ServerApi {
   }
 
   async getDebtor(): Promise<Debtor> {
-    return await this.makeRequest(async (client, debtorId): Promise<Debtor> => {
+    return await this.makeRequest(async (client, debtorId) => {
       const response = await client.get(`${debtorId}/`)
       return response.data
     })
   }
 
   async getDebtorConfig(): Promise<DebtorConfig> {
-    return await this.makeRequest(async (client, debtorId): Promise<DebtorConfig> => {
+    return await this.makeRequest(async (client, debtorId) => {
       const response = await client.get(`${debtorId}/config`)
       return response.data
     })
   }
 
   async updateDebtorConfig(updateRequest: DebtorConfigUpdateRequest): Promise<DebtorConfig> {
-    return await this.makeRequest(async (client, debtorId): Promise<DebtorConfig> => {
+    return await this.makeRequest(async (client, debtorId) => {
       const response = await client.patch(`${debtorId}/config`, updateRequest)
       return response.data
     })
   }
 
   async getTransfersList(): Promise<TransfersList> {
-    return await this.makeRequest(async (client, debtorId): Promise<TransfersList> => {
+    return await this.makeRequest(async (client, debtorId) => {
       const response = await client.get(`${debtorId}/transfers/`)
       return response.data
     })
   }
 
   async createTransfer(creationRequest: TransferCreationRequest): Promise<Transfer | undefined> {
-    return await this.makeRequest(async (client, debtorId): Promise<Transfer | undefined> => {
+    return await this.makeRequest(async (client, debtorId) => {
       const response = await client.post(
         `${debtorId}/transfers/`,
         creationRequest,
@@ -147,14 +147,14 @@ export class ServerApi {
   }
 
   async getTransfer(transferUuid: Uuid): Promise<Transfer> {
-    return await this.makeRequest(async (client, debtorId): Promise<Transfer> => {
+    return await this.makeRequest(async (client, debtorId) => {
       const response = await client.get(`${debtorId}/transfers/${transferUuid}`)
       return response.data
     })
   }
 
   async cancelTransfer(transferUuid: Uuid): Promise<Transfer> {
-    return await this.makeRequest(async (client, debtorId): Promise<Transfer> => {
+    return await this.makeRequest(async (client, debtorId) => {
       const cancelationRequest = { "type": "TransferCancelationRequest" }
       const response = await client.post(`${debtorId}/transfers/${transferUuid}`, cancelationRequest)
       return response.data
@@ -162,13 +162,13 @@ export class ServerApi {
   }
 
   async deleteTransfer(transferUuid: Uuid): Promise<void> {
-    return await this.makeRequest(async (client, debtorId): Promise<void> => {
+    return await this.makeRequest(async (client, debtorId) => {
       await client.delete(`${debtorId}/transfers/${transferUuid}`)
     })
   }
 
   async saveDocument(contentType: string, content: string): Promise<Url> {
-    return await this.makeRequest(async (client, debtorId): Promise<Url> => {
+    return await this.makeRequest(async (client, debtorId) => {
       const headers = {
         'Content-Type': contentType,
         'Accept': contentType,
