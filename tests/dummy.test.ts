@@ -1,6 +1,6 @@
 import App from '../src/App.svelte'
 import { stringify, parse } from '../src/json-bigint/index.js'
-import { ServerApi } from '../src/server-api/index.js'
+import { ServerApi, ServerApiError } from '../src/server-api/index.js'
 
 test("Instantiate svelte app", () => {
   const el = document.body
@@ -23,6 +23,14 @@ test("Parse bigint", () => {
 })
 
 test("Create ServerApi", async () => {
-  const api = new ServerApi()
+  const api = new ServerApi(() => '')
   expect(api).toBeInstanceOf(ServerApi)
+})
+
+test.skip("Request debtor info", async () => {
+  const api = new ServerApi(() => 'INVALID')
+  api.getDebtor().catch(e => {
+    expect(e).toBeInstanceOf(ServerApiError)
+    expect(e.status).toBe(401)
+  })
 })
