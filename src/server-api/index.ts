@@ -93,7 +93,7 @@ export class ServerApi {
 
   async redirectToDebtor(): Promise<Debtor> {
     return await this.makeRequest(async (client): Promise<Debtor> => {
-      const response = await client.post(`.debtor`)
+      const response = await client.get(`.debtor`)
       if (response.status === 204) {
         throw new ServerApiError('The debtor has not been found.')
       }
