@@ -5,7 +5,7 @@ export type DebtorReservationRequest = {
 
 export type DebtorReservation = {
   /** A number that will be needed in order to activate the debtor. */
-  reservationId: BigInt;
+  reservationId: bigint;
 
   /** The type of this object. */
   type: string;
@@ -22,7 +22,7 @@ export type DebtorReservation = {
 
 export type Error = {
   /** Error code */
-  code?: BigInt;
+  code?: bigint;
 
   /** Error name */
   status?: string;
@@ -84,7 +84,7 @@ export type DebtorActivationRequest = {
    * `reservationID`. When this field is not present, the server will
    * try to reserve the debtor ID specified in the path, and activate
    * it at once. */
-  reservationId?: BigInt;
+  reservationId?: bigint;
 }
 
 export type AccountIdentity = {
@@ -132,7 +132,7 @@ export type DebtorConfig = {
    * value of the field to detect conflicts which can occur when two
    * clients try to update the object simultaneously.
    */
-  latestUpdateId: BigInt;
+  latestUpdateId: bigint;
 
   /** The type of this object. */
   type?: string;
@@ -177,7 +177,7 @@ export type Debtor = {
   /** The maximal number of bytes that transfer notes are allowed to
    * contain when UTF-8 encoded. This will be a non-negative
    * number. */
-  noteMaxBytes: BigInt;
+  noteMaxBytes: bigint;
 
   /** The debtor's `DebtorIdentity`. */
   identity: DebtorIdentity;
@@ -185,7 +185,7 @@ export type Debtor = {
   /** The total issued amount with a negative sign. Normally, it will
    * be a negative number or a zero. A positive value, although
    * theoretically possible, should be very rare. */
-  balance: BigInt;
+  balance: bigint;
 
   /** The moment at which the debtor was created. */
   createdAt: string;
@@ -229,7 +229,7 @@ export type TransferCreationRequest = {
    * number. Setting this value to zero can be useful when the debtor
    * wants to verify whether the recipient's account exists and
    * accepts incoming transfers. */
-  amount: BigInt;
+  amount: bigint;
 
   /** The type of this object. */
   type?: string;
@@ -283,7 +283,7 @@ export type TransferError = {
    * rejected due to insufficient available amount. In this case, it
    * will contain the total sum secured (locked) for transfers on the
    * account, *after* this transfer has been finalized. */
-  totalLockedAmount?: BigInt;
+  totalLockedAmount?: bigint;
 }
 
 export type TransferResult = {
@@ -302,7 +302,7 @@ export type TransferResult = {
    * value will be equal to the requested transfer amount (always a
    * positive number). If the transfer has been unsuccessful, the
    * value will be zero. */
-  committedAmount: BigInt;
+  committedAmount: bigint;
 }
 
 export type Transfer = {
@@ -313,7 +313,7 @@ export type Transfer = {
    * number. Setting this value to zero can be useful when the debtor
    * wants to verify whether the recipient's account exists and
    * accepts incoming transfers. */
-  amount: BigInt;
+  amount: bigint;
 
   /** The URI of this object. Can be a relative URI. */
   uri: string;
