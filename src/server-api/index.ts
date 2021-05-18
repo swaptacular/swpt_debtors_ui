@@ -134,11 +134,7 @@ export class ServerApi {
 
   async createTransfer(creationRequest: TransferCreationRequest): Promise<Transfer | undefined> {
     return await this.makeRequest(async (client, debtorId) => {
-      const response = await client.post(
-        `${debtorId}/transfers/`,
-        creationRequest,
-        { maxRedirects: 0 },
-      )
+      const response = await client.post(`${debtorId}/transfers/`, creationRequest, { maxRedirects: 0 })
       if (response.status === 303) {
         return undefined  // The same transfer entry already exists.
       }
