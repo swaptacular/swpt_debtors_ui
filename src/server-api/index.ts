@@ -7,6 +7,7 @@ import type {
   TransfersList,
   TransferCreationRequest,
 } from './schemas.js'
+import { parse, stringify } from '../json-bigint/index.js'
 
 
 type DebtorConfigUpdateRequest = {
@@ -66,13 +67,15 @@ export class ServerApi {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
+      transformRequest: [(data) => stringify(data)],
+      transformResponse: [(data) => parse(data)],
     })
     this.auth = { client, debtorId: 0n }
 
     // We do not know the real ID of the debtor yet. To obtain it, we
     // make an HTTP request and extract the ID from the response.
     const debtor = await this.redirectToDebtor()
-    const captured = debtor.identity.uri.match(/^(?:.*\/)?(\d+)\/$/)
+    const captured = debtor.uri.match(/^(?:.*\/)?(\d+)\/$/)
     if (!captured) {
       throw new ServerApiError('Invalid debtor URI.')
     }
