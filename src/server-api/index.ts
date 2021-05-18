@@ -163,14 +163,19 @@ export class ServerApi {
     })
   }
 
-  async saveDocument(contentType: string, content: string): Promise<Url> {
+  async saveDocument(contentType: string, content: ArrayBuffer): Promise<Url> {
     return await this.makeRequest(async (client, debtorId) => {
-      const headers = {
-        'Content-Type': contentType,
-        'Accept': contentType,
+      const config = {
+        headers: {
+          'Content-Type': contentType,
+          'Accept': contentType,
+        },
+        transformRequest: [],
+        transformResponse: [],
+        responseType: 'arraybuffer' as const,
       }
-      const response = await client.post(`${debtorId}/documents/`, content, { headers })
-      return response.headers.Location
+      const response = await client.post(`${debtorId}/documents/`, content, config)
+      return response.headers.location
     })
   }
 }
