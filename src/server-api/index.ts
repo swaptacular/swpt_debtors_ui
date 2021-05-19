@@ -42,8 +42,8 @@ export class ServerApiError extends Error {
 
 function wrapErrorResponses(e: Error): never {
   const error = e as AxiosError
-  if (error.isAxiosError && error.response) {
-    throw new ServerApiError(error.response.status)
+  if (error.isAxiosError) {
+    throw new ServerApiError(error?.response?.status ?? error.message)
   }
   throw error
 }
@@ -78,7 +78,7 @@ export class ServerApi {
     const debtor = await this.redirectToDebtor()
     const captured = debtor.uri.match(/^(?:.*\/)?(\d+)\/$/)
     if (!captured) {
-      throw new ServerApiError('Invalid debtor URI.')
+      throw new ServerApiError('invalid debtor URI')
     }
     this.auth.debtorId = BigInt(captured[1])
 
@@ -114,7 +114,7 @@ export class ServerApi {
       }
       const response = await client.get(`.debtor`)
       if (response.status === 204) {
-        throw new ServerApiError('The debtor has not been found.')
+        throw new ServerApiError('debtor not found')
       }
       return response.data
     })
@@ -153,7 +153,7 @@ export class ServerApi {
       const transferUris = transfersList.items.map(item => item.uri)
       const uuids = transferUris.map(uri => uri.match(transferUriRegex)?.[1])
       if (uuids.includes(undefined)) {
-        throw new ServerApiError('Invalid transfer URI.')
+        throw new ServerApiError('invalid transfer URI')
       }
       return uuids as Uuid[]
     })
