@@ -76,11 +76,11 @@ export class ServerApi {
     // We do not know the real ID of the debtor yet. To obtain it, we
     // make an HTTP request and extract the ID from the response.
     const debtor = await this.redirectToDebtor()
-    const captured = debtor.uri.match(ServerApi.debtorUrisRegex)
-    if (!captured) {
+    const extracted = debtor.uri.match(ServerApi.debtorUrisRegex)
+    if (!extracted) {
       throw new ServerApiError('invalid debtor URI')
     }
-    this.auth.debtorId = BigInt(captured[1])
+    this.auth.debtorId = BigInt(extracted[1])
 
     return {
       auth: this.auth,
