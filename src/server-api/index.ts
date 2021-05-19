@@ -20,22 +20,21 @@ type Uuid = string
 
 
 export class ServerApiError extends Error {
-  response?: { status: number, headers: any, data: any }
+  name = 'ServerApiError'
+}
 
-  constructor(x: string | AxiosResponse) {
-    let message
-    let response
 
-    if (typeof x === 'string') {
-      message = x
-    } else {
-      message = `status code ${x.status}`
-      response = x
-    }
+export class ErrorResponse extends Error {
+  name = 'ErrorResponse'
+  status: number
+  headers: any
+  data: any
 
-    super(message)
-    this.name = 'ServerApiError'
-    this.response = response
+  constructor(r: AxiosResponse) {
+    super(`status code ${r.status}`)
+    this.status = r.status
+    this.headers = r.headers
+    this.data = r.data
   }
 }
 
@@ -66,14 +65,11 @@ export class ServerApi {
     // We do not know the ID of the debtor yet. To obtain it, we make
     // an HTTP request and extract the ID from the response.
     const debtor = await ServerApi.redirectToDebtor(client)
-    const extracted = debtor.uri.match(ServerApi.debtorUrisRegex)
-    if (!extracted) {
-      throw new ServerApiError('invalid debtor URI')
+    const debtorId = debtor.uri.match(ServerApi.debtorUrisRegex)?.[1]
+    if (debtorId === undefined) {
+      throw new TypeError('undefined instead of string')  // Normally, this should never happen
     }
-    const auth = {
-      client: client,
-      debtorId: extracted[1],
-    }
+    const auth = { client, debtorId }
 
     this.auth = auth
     return { auth, debtor }
@@ -129,7 +125,7 @@ export class ServerApi {
       const transferUris = transfersList.items.map(item => item.uri)
       const uuids = transferUris.map(uri => uri.match(ServerApi.transferUrisRegex)?.[1])
       if (uuids.includes(undefined)) {
-        throw new ServerApiError('invalid transfer URI')
+        throw new TypeError('undefined instead of string')  // Normally, this should never happen
       }
       return uuids as Uuid[]
     })
@@ -185,11 +181,14 @@ export class ServerApi {
   static debtorUrisRegex = /^(?:.*\/)?([0-9A-Za-z_=-]+)\/$/
   static transferUrisRegex = /^(?:.*\/)?([0-9A-Fa-f-]+)$/
 
-  static wrapError(e: Error, kw = { copyResponse: true }): never {
+  static wrapError(e: Error, kw = { passResponse: true }): never {
     const error = e as AxiosError
     if (error.isAxiosError) {
-      const response = kw.copyResponse ? error?.response : undefined
-      throw new ServerApiError(response ?? error.message)
+      const response = error.response
+      if (response && kw.passResponse) {
+        throw new ErrorResponse(response)
+      }
+      throw new ServerApiError(error.message)
     }
     throw error
   }
@@ -199,13 +198,13 @@ export class ServerApi {
     try {
       response = await client.get(`.debtor`)
     } catch (e) {
-      // The received axios error response (`e.response`) should not
-      // be delivered to the caller, because this function is executed
-      // implicitly, as a part of the authentication process.
-      ServerApi.wrapError(e, { copyResponse: false })
+      // The eventual Axios error response (`e.response`) should not
+      // be passed to the caller, because this function is always
+      // executed implicitly, as a part of the authentication process.
+      ServerApi.wrapError(e, { passResponse: false })
     }
     if (response.status === 204) {
-      throw new ServerApiError('debtor not found')
+      throw new Error('debtor not found')  // Normally, this should never happen.
     }
     return response.data
   }

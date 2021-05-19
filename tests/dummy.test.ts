@@ -1,6 +1,6 @@
 import App from '../src/App.svelte'
 import { stringify, parse } from '../src/json-bigint/index.js'
-import { ServerApi, ServerApiError } from '../src/server-api/index.js'
+import { ServerApi, ErrorResponse } from '../src/server-api/index.js'
 
 const authToken = '3x-KAxNWrYPJUWNKTbpnTWxoR0Arr0gG_uEqeWUNDkk.B-Iqy02FM7rK1rKSb4I7D9gaqGFXc2vdyJQ6Uuv3EF4'
 
@@ -44,8 +44,8 @@ test.skip("Request debtor info", async () => {
 test.skip("Try to cancel non-existing transfer", async () => {
   const api = new ServerApi(() => authToken)
   api.cancelTransfer('123e4567-e89b-12d3-a456-426655440000').catch(e => {
-    expect(e).toBeInstanceOf(ServerApiError)
-    expect(e.response.status).toBe(404)
+    expect(e).toBeInstanceOf(ErrorResponse)
+    expect(e.status).toBe(404)
   })
 })
 
