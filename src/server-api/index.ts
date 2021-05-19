@@ -40,15 +40,6 @@ export class ServerApiError extends Error {
 }
 
 
-function wrapErrorResponses(e: Error): never {
-  const error = e as AxiosError
-  if (error.isAxiosError) {
-    throw new ServerApiError(error?.response?.status ?? error.message)
-  }
-  throw error
-}
-
-
 export class ServerApi {
   auth?: {
     debtorId: string,
@@ -71,21 +62,18 @@ export class ServerApi {
       transformRequest: [(data) => stringify(data)],
       transformResponse: [(data) => parse(data)],
     })
-    this.auth = { client, debtorId: ServerApi.invalidDebtorId }
 
     // We do not know the real ID of the debtor yet. To obtain it, we
     // make an HTTP request and extract the ID from the response.
-    const debtor = await this.redirectToDebtor()
+    const debtor = await ServerApi.redirectToDebtor(client)
     const extracted = debtor.uri.match(ServerApi.debtorUrisRegex)
     if (!extracted) {
       throw new ServerApiError('invalid debtor URI')
     }
-    this.auth.debtorId = extracted[1]
+    const auth = { client, debtorId: extracted[1] }
 
-    return {
-      auth: this.auth,
-      debtor: debtor,
-    }
+    this.auth = auth
+    return { auth, debtor }
   }
 
   private async makeRequest<T>(f: (client: AxiosInstance, debtorId: string) => Promise<T>): Promise<T> {
@@ -101,20 +89,10 @@ export class ServerApi {
     try {
       return await f(auth.client, auth.debtorId)
     } catch (e) {
-      wrapErrorResponses(e)
+      ServerApi.wrapError(e)
     } finally {
       this.debtor = undefined
     }
-  }
-
-  private async redirectToDebtor(): Promise<Debtor> {
-    return await this.makeRequest(async (client) => {
-      const response = await client.get(`.debtor`)
-      if (response.status === 204) {
-        throw new ServerApiError('debtor not found')
-      }
-      return response.data
-    })
   }
 
   async getDebtor(): Promise<Debtor> {
@@ -203,7 +181,28 @@ export class ServerApi {
 
   static debtorUrisRegex = /^(?:.*\/)?(\d+)\/$/
   static transferUrisRegex = /^(?:.*\/)?([0-9A-Fa-f-]+)$/
-  static invalidDebtorId = ''
+
+  static wrapError(e: Error, kw = { copyHttpStatus: true }): never {
+    const error = e as AxiosError
+    if (error.isAxiosError) {
+      const status = kw.copyHttpStatus ? error?.response?.status : undefined
+      throw new ServerApiError(status ?? error.message)
+    }
+    throw error
+  }
+
+  static async redirectToDebtor(client: AxiosInstance): Promise<Debtor> {
+    let response
+    try {
+      response = await client.get(`.debtor`)
+    } catch (e) {
+      ServerApi.wrapError(e, { copyHttpStatus: false })
+    }
+    if (response.status === 204) {
+      throw new ServerApiError('debtor not found')
+    }
+    return response.data
+  }
 }
 
 
