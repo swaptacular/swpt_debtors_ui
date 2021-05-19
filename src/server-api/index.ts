@@ -51,7 +51,7 @@ function wrapErrorResponses(e: Error): never {
 
 export class ServerApi {
   auth?: {
-    debtorId: bigint,
+    debtorId: string,
     client: AxiosInstance,
   }
   debtor?: Debtor
@@ -71,7 +71,7 @@ export class ServerApi {
       transformRequest: [(data) => stringify(data)],
       transformResponse: [(data) => parse(data)],
     })
-    this.auth = { client, debtorId: 0n }  // `0n` is a made up debtor ID.
+    this.auth = { client, debtorId: ServerApi.invalidDebtorId }
 
     // We do not know the real ID of the debtor yet. To obtain it, we
     // make an HTTP request and extract the ID from the response.
@@ -80,7 +80,7 @@ export class ServerApi {
     if (!extracted) {
       throw new ServerApiError('invalid debtor URI')
     }
-    this.auth.debtorId = BigInt(extracted[1])
+    this.auth.debtorId = extracted[1]
 
     return {
       auth: this.auth,
@@ -88,7 +88,7 @@ export class ServerApi {
     }
   }
 
-  private async makeRequest<T>(f: (client: AxiosInstance, debtorId: bigint) => Promise<T>): Promise<T> {
+  private async makeRequest<T>(f: (client: AxiosInstance, debtorId: string) => Promise<T>): Promise<T> {
     let auth = this.auth
     if (!auth) {
       // Sometimes this method is called by the `this.getDebtor()
@@ -203,6 +203,7 @@ export class ServerApi {
 
   static debtorUrisRegex = /^(?:.*\/)?(\d+)\/$/
   static transferUrisRegex = /^(?:.*\/)?([0-9A-Fa-f-]+)$/
+  static invalidDebtorId = ''
 }
 
 
