@@ -63,14 +63,17 @@ export class ServerApi {
       transformResponse: [(data) => parse(data)],
     })
 
-    // We do not know the real ID of the debtor yet. To obtain it, we
-    // make an HTTP request and extract the ID from the response.
+    // We do not know the ID of the debtor yet. To obtain it, we make
+    // an HTTP request and extract the ID from the response.
     const debtor = await ServerApi.redirectToDebtor(client)
     const extracted = debtor.uri.match(ServerApi.debtorUrisRegex)
     if (!extracted) {
       throw new ServerApiError('invalid debtor URI')
     }
-    const auth = { client, debtorId: extracted[1] }
+    const auth = {
+      client: client,
+      debtorId: extracted[1],
+    }
 
     this.auth = auth
     return { auth, debtor }
@@ -196,9 +199,9 @@ export class ServerApi {
     try {
       response = await client.get(`.debtor`)
     } catch (e) {
-      // The received error response should not be passed to the
-      // caller, because this function is executed implicitly, as a
-      // part of the authentication process.
+      // The received axios error response (`e.response`) should not
+      // be delivered to the caller, because this function is executed
+      // implicitly, as a part of the authentication process.
       ServerApi.wrapError(e, { copyResponse: false })
     }
     if (response.status === 204) {
