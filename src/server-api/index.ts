@@ -58,8 +58,13 @@ export class ServerApi {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
-      transformRequest: [(data) => stringify(data)],
-      transformResponse: [(data) => parse(data)],
+      transformRequest: (data) => stringify(data),
+      transformResponse: (data, headers) => {
+        if (typeof data == 'string' && headers['content-type'] === 'application/json') {
+          return parse(data)
+        }
+        return data
+      },
     })
 
     // We do not know the ID of the debtor yet. To obtain it, we make
@@ -170,7 +175,6 @@ export class ServerApi {
           'Accept': contentType,
         },
         transformRequest: [],
-        transformResponse: [],
         responseType: 'arraybuffer' as const,
       }
       const response = await client.post(`${debtorId}/documents/`, content, config)
