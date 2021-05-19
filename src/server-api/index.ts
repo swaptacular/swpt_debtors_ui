@@ -76,7 +76,7 @@ export class ServerApi {
     // We do not know the real ID of the debtor yet. To obtain it, we
     // make an HTTP request and extract the ID from the response.
     const debtor = await this.redirectToDebtor()
-    const captured = debtor.uri.match(/^(?:.*\/)?(\d+)\/$/)
+    const captured = debtor.uri.match(ServerApi.debtorUrisRegex)
     if (!captured) {
       throw new ServerApiError('invalid debtor URI')
     }
@@ -201,6 +201,7 @@ export class ServerApi {
     })
   }
 
+  static debtorUrisRegex = /^(?:.*\/)?(\d+)\/$/
   static transferUrisRegex = /^(?:.*\/)?([0-9A-Fa-f-]+)$/
 }
 
