@@ -142,13 +142,11 @@ export class ServerApi {
   }
 
   async getTransfersList(): Promise<Uuid[]> {
-    const transferUriRegex = /^(?:.*\/)?([0-9A-Fa-f-]+)$/
-
     return await this.makeRequest(async (client, debtorId) => {
       const response = await client.get(`${debtorId}/transfers/`)
       const transfersList = response.data as TransfersList
       const transferUris = transfersList.items.map(item => item.uri)
-      const uuids = transferUris.map(uri => uri.match(transferUriRegex)?.[1])
+      const uuids = transferUris.map(uri => uri.match(ServerApi.transferUrisRegex)?.[1])
       if (uuids.includes(undefined)) {
         throw new ServerApiError('invalid transfer URI')
       }
@@ -202,6 +200,8 @@ export class ServerApi {
       return response.headers.location
     })
   }
+
+  static transferUrisRegex = /^(?:.*\/)?([0-9A-Fa-f-]+)$/
 }
 
 
