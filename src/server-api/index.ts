@@ -94,7 +94,7 @@ export class ServerApi {
       // Sometimes this method is called by `this.redirectToDebor()`
       // or `this.getDebtor() methods. To optimize those cases, we use
       // `this.debtor` to temporarily save the returned debtor
-      // instance, to avoid making two identical requests in a row.
+      // instance, and avoid making two identical requests in a row.
       ({ auth: auth, debtor: this.debtor } = await this.authenticate())
     }
 
@@ -144,10 +144,18 @@ export class ServerApi {
     })
   }
 
-  async getTransfersList(): Promise<TransfersList> {
+  async getTransfersList(): Promise<Uuid[]> {
+    const transferUriRegex = /^(?:.*\/)?([0-9A-Fa-f-]+)$/
+
     return await this.makeRequest(async (client, debtorId) => {
       const response = await client.get(`${debtorId}/transfers/`)
-      return response.data
+      const transfersList = response.data as TransfersList
+      const transferUris = transfersList.items.map(item => item.uri)
+      const uuids = transferUris.map(uri => uri.match(transferUriRegex)?.[1])
+      if (uuids.includes(undefined)) {
+        throw new ServerApiError('Invalid transfer URI.')
+      }
+      return uuids as Uuid[]
     })
   }
 
@@ -204,7 +212,6 @@ export type {
   Debtor,
   DebtorConfig,
   Transfer,
-  TransfersList,
   TransferCreationRequest,
   DebtorConfigUpdateRequest,
 }
