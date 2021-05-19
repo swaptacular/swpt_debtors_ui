@@ -182,7 +182,7 @@ export class ServerApi {
     })
   }
 
-  static debtorUrisRegex = /^(?:.*\/)?(\d+)\/$/
+  static debtorUrisRegex = /^(?:.*\/)?([0-9A-Za-z_=-]+)\/$/
   static transferUrisRegex = /^(?:.*\/)?([0-9A-Fa-f-]+)$/
 
   static wrapError(e: Error, kw = { copyResponse: true }): never {
