@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { AxiosInstance, AxiosError } from 'axios'
+import type { AxiosInstance, AxiosError, AxiosResponse } from 'axios'
 import type {
   Debtor,
   DebtorConfig,
@@ -20,22 +20,22 @@ type Uuid = string
 
 
 export class ServerApiError extends Error {
-  status?: number
+  response?: { status: number, headers: any, data: any }
 
-  constructor(m?: string | number) {
+  constructor(x: string | AxiosResponse) {
     let message
-    let status
+    let response
 
-    if (typeof m === 'number') {
-      message = `Returned ${m} HTTP status code.`
-      status = m
+    if (typeof x === 'string') {
+      message = x
     } else {
-      message = m
+      message = `status code ${x.status}`
+      response = x
     }
 
     super(message)
     this.name = 'ServerApiError'
-    this.status = status
+    this.response = response
   }
 }
 
@@ -182,11 +182,11 @@ export class ServerApi {
   static debtorUrisRegex = /^(?:.*\/)?(\d+)\/$/
   static transferUrisRegex = /^(?:.*\/)?([0-9A-Fa-f-]+)$/
 
-  static wrapError(e: Error, kw = { copyHttpStatus: true }): never {
+  static wrapError(e: Error, kw = { copyResponse: true }): never {
     const error = e as AxiosError
     if (error.isAxiosError) {
-      const status = kw.copyHttpStatus ? error?.response?.status : undefined
-      throw new ServerApiError(status ?? error.message)
+      const response = kw.copyResponse ? error?.response : undefined
+      throw new ServerApiError(response ?? error.message)
     }
     throw error
   }
@@ -196,7 +196,10 @@ export class ServerApi {
     try {
       response = await client.get(`.debtor`)
     } catch (e) {
-      ServerApi.wrapError(e, { copyHttpStatus: false })
+      // The received error response should not be passed to the
+      // caller, because this function is executed implicitly, as a
+      // part of the authentication process.
+      ServerApi.wrapError(e, { copyResponse: false })
     }
     if (response.status === 204) {
       throw new ServerApiError('debtor not found')

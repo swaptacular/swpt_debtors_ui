@@ -2,6 +2,8 @@ import App from '../src/App.svelte'
 import { stringify, parse } from '../src/json-bigint/index.js'
 import { ServerApi, ServerApiError } from '../src/server-api/index.js'
 
+const authToken = '3x-KAxNWrYPJUWNKTbpnTWxoR0Arr0gG_uEqeWUNDkk.B-Iqy02FM7rK1rKSb4I7D9gaqGFXc2vdyJQ6Uuv3EF4'
+
 test("Instantiate svelte app", () => {
   const el = document.body
   const app = new App({
@@ -33,9 +35,26 @@ test("Create ServerApi", async () => {
 })
 
 test.skip("Request debtor info", async () => {
-  const api = new ServerApi(() => 'INVALID')
-  api.getDebtor().catch(e => {
+  const api = new ServerApi(() => authToken)
+  api.getDebtor().then(data => {
+    expect(data).toHaveProperty('identity')
+  })
+})
+
+test.skip("Try to cancel non-existing transfer", async () => {
+  const api = new ServerApi(() => authToken)
+  api.cancelTransfer('123e4567-e89b-12d3-a456-426655440000').catch(e => {
     expect(e).toBeInstanceOf(ServerApiError)
-    expect(e.status).toBe(401)
+    expect(e.response.status).toBe(404)
+  })
+})
+
+test.skip("Try to save document", async () => {
+  const api = new ServerApi(() => authToken)
+  const buffer = new ArrayBuffer(4)
+  const view = new Int32Array(buffer);
+  view[0] = 0
+  api.saveDocument('application/octet-stream', buffer).then(url => {
+    expect(url.length > 0).toBeTruthy()
   })
 })
