@@ -79,7 +79,7 @@ export class ServerApi {
     let auth = this.auth
     if (!auth) {
       // Sometimes this method is called by the `this.getDebtor()
-      // method. To optimize those cases, we use `this.debtor` to
+      // method. To optimize these cases, we use `this.debtor` to
       // temporarily save the returned debtor instance, thus avoiding
       // to make two identical requests in a row.
       ({ auth: auth, debtor: this.debtor } = await this.authenticate())
