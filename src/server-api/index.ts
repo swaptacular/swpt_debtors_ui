@@ -54,6 +54,7 @@ export class ServerApi {
     debtorId: bigint,
     client: AxiosInstance,
   }
+  debtor?: Debtor
 
   constructor(public obtainAuthToken: () => string) { }
 
@@ -81,21 +82,36 @@ export class ServerApi {
     }
     this.auth.debtorId = BigInt(captured[1])
 
-    return this.auth
+    return {
+      auth: this.auth,
+      debtor: debtor,
+    }
   }
 
   private async makeRequest<T>(f: (client: AxiosInstance, debtorId: bigint) => Promise<T>): Promise<T> {
-    let auth = this.auth || await this.authenticate()
+    let auth = this.auth
+    if (!auth) {
+      // Sometimes this method is called by `this.redirectToDebor()`
+      // or `this.getDebtor() methods. To optimize those cases, we use
+      // `this.debtor` to temporarily save the returned debtor
+      // instance, to avoid making two identical requests in a row.
+      ({ auth: auth, debtor: this.debtor } = await this.authenticate())
+    }
 
     try {
       return await f(auth.client, auth.debtorId)
     } catch (e) {
       wrapErrorResponses(e)
+    } finally {
+      this.debtor = undefined
     }
   }
 
   async redirectToDebtor(): Promise<Debtor> {
     return await this.makeRequest(async (client) => {
+      if (this.debtor) {
+        return this.debtor
+      }
       const response = await client.get(`.debtor`)
       if (response.status === 204) {
         throw new ServerApiError('The debtor has not been found.')
@@ -106,6 +122,9 @@ export class ServerApi {
 
   async getDebtor(): Promise<Debtor> {
     return await this.makeRequest(async (client, debtorId) => {
+      if (this.debtor) {
+        return this.debtor
+      }
       const response = await client.get(`${debtorId}/`)
       return response.data
     })
