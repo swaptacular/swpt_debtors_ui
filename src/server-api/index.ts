@@ -71,7 +71,7 @@ export class ServerApi {
       transformRequest: [(data) => stringify(data)],
       transformResponse: [(data) => parse(data)],
     })
-    this.auth = { client, debtorId: 0n }
+    this.auth = { client, debtorId: 0n }  // `0n` is a made up debtor ID.
 
     // We do not know the real ID of the debtor yet. To obtain it, we
     // make an HTTP request and extract the ID from the response.
@@ -91,10 +91,10 @@ export class ServerApi {
   private async makeRequest<T>(f: (client: AxiosInstance, debtorId: bigint) => Promise<T>): Promise<T> {
     let auth = this.auth
     if (!auth) {
-      // Sometimes this method is called by `this.redirectToDebor()`
-      // or `this.getDebtor() methods. To optimize those cases, we use
-      // `this.debtor` to temporarily save the returned debtor
-      // instance, and avoid making two identical requests in a row.
+      // Sometimes this method is called by the `this.getDebtor()
+      // method. To optimize those cases, we use `this.debtor` to
+      // temporarily save the returned debtor instance, thus avoiding
+      // to make two identical requests in a row.
       ({ auth: auth, debtor: this.debtor } = await this.authenticate())
     }
 
@@ -107,11 +107,8 @@ export class ServerApi {
     }
   }
 
-  async redirectToDebtor(): Promise<Debtor> {
+  private async redirectToDebtor(): Promise<Debtor> {
     return await this.makeRequest(async (client) => {
-      if (this.debtor) {
-        return this.debtor
-      }
       const response = await client.get(`.debtor`)
       if (response.status === 204) {
         throw new ServerApiError('debtor not found')
