@@ -17,6 +17,7 @@ type DebtorConfigUpdateRequest = {
 }
 type Url = string
 type Uuid = string
+type AuthTokenSource = () => Promise<string>
 
 
 export class ServerApiError extends Error {
@@ -31,7 +32,7 @@ export class ErrorResponse extends Error {
   data: any
 
   constructor(r: AxiosResponse) {
-    super(`status code ${r.status}`)
+    super(`Request failed with status code ${r.status}`)
     this.status = r.status
     this.headers = r.headers
     this.data = r.data
@@ -40,16 +41,25 @@ export class ErrorResponse extends Error {
 
 
 export class ServerApi {
+  getAuthToken: AuthTokenSource
   auth?: {
     debtorId: string,
     client: AxiosInstance,
   }
   debtor?: Debtor
 
-  constructor(public obtainAuthToken: () => string) { }
+  constructor(s: AuthTokenSource) {
+    this.getAuthToken = s
+  }
 
   private async authenticate() {
-    const token = this.obtainAuthToken()
+    let token
+    try {
+      token = await this.getAuthToken()
+    } catch {
+      throw new ServerApiError('Can not obtain an authentication token.')
+    }
+
     const client = axios.create({
       baseURL: appConfig.serverApiBaseUrl,
       timeout: appConfig.serverApiTimeout,
@@ -60,7 +70,7 @@ export class ServerApi {
       },
       transformRequest: (data) => stringify(data),
       transformResponse: (data, headers) => {
-        if (typeof data == 'string' && headers['content-type'] === 'application/json') {
+        if (typeof data === 'string' && headers['content-type'] === 'application/json') {
           return parse(data)
         }
         return data

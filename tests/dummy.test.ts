@@ -2,7 +2,7 @@ import App from '../src/App.svelte'
 import { stringify, parse } from '../src/json-bigint/index.js'
 import { ServerApi, ErrorResponse } from '../src/server-api/index.js'
 
-const authToken = '3x-KAxNWrYPJUWNKTbpnTWxoR0Arr0gG_uEqeWUNDkk.B-Iqy02FM7rK1rKSb4I7D9gaqGFXc2vdyJQ6Uuv3EF4'
+const authToken = Promise.resolve('3x-KAxNWrYPJUWNKTbpnTWxoR0Arr0gG_uEqeWUNDkk.B-Iqy02FM7rK1rKSb4I7D9gaqGFXc2vdyJQ6Uuv3EF4')
 
 test("Instantiate svelte app", () => {
   const el = document.body
@@ -30,7 +30,7 @@ test("Parse bigint", () => {
 })
 
 test("Create ServerApi", async () => {
-  const api = new ServerApi(() => '')
+  const api = new ServerApi(() => authToken)
   expect(api).toBeInstanceOf(ServerApi)
 })
 
