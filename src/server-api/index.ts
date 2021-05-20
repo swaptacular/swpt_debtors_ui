@@ -17,7 +17,7 @@ type DebtorConfigUpdateRequest = {
 }
 
 type AuthTokenSource = {
-  getToken: () => Promise<string>,
+  getToken: () => string | Promise<string>,
   invalidateToken: (token: string) => void | Promise<void>,
 }
 
