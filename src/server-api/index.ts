@@ -117,7 +117,7 @@ export class ServerApi {
     try {
       return await reqfunc(auth.client, auth.debtorId)
 
-    } catch (e) {
+    } catch (e: unknown) {
       const error = ServerApi.wrapError(e)
 
       // If the request failed with status 401, the authentication
@@ -225,23 +225,26 @@ export class ServerApi {
   static debtorUrisRegex = /^(?:.*\/)?([0-9A-Za-z_=-]+)\/$/
   static transferUrisRegex = /^(?:.*\/)?([0-9A-Fa-f-]+)$/
 
-  static wrapError(e: Error, kw = { passResponse: true }): Error {
-    const error = e as AxiosError
-    if (error.isAxiosError) {
-      const response = error.response
-      if (response && kw.passResponse) {
-        return new ErrorResponse(response)
+  static wrapError(e: unknown, kw = { passResponse: true }): unknown {
+    if (typeof e === 'object' && e !== null) {
+      const error = e as AxiosError
+      if (error.isAxiosError) {
+        const response = error.response
+        if (response && kw.passResponse) {
+          return new ErrorResponse(response)
+        }
+        return new ServerApiError(error.message)
       }
-      return new ServerApiError(error.message)
     }
-    return error
+
+    return e
   }
 
   static async redirectToDebtor(client: AxiosInstance): Promise<Debtor> {
     let response
     try {
       response = await client.get(`.debtor`)
-    } catch (e) {
+    } catch (e: unknown) {
       // The eventual Axios error response (`e.response`) should not
       // be passed to the caller, because this function is always
       // executed implicitly, as a part of the authentication process.
