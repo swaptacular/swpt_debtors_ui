@@ -10,19 +10,27 @@ import type {
 import { parse, stringify } from '../json-bigint/index.js'
 
 
-type DebtorConfigUpdateRequest = {
+export type {
+  Debtor,
+  DebtorConfig,
+  Transfer,
+  TransferCreationRequest,
+}
+
+export type DebtorConfigUpdateRequest = {
   type?: string;
   latestUpdateId: bigint;
   configData: string;
 }
 
-type AuthTokenSource = {
+export type AuthTokenSource = {
   getToken: () => string | Promise<string>,
   invalidateToken: (token: string) => void | Promise<void>,
 }
 
-type Url = string
-type Uuid = string
+export type Url = string
+
+export type Uuid = string
 
 
 export class ServerApiError extends Error {
@@ -244,14 +252,4 @@ export class ServerApi {
     }
     return response.data
   }
-}
-
-
-export type {
-  Debtor,
-  DebtorConfig,
-  Transfer,
-  TransferCreationRequest,
-  DebtorConfigUpdateRequest,
-  AuthTokenSource,
 }
