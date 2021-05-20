@@ -1,8 +1,30 @@
 import App from '../src/App.svelte'
 import { stringify, parse } from '../src/json-bigint/index.js'
-import { ServerApi, ErrorResponse } from '../src/server-api/index.js'
+import { ServerApi, ErrorResponse, AuthTokenSource } from '../src/server-api/index.js'
 
-const authToken = Promise.resolve('3x-KAxNWrYPJUWNKTbpnTWxoR0Arr0gG_uEqeWUNDkk.B-Iqy02FM7rK1rKSb4I7D9gaqGFXc2vdyJQ6Uuv3EF4')
+const authToken = '3x-KAxNWrYPJUWNKTbpnTWxoR0Arr0gG_uEqeWUNDkk.B-Iqy02FM7rK1rKSb4I7D9gaqGFXc2vdyJQ6Uuv3EF4'
+
+class SingleToken implements AuthTokenSource {
+  token?: string
+
+  constructor(token: string) {
+    this.token = token
+  }
+
+  getToken() {
+    if (this.token === undefined) {
+      throw Error('Can not obtain token.')
+    }
+    return Promise.resolve(this.token)
+  }
+
+  invalidateToken(token: string) {
+    if (token === this.token) {
+      this.token = undefined
+    }
+  }
+}
+
 
 test("Instantiate svelte app", () => {
   const el = document.body
@@ -30,19 +52,19 @@ test("Parse bigint", () => {
 })
 
 test("Create ServerApi", async () => {
-  const api = new ServerApi(() => authToken)
+  const api = new ServerApi(new SingleToken(authToken))
   expect(api).toBeInstanceOf(ServerApi)
 })
 
 test.skip("Request debtor info", async () => {
-  const api = new ServerApi(() => authToken)
+  const api = new ServerApi(new SingleToken(authToken))
   api.getDebtor().then(data => {
     expect(data).toHaveProperty('identity')
   })
 })
 
 test.skip("Try to cancel non-existing transfer", async () => {
-  const api = new ServerApi(() => authToken)
+  const api = new ServerApi(new SingleToken(authToken))
   api.cancelTransfer('123e4567-e89b-12d3-a456-426655440000').catch(e => {
     expect(e).toBeInstanceOf(ErrorResponse)
     expect(e.status).toBe(404)
@@ -50,7 +72,7 @@ test.skip("Try to cancel non-existing transfer", async () => {
 })
 
 test.skip("Try to save document", async () => {
-  const api = new ServerApi(() => authToken)
+  const api = new ServerApi(new SingleToken(authToken))
   const buffer = new ArrayBuffer(4)
   const view = new Int32Array(buffer);
   view[0] = 0

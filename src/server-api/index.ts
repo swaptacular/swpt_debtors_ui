@@ -15,9 +15,14 @@ type DebtorConfigUpdateRequest = {
   latestUpdateId: bigint;
   configData: string;
 }
+
+type AuthTokenSource = {
+  getToken: () => Promise<string>,
+  invalidateToken: (token: string) => void,
+}
+
 type Url = string
 type Uuid = string
-type AuthTokenSource = () => Promise<string>
 
 
 export class ServerApiError extends Error {
@@ -41,21 +46,22 @@ export class ErrorResponse extends Error {
 
 
 export class ServerApi {
-  getAuthToken: AuthTokenSource
+  tokenSource: AuthTokenSource
   auth?: {
     debtorId: string,
     client: AxiosInstance,
+    token: string,
   }
   debtor?: Debtor
 
   constructor(s: AuthTokenSource) {
-    this.getAuthToken = s
+    this.tokenSource = s
   }
 
   private async authenticate() {
     let token
     try {
-      token = await this.getAuthToken()
+      token = await this.tokenSource.getToken()
     } catch {
       throw new ServerApiError('Can not obtain an authentication token.')
     }
@@ -84,7 +90,7 @@ export class ServerApi {
     if (debtorId === undefined) {
       throw new TypeError('undefined instead of string')  // Normally, this should never happen
     }
-    const auth = { client, debtorId }
+    const auth = { client, debtorId, token }
 
     this.auth = auth
     return { auth, debtor }
@@ -104,7 +110,22 @@ export class ServerApi {
       return await reqfunc(auth.client, auth.debtorId)
 
     } catch (e) {
-      throw ServerApi.wrapError(e)
+      const error = ServerApi.wrapError(e)
+
+      // If the request failed with status 401, the authentication
+      // token is invalidated, and the request is retried. This should
+      // not result in an infinite loop because: 1) obtaining a new
+      // token requires interaction with the user; 2) immediately
+      // after a new token is obained, a "redirectToDebtor" request is
+      // made, verifying the token.
+      if (error instanceof ErrorResponse && error.status === 401) {
+        this.tokenSource.invalidateToken(auth.token)
+        this.auth = undefined
+        return await this.makeRequest(reqfunc)
+      }
+
+      throw error
+
     } finally {
       this.debtor = undefined
     }
@@ -232,4 +253,5 @@ export type {
   Transfer,
   TransferCreationRequest,
   DebtorConfigUpdateRequest,
+  AuthTokenSource,
 }
