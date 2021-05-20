@@ -18,7 +18,7 @@ type DebtorConfigUpdateRequest = {
 
 type AuthTokenSource = {
   getToken: () => Promise<string>,
-  invalidateToken: (token: string) => void,
+  invalidateToken: (token: string) => void | Promise<void>,
 }
 
 type Url = string
@@ -119,7 +119,7 @@ export class ServerApi {
       // after a new token is obained, a "redirectToDebtor" request is
       // made, verifying the token.
       if (error instanceof ErrorResponse && error.status === 401) {
-        this.tokenSource.invalidateToken(auth.token)
+        await this.tokenSource.invalidateToken(auth.token)
         this.auth = undefined
         return await this.makeRequest(reqfunc)
       }
