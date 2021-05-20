@@ -90,7 +90,7 @@ export class ServerApi {
     return { auth, debtor }
   }
 
-  private async makeRequest<T>(f: (client: AxiosInstance, debtorId: string) => Promise<T>): Promise<T> {
+  private async makeRequest<T>(reqfunc: (client: AxiosInstance, debtorId: string) => Promise<T>): Promise<T> {
     let auth = this.auth
     if (!auth) {
       // Sometimes this method is called by the `this.getDebtor()
@@ -101,9 +101,10 @@ export class ServerApi {
     }
 
     try {
-      return await f(auth.client, auth.debtorId)
+      return await reqfunc(auth.client, auth.debtorId)
+
     } catch (e) {
-      ServerApi.wrapError(e)
+      throw ServerApi.wrapError(e)
     } finally {
       this.debtor = undefined
     }
@@ -195,16 +196,16 @@ export class ServerApi {
   static debtorUrisRegex = /^(?:.*\/)?([0-9A-Za-z_=-]+)\/$/
   static transferUrisRegex = /^(?:.*\/)?([0-9A-Fa-f-]+)$/
 
-  static wrapError(e: Error, kw = { passResponse: true }): never {
+  static wrapError(e: Error, kw = { passResponse: true }): Error {
     const error = e as AxiosError
     if (error.isAxiosError) {
       const response = error.response
       if (response && kw.passResponse) {
-        throw new ErrorResponse(response)
+        return new ErrorResponse(response)
       }
-      throw new ServerApiError(error.message)
+      return new ServerApiError(error.message)
     }
-    throw error
+    return error
   }
 
   static async redirectToDebtor(client: AxiosInstance): Promise<Debtor> {
@@ -215,7 +216,7 @@ export class ServerApi {
       // The eventual Axios error response (`e.response`) should not
       // be passed to the caller, because this function is always
       // executed implicitly, as a part of the authentication process.
-      ServerApi.wrapError(e, { passResponse: false })
+      throw ServerApi.wrapError(e, { passResponse: false })
     }
     if (response.status === 204) {
       throw new Error('debtor not found')  // Normally, this should never happen.
