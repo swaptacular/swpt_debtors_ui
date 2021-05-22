@@ -192,7 +192,7 @@ export class ServerSession {
       throw new Error("unexpected debtor ID change")
     }
 
-    const auth = { client, debtorId, token }
+    const auth = { client, token }
     this.auth = auth
     this.debtor = debtor
     this.debtorId = debtorId
@@ -219,7 +219,7 @@ export class ServerSession {
 
       // If the request failed with status 401, the authentication
       // token is invalidated, and the request is retried. This should
-      // not result in an infinite loop because immediately after a
+      // not result in an infinite loop, because immediately after a
       // new token is obtained, a "redirectToDebtor" request is made,
       // verifying the token.
       if (error instanceof ErrorResponse && error.status === 401) {
