@@ -51,20 +51,20 @@ test("Parse bigint", () => {
   expect(o).toEqual({ float: 1, int: 1n, bigint: 123456789012345678901234567890n })
 })
 
-test("Create ServerApi", async () => {
-  const api = new ServerApi(new SingleToken(authToken))
-  expect(api).toBeInstanceOf(ServerApi)
+test.skip("Create ServerSession", async () => {
+  const api = new ServerSession(new SingleToken(authToken))
+  expect(api).toBeInstanceOf(ServerSession)
 })
 
 test.skip("Request debtor info", async () => {
-  const api = new ServerApi(new SingleToken(authToken))
+  const api = new ServerSession(new SingleToken(authToken))
   api.getDebtor().then(data => {
     expect(data).toHaveProperty('identity')
   })
 })
 
 test.skip("Try to cancel non-existing transfer", async () => {
-  const api = new ServerApi(new SingleToken(authToken))
+  const api = new ServerSession(new SingleToken(authToken))
   api.cancelTransfer('123e4567-e89b-12d3-a456-426655440000').catch(e => {
     expect(e).toBeInstanceOf(ErrorResponse)
     expect(e.status).toBe(404)
@@ -72,7 +72,7 @@ test.skip("Try to cancel non-existing transfer", async () => {
 })
 
 test.skip("Try to save document", async () => {
-  const api = new ServerApi(new SingleToken(authToken))
+  const api = new ServerSession(new SingleToken(authToken))
   const buffer = new ArrayBuffer(4)
   const view = new Int32Array(buffer);
   view[0] = 0

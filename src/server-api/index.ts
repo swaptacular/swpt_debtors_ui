@@ -33,8 +33,8 @@ export type Url = string
 export type Uuid = string
 
 
-export class ServerApiError extends Error {
-  name = 'ServerApiError'
+export class ServerSessionError extends Error {
+  name = 'ServerSessionError'
 }
 
 
@@ -53,102 +53,26 @@ export class ErrorResponse extends Error {
 }
 
 
-export class ServerApi {
-  tokenSource: AuthTokenSource
-  auth?: {
-    debtorId: string,
+export class ServerSession {
+  debtor!: Debtor
+  debtorId!: string
+
+  private isDebtorCurrent: boolean
+  private tokenSource: AuthTokenSource
+  private auth?: {
     client: AxiosInstance,
     token: string,
   }
-  debtor?: Debtor
 
   constructor(s: AuthTokenSource) {
     this.tokenSource = s
-  }
-
-  private async authenticate() {
-    let token
-    try {
-      token = await this.tokenSource.getToken()
-    } catch {
-      throw new ServerApiError('Can not obtain an authentication token.')
-    }
-
-    const client = axios.create({
-      baseURL: appConfig.serverApiBaseUrl,
-      timeout: appConfig.serverApiTimeout,
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      transformRequest: (data) => stringify(data),
-      transformResponse: (data, headers) => {
-        if (typeof data === 'string' && headers['content-type'] === 'application/json') {
-          return parse(data)
-        }
-        return data
-      },
-    })
-
-    // We do not know the ID of the debtor yet. To obtain it, we make
-    // an HTTP request and extract the ID from the response.
-    const debtor = await ServerApi.redirectToDebtor(client)
-    const debtorId = debtor.uri.match(ServerApi.debtorUrisRegex)?.[1]
-    if (debtorId === undefined) {
-      throw new TypeError('undefined instead of string')  // Normally, this should never happen
-    }
-    const auth = { client, debtorId, token }
-
-    this.auth = auth
-    return { auth, debtor }
-  }
-
-  private async makeRequest<T>(reqfunc: (client: AxiosInstance, debtorId: string) => Promise<T>): Promise<T> {
-    let auth = this.auth
-    if (!auth) {
-      // Sometimes this method is called by the `this.getDebtor()
-      // method. To optimize these cases, we use `this.debtor` to
-      // temporarily save the returned debtor instance, thus avoiding
-      // to make two identical requests in a row.
-      ({ auth: auth, debtor: this.debtor } = await this.authenticate())
-    }
-
-    try {
-      return await reqfunc(auth.client, auth.debtorId)
-
-    } catch (e: unknown) {
-      const error = ServerApi.wrapError(e)
-
-      // If the request failed with status 401, the authentication
-      // token is invalidated, and the request is retried. This should
-      // not result in an infinite loop because: 1) obtaining a new
-      // token requires interaction with the user; 2) immediately
-      // after a new token is obained, a "redirectToDebtor" request is
-      // made, verifying the token.
-      if (error instanceof ErrorResponse && error.status === 401) {
-        await this.invalidateToken(auth.token)
-        return await this.makeRequest(reqfunc)
-      }
-
-      throw error
-
-    } finally {
-      this.debtor = undefined
-    }
-  }
-
-  async invalidateToken(token: string): Promise<void> {
-    const auth = this.auth
-    if (auth && auth.token === token) {
-      await this.tokenSource.invalidateToken(token)
-      this.auth = undefined
-    }
+    this.isDebtorCurrent = false
+    this.getDebtor()
   }
 
   async getDebtor(): Promise<Debtor> {
     return await this.makeRequest(async (client, debtorId) => {
-      if (this.debtor) {
+      if (this.isDebtorCurrent) {
         return this.debtor
       }
       const response = await client.get(`${debtorId}/`)
@@ -175,9 +99,9 @@ export class ServerApi {
       const response = await client.get(`${debtorId}/transfers/`)
       const transfersList = response.data as TransfersList
       const transferUris = transfersList.items.map(item => item.uri)
-      const uuids = transferUris.map(uri => uri.match(ServerApi.transferUrisRegex)?.[1])
+      const uuids = transferUris.map(uri => uri.match(ServerSession.transferUrisRegex)?.[1])
       if (uuids.includes(undefined)) {
-        throw new TypeError('undefined instead of string')  // Normally, this should never happen
+        throw new Error('invalid transfer URI')
       }
       return uuids as Uuid[]
     })
@@ -229,10 +153,89 @@ export class ServerApi {
     })
   }
 
-  static debtorUrisRegex = /^(?:.*\/)?([0-9A-Za-z_=-]+)\/$/
-  static transferUrisRegex = /^(?:.*\/)?([0-9A-Fa-f-]+)$/
+  private async authenticate() {
+    let token
+    try {
+      token = await this.tokenSource.getToken()
+    } catch {
+      throw new ServerSessionError('Can not obtain an authentication token.')
+    }
 
-  static wrapError(e: unknown, kw = { passResponse: true }): unknown {
+    const client = axios.create({
+      baseURL: appConfig.serverApiBaseUrl,
+      timeout: appConfig.serverApiTimeout,
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      transformRequest: (data) => stringify(data),
+      transformResponse: (data, headers) => {
+        if (typeof data === 'string' && headers['content-type'] === 'application/json') {
+          return parse(data)
+        }
+        return data
+      },
+    })
+
+    // We do not know the ID of the debtor yet. To obtain it, we make
+    // an HTTP request, and extract the debtor ID from the
+    // response. Note that while the authentication token may change
+    // during the lifespan of the `ServerSession` instance, the debtor
+    // ID must stay the same.
+    const debtor = await ServerSession.redirectToDebtor(client)
+    const debtorId = debtor.uri.match(ServerSession.debtorUrisRegex)?.[1]
+    if (debtorId === undefined) {
+      throw new Error('invalid debtor URI')
+    }
+    if (this.debtorId !== undefined && this.debtorId !== debtorId) {
+      throw new Error("unexpected debtor ID change")
+    }
+
+    const auth = { client, debtorId, token }
+    this.auth = auth
+    this.debtor = debtor
+    this.debtorId = debtorId
+    return auth
+  }
+
+  private async makeRequest<T>(reqfunc: (client: AxiosInstance, debtorId: string) => Promise<T>): Promise<T> {
+    let auth = this.auth
+    if (!auth) {
+      auth = await this.authenticate()
+
+      // Often this method is called by the `this.getDebtor`
+      // method. To optimize these cases, we temporarily set
+      // `this.isDebtorCurrent` to `true`, knowing that every
+      // authentication updates the value of `this.debtor`.
+      this.isDebtorCurrent = true
+    }
+
+    try {
+      return await reqfunc(auth.client, this.debtorId)
+
+    } catch (e: unknown) {
+      const error = ServerSession.convertError(e)
+
+      // If the request failed with status 401, the authentication
+      // token is invalidated, and the request is retried. This should
+      // not result in an infinite loop because immediately after a
+      // new token is obtained, a "redirectToDebtor" request is made,
+      // verifying the token.
+      if (error instanceof ErrorResponse && error.status === 401) {
+        await this.tokenSource.invalidateToken(auth.token)
+        this.auth = undefined
+        return await this.makeRequest(reqfunc)
+      }
+
+      throw error
+
+    } finally {
+      this.isDebtorCurrent = false
+    }
+  }
+
+  private static convertError(e: unknown, kw = { passResponse: true }): unknown {
     if (typeof e === 'object' && e !== null) {
       const error = e as AxiosError
       if (error.isAxiosError) {
@@ -240,14 +243,14 @@ export class ServerApi {
         if (response && kw.passResponse) {
           return new ErrorResponse(response)
         }
-        return new ServerApiError(error.message)
+        return new ServerSessionError(error.message)
       }
     }
 
     return e
   }
 
-  static async redirectToDebtor(client: AxiosInstance): Promise<Debtor> {
+  private static async redirectToDebtor(client: AxiosInstance): Promise<Debtor> {
     let response
     try {
       response = await client.get(`.debtor`)
@@ -255,11 +258,14 @@ export class ServerApi {
       // The eventual Axios error response (`e.response`) should not
       // be passed to the caller, because this function is always
       // executed implicitly, as a part of the authentication process.
-      throw ServerApi.wrapError(e, { passResponse: false })
+      throw ServerSession.convertError(e, { passResponse: false })
     }
     if (response.status === 204) {
-      throw new Error('debtor not found')  // Normally, this should never happen.
+      throw new Error('debtor not found')
     }
     return response.data
   }
+
+  private static debtorUrisRegex = /^(?:.*\/)?([0-9A-Za-z_=-]+)\/$/
+  private static transferUrisRegex = /^(?:.*\/)?([0-9A-Fa-f-]+)$/
 }
