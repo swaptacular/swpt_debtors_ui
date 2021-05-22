@@ -76,7 +76,8 @@ export class ServerSession {
         return this.debtor
       }
       const response = await client.get(`${debtorId}/`)
-      return response.data
+      const debtor = this.debtor = response.data
+      return debtor
     })
   }
 

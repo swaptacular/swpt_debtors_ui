@@ -1,6 +1,6 @@
 import App from '../src/App.svelte'
 import { stringify, parse } from '../src/json-bigint/index.js'
-import { ServerApi, ErrorResponse, AuthTokenSource } from '../src/server-api/index.js'
+import { ServerSession, ErrorResponse, AuthTokenSource } from '../src/server-api/index.js'
 
 const authToken = '3x-KAxNWrYPJUWNKTbpnTWxoR0Arr0gG_uEqeWUNDkk.B-Iqy02FM7rK1rKSb4I7D9gaqGFXc2vdyJQ6Uuv3EF4'
 
