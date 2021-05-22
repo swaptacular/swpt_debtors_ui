@@ -127,8 +127,7 @@ export class ServerApi {
       // after a new token is obained, a "redirectToDebtor" request is
       // made, verifying the token.
       if (error instanceof ErrorResponse && error.status === 401) {
-        await this.tokenSource.invalidateToken(auth.token)
-        this.auth = undefined
+        await this.invalidateToken(auth.token)
         return await this.makeRequest(reqfunc)
       }
 
@@ -136,6 +135,14 @@ export class ServerApi {
 
     } finally {
       this.debtor = undefined
+    }
+  }
+
+  async invalidateToken(token: string): Promise<void> {
+    const auth = this.auth
+    if (auth && auth.token === token) {
+      await this.tokenSource.invalidateToken(token)
+      this.auth = undefined
     }
   }
 
