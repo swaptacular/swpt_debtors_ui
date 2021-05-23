@@ -227,7 +227,7 @@ export class ServerSession {
         if (error.status == 303) {
           const url = error.headers.location
           if (typeof url !== 'string') {
-            throw new Error('invalid redirect location')
+            throw new Error('missing redirect location')
           }
           return url
         }
