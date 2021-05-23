@@ -156,6 +156,12 @@ export type Debtor = {
    * create new credit-issuing transfers. */
   createTransfer: ObjectReference;
 
+  /** A URI to which the debtor can POST documents to be saved. */
+  saveDocument: ObjectReference;
+
+  /** A URI that redirects to the debtor's public info document. */
+  publicInfoDocument: ObjectReference;
+
   /** When this field is present, this means that for some reason, the
    * current `DebtorConfig` settings can not be applied, or are not
    * effectual anymore. Usually this means that there has been a
