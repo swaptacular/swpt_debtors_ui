@@ -60,7 +60,7 @@ export class HttpError extends Error implements HttpResponse {
   url: string
   status: number
   headers: any
-  data: any
+  data: unknown
 
   constructor(r: AxiosResponse) {
     super(`Request failed with status code ${r.status}`)
