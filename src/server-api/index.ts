@@ -190,7 +190,14 @@ export class ServerSession {
       // verifying the token.
       if (error instanceof HttpError && error.status === 401) {
         await this.tokenSource.invalidateToken(authData.token)
-        this.authData = undefined
+
+        // Before erasing the invalidated `this.AuthData`, we should
+        // make sure that it has not been updated in the mean time by
+        // another task.
+        if (this?.authData?.token === authData.token) {
+          this.authData = undefined
+        }
+
         return await this.makeRequest(reqfunc)
       }
 
