@@ -1,11 +1,12 @@
 import axios from 'axios'
-import type { AxiosInstance, AxiosError, AxiosResponse } from 'axios'
+import type { AxiosInstance, AxiosRequestConfig, AxiosError, AxiosResponse } from 'axios'
 import type {
   Debtor,
   DebtorConfig,
   Transfer,
   TransfersList,
   TransferCreationRequest,
+  TransferCancelationRequest,
 } from './schemas.js'
 import { parse, stringify } from '../json-bigint/index.js'
 
@@ -14,13 +15,15 @@ export type {
   Debtor,
   DebtorConfig,
   Transfer,
+  TransfersList,
   TransferCreationRequest,
+  TransferCancelationRequest,
 }
 
 export type DebtorConfigUpdateRequest = {
-  type?: string;
-  latestUpdateId: bigint;
-  configData: string;
+  type?: string,
+  latestUpdateId: bigint,
+  configData: string,
 }
 
 export type AuthTokenSource = {
@@ -28,24 +31,23 @@ export type AuthTokenSource = {
   invalidateToken: (token: string) => void | Promise<void>,
 }
 
-export type Url = string
 
-export type Uuid = string
-
-
-export class ServerSessionError extends Error {
-  name = 'ServerSessionError'
+function getRequestUrl(r: AxiosResponse): string {
+  let url = r.request.responseURL
+  if (url === undefined) {
+    url = r.request.res.responseUrl  // running in Node.js
+  }
+  return url
 }
 
-
-export class ErrorResponse extends Error {
-  name = 'ErrorResponse'
+export class HttpResponse {
+  url: string
   status: number
   headers: any
-  data: any
+  data: unknown
 
   constructor(r: AxiosResponse) {
-    super(`Request failed with status code ${r.status}`)
+    this.url = getRequestUrl(r)
     this.status = r.status
     this.headers = r.headers
     this.data = r.data
@@ -53,105 +55,83 @@ export class ErrorResponse extends Error {
 }
 
 
-export class ServerSession {
-  debtor!: Debtor
-  debtorId!: string
+export class HttpError extends Error implements HttpResponse {
+  name = 'HttpError'
+  url: string
+  status: number
+  headers: any
+  data: any
 
-  private isDebtorCurrent: boolean
+  constructor(r: AxiosResponse) {
+    super(`Request failed with status code ${r.status}`)
+    this.url = getRequestUrl(r)
+    this.status = r.status
+    this.headers = r.headers
+    this.data = r.data
+  }
+}
+
+
+export class ServerSessionError extends Error {
+  name = 'ServerSessionError'
+}
+
+
+export class ServerSession {
   private tokenSource: AuthTokenSource
-  private auth?: {
+  private debtorUrl?: string
+  private authData?: {
     client: AxiosInstance,
     token: string,
   }
 
   constructor(s: AuthTokenSource) {
     this.tokenSource = s
-    this.isDebtorCurrent = false
-    this.getDebtor()
   }
 
-  async getDebtor(): Promise<Debtor> {
-    return await this.makeRequest(async (client, debtorId) => {
-      if (this.isDebtorCurrent) {
-        return this.debtor
-      }
-      const response = await client.get(`${debtorId}/`)
-      const debtor = this.debtor = response.data
-      return debtor
-    })
+  async getDebtorUrl(): Promise<string> {
+    let url = this.debtorUrl
+    if (url === undefined) {
+      url = (await this.authenticate()).debtorUrl
+    }
+    return url
   }
 
-  async getDebtorConfig(): Promise<DebtorConfig> {
-    return await this.makeRequest(async (client, debtorId) => {
-      const response = await client.get(`${debtorId}/config`)
-      return response.data
-    })
+  async get(url: string, config?: AxiosRequestConfig): Promise<HttpResponse> {
+    return await this.makeRequest(
+      async client => new HttpResponse(await client.get(url, config))
+    )
   }
 
-  async updateDebtorConfig(updateRequest: DebtorConfigUpdateRequest): Promise<DebtorConfig> {
-    return await this.makeRequest(async (client, debtorId) => {
-      const response = await client.patch(`${debtorId}/config`, updateRequest)
-      return response.data
-    })
+  async post(url: string, data?: any, config?: AxiosRequestConfig): Promise<HttpResponse> {
+    return await this.makeRequest(
+      async client => new HttpResponse(await client.post(url, data, config))
+    )
   }
 
-  async getTransfersList(): Promise<Uuid[]> {
-    return await this.makeRequest(async (client, debtorId) => {
-      const response = await client.get(`${debtorId}/transfers/`)
-      const transfersList = response.data as TransfersList
-      const transferUris = transfersList.items.map(item => item.uri)
-      const uuids = transferUris.map(uri => uri.match(ServerSession.transferUrisRegex)?.[1])
-      if (uuids.includes(undefined)) {
-        throw new Error('invalid transfer URI')
-      }
-      return uuids as Uuid[]
-    })
+  async postDocument(url: string, contentType: string, content: ArrayBuffer): Promise<HttpResponse> {
+    const config = {
+      headers: {
+        'Content-Type': contentType,
+        'Accept': contentType,
+      },
+      transformRequest: [],
+      responseType: 'arraybuffer' as const,
+    }
+
+    return await this.post(url, content, config)
   }
 
-  async createTransfer(creationRequest: TransferCreationRequest): Promise<Transfer | undefined> {
-    return await this.makeRequest(async (client, debtorId) => {
-      const response = await client.post(`${debtorId}/transfers/`, creationRequest, { maxRedirects: 0 })
-      if (response.status === 303) {
-        return undefined  // The same transfer entry already exists.
-      }
-      return response.data
-    })
+  async patch(url: string, data?: any, config?: AxiosRequestConfig): Promise<HttpResponse> {
+    return await this.makeRequest(
+      async client => new HttpResponse(await client.patch(url, data, config))
+    )
   }
 
-  async getTransfer(transferUuid: Uuid): Promise<Transfer> {
-    return await this.makeRequest(async (client, debtorId) => {
-      const response = await client.get(`${debtorId}/transfers/${transferUuid}`)
-      return response.data
-    })
-  }
-
-  async cancelTransfer(transferUuid: Uuid): Promise<Transfer> {
-    return await this.makeRequest(async (client, debtorId) => {
-      const cancelationRequest = { "type": "TransferCancelationRequest" }
-      const response = await client.post(`${debtorId}/transfers/${transferUuid}`, cancelationRequest)
-      return response.data
-    })
-  }
-
-  async deleteTransfer(transferUuid: Uuid): Promise<void> {
-    return await this.makeRequest(async (client, debtorId) => {
-      await client.delete(`${debtorId}/transfers/${transferUuid}`)
-    })
-  }
-
-  async saveDocument(contentType: string, content: ArrayBuffer): Promise<Url> {
-    return await this.makeRequest(async (client, debtorId) => {
-      const config = {
-        headers: {
-          'Content-Type': contentType,
-          'Accept': contentType,
-        },
-        transformRequest: [],
-        responseType: 'arraybuffer' as const,
-      }
-      const response = await client.post(`${debtorId}/documents/`, content, config)
-      return response.headers.location
-    })
+  async delete(url: string, config?: AxiosRequestConfig): Promise<HttpResponse> {
+    return await this.makeRequest(
+      async client => new HttpResponse(await client.delete(url, config))
+    )
   }
 
   private async authenticate() {
@@ -179,41 +159,27 @@ export class ServerSession {
       },
     })
 
-    // We do not know the ID of the debtor yet. To obtain it, we make
-    // an HTTP request, and extract the debtor ID from the
-    // response. Note that while the authentication token may change
-    // during the lifespan of the `ServerSession` instance, the debtor
-    // ID must stay the same.
-    const debtor = await ServerSession.redirectToDebtor(client)
-    const debtorId = debtor.uri.match(ServerSession.debtorUrisRegex)?.[1]
-    if (debtorId === undefined) {
-      throw new Error('invalid debtor URI')
-    }
-    if (this.debtorId !== undefined && this.debtorId !== debtorId) {
-      throw new Error("unexpected debtor ID change")
+    // We do not know the URL of the debtor yet. To obtain it, we make
+    // a "redirectToDebtor" HTTP request, and get the debtor URL from
+    // the redirect location. Note that while the authentication token
+    // may change during the lifespan of the `ServerSession` instance,
+    // the debtor URL must stay the same.
+    const debtorUrl = await ServerSession.getDebtorUrl(client)
+    if (this.debtorUrl !== undefined && this.debtorUrl !== debtorUrl) {
+      throw new Error("unexpected debtor URL change")
     }
 
-    const auth = { client, token }
-    this.auth = auth
-    this.debtor = debtor
-    this.debtorId = debtorId
-    return auth
+    const authData = { client, token }
+    this.authData = authData
+    this.debtorUrl = debtorUrl
+    return { authData, debtorUrl }
   }
 
-  private async makeRequest<T>(reqfunc: (client: AxiosInstance, debtorId: string) => Promise<T>): Promise<T> {
-    let auth = this.auth
-    if (!auth) {
-      auth = await this.authenticate()
-
-      // Often this method is called by the `this.getDebtor`
-      // method. To optimize these cases, we temporarily set
-      // `this.isDebtorCurrent` to `true`, knowing that every
-      // authentication updates the value of `this.debtor`.
-      this.isDebtorCurrent = true
-    }
+  private async makeRequest<T>(reqfunc: (client: AxiosInstance) => Promise<T>): Promise<T> {
+    const authData = this.authData ?? (await this.authenticate()).authData
 
     try {
-      return await reqfunc(auth.client, this.debtorId)
+      return await reqfunc(authData.client)
 
     } catch (e: unknown) {
       const error = ServerSession.convertError(e)
@@ -223,26 +189,24 @@ export class ServerSession {
       // not result in an infinite loop, because immediately after a
       // new token is obtained, a "redirectToDebtor" request is made,
       // verifying the token.
-      if (error instanceof ErrorResponse && error.status === 401) {
-        await this.tokenSource.invalidateToken(auth.token)
-        this.auth = undefined
+      if (error instanceof HttpError && error.status === 401) {
+        await this.tokenSource.invalidateToken(authData.token)
+        this.authData = undefined
         return await this.makeRequest(reqfunc)
       }
 
       throw error
 
-    } finally {
-      this.isDebtorCurrent = false
     }
   }
 
-  private static convertError(e: unknown, kw = { passResponse: true }): unknown {
+  private static convertError(e: unknown): unknown {
     if (typeof e === 'object' && e !== null) {
       const error = e as AxiosError
       if (error.isAxiosError) {
         const response = error.response
-        if (response && kw.passResponse) {
-          return new ErrorResponse(response)
+        if (response) {
+          return new HttpError(response)
         }
         return new ServerSessionError(error.message)
       }
@@ -251,22 +215,32 @@ export class ServerSession {
     return e
   }
 
-  private static async redirectToDebtor(client: AxiosInstance): Promise<Debtor> {
-    let response
+  private static async getDebtorUrl(client: AxiosInstance): Promise<string> {
     try {
-      response = await client.get(`.debtor`)
-    } catch (e: unknown) {
-      // The eventual Axios error response (`e.response`) should not
-      // be passed to the caller, because this function is always
-      // executed implicitly, as a part of the authentication process.
-      throw ServerSession.convertError(e, { passResponse: false })
-    }
-    if (response.status === 204) {
-      throw new Error('debtor not found')
-    }
-    return response.data
-  }
+      // Normally, the debtor will be found, and the next expression
+      // will throw an `AxiosError` with status code 303 (a redirect).
+      await client.get(`.debtor`, { maxRedirects: 0 })
 
-  private static debtorUrisRegex = /^(?:.*\/)?([0-9A-Za-z_=-]+)\/$/
-  private static transferUrisRegex = /^(?:.*\/)?([0-9A-Fa-f-]+)$/
+    } catch (e: unknown) {
+      const error = ServerSession.convertError(e)
+      if (error instanceof HttpError) {
+        if (error.status == 303) {
+          const url = error.headers.location
+          if (typeof url !== 'string') {
+            throw new Error('invalid redirect location')
+          }
+          return url
+        }
+
+        // This function should never throw an `HttpError` to the
+        // caller, because it is always executed implicitly, as a part
+        // of the authentication process.
+        throw new ServerSessionError(error.message)
+      }
+
+      throw error
+    }
+
+    throw new Error('debtor not found')  // status code 204
+  }
 }

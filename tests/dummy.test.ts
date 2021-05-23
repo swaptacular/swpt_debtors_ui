@@ -1,6 +1,6 @@
 import App from '../src/App.svelte'
 import { stringify, parse } from '../src/json-bigint/index.js'
-import { ServerSession, ErrorResponse, AuthTokenSource } from '../src/server-api/index.js'
+import { ServerSession, HttpError, AuthTokenSource } from '../src/server-api/index.js'
 
 const authToken = '3x-KAxNWrYPJUWNKTbpnTWxoR0Arr0gG_uEqeWUNDkk.B-Iqy02FM7rK1rKSb4I7D9gaqGFXc2vdyJQ6Uuv3EF4'
 
@@ -51,32 +51,45 @@ test("Parse bigint", () => {
   expect(o).toEqual({ float: 1, int: 1n, bigint: 123456789012345678901234567890n })
 })
 
-test.skip("Create ServerSession", async () => {
-  const api = new ServerSession(new SingleToken(authToken))
-  expect(api).toBeInstanceOf(ServerSession)
+test("Create ServerSession", async () => {
+  const session = new ServerSession(new SingleToken(authToken))
+  expect(session).toBeInstanceOf(ServerSession)
+})
+
+test.skip("Get debtor URL", async () => {
+  const session = new ServerSession(new SingleToken(authToken))
+  const debtorUrl = await session.getDebtorUrl()
+  expect(debtorUrl).toContain('/debtors/')
 })
 
 test.skip("Request debtor info", async () => {
-  const api = new ServerSession(new SingleToken(authToken))
-  api.getDebtor().then(data => {
-    expect(data).toHaveProperty('identity')
-  })
+  const session = new ServerSession(new SingleToken(authToken))
+  const debtorUrl = await session.getDebtorUrl()
+  const response = await session.get(debtorUrl)
+  expect(response.status).toBe(200)
+  expect(response.data).toHaveProperty('identity')
 })
 
 test.skip("Try to cancel non-existing transfer", async () => {
-  const api = new ServerSession(new SingleToken(authToken))
-  api.cancelTransfer('123e4567-e89b-12d3-a456-426655440000').catch(e => {
-    expect(e).toBeInstanceOf(ErrorResponse)
+  const session = new ServerSession(new SingleToken(authToken))
+  const debtorUrl = await session.getDebtorUrl()
+  try {
+    await session.post(`${debtorUrl}transfers/123e4567-e89b-12d3-a456-426655440000`)
+  } catch (e) {
+    expect(e).toBeInstanceOf(HttpError)
     expect(e.status).toBe(404)
-  })
+    expect(e.url).toContain('123e4567-e89b-12d3-a456-426655440000')
+  }
 })
 
 test.skip("Try to save document", async () => {
-  const api = new ServerSession(new SingleToken(authToken))
+  const session = new ServerSession(new SingleToken(authToken))
+  const debtorUrl = await session.getDebtorUrl()
   const buffer = new ArrayBuffer(4)
   const view = new Int32Array(buffer);
   view[0] = 0
-  api.saveDocument('application/octet-stream', buffer).then(url => {
-    expect(url.length > 0).toBeTruthy()
-  })
+  const response = await session.postDocument(`${debtorUrl}documents/`, 'application/octet-stream', buffer)
+  expect(response.url.length > 0).toBeTruthy()
+  expect(response.headers['content-type']).toBe('application/octet-stream')
+  expect(typeof response.data).toBe('object')  // ArrayBuffer or Buffer
 })
