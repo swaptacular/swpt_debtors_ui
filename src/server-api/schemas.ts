@@ -145,6 +145,16 @@ export type DebtorConfig = {
   debtor: ObjectReference;
 }
 
+export type DebtorConfigUpdateRequest = {
+  /** The type of the updated object ("DebtorConfig"). */
+  type?: string,
+
+  /** These are the fields in `DebtorConfig` that the user have
+   * control over. */
+  latestUpdateId: bigint,
+  configData: string,
+}
+
 export type Debtor = {
   /** The URI of this object. Can be a relative URI. */
   uri: string;

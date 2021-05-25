@@ -7,6 +7,7 @@ import type {
   TransfersList,
   TransferCreationRequest,
   TransferCancelationRequest,
+  DebtorConfigUpdateRequest,
 } from './schemas.js'
 import { parse, stringify } from '../json-bigint/index.js'
 
@@ -18,12 +19,7 @@ export type {
   TransfersList,
   TransferCreationRequest,
   TransferCancelationRequest,
-}
-
-export type DebtorConfigUpdateRequest = {
-  type?: string,
-  latestUpdateId: bigint,
-  configData: string,
+  DebtorConfigUpdateRequest,
 }
 
 export type AuthTokenSource = {
@@ -39,6 +35,7 @@ function getRequestUrl(r: AxiosResponse): string {
   }
   return url
 }
+
 
 export class HttpResponse {
   url: string
@@ -74,6 +71,11 @@ export class HttpError extends Error implements HttpResponse {
 
 export class ServerSessionError extends Error {
   name = 'ServerSessionError'
+}
+
+
+export class AuthenticationError extends ServerSessionError {
+  name = 'AuthenticationError'
 }
 
 
@@ -138,7 +140,7 @@ export class ServerSession {
     try {
       token = await this.tokenSource.getToken()
     } catch {
-      throw new ServerSessionError('Can not obtain an authentication token.')
+      throw new AuthenticationError('can not obtain token')
     }
 
     const client = axios.create({
@@ -236,6 +238,9 @@ export class ServerSession {
           }
           return url
         }
+        if (error.status == 401) {
+          throw new AuthenticationError('invalid token')
+        }
 
         // This function should never throw an `HttpError` to the
         // caller, because it is always executed implicitly, as a part
@@ -246,6 +251,6 @@ export class ServerSession {
       throw error
     }
 
-    throw new Error('debtor not found')  // status code 204
+    throw new AuthenticationError('debtor not found')  // status code 204
   }
 }
