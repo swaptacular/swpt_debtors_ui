@@ -21,7 +21,7 @@ type ConfigData = {
 type ActionData = {
   actionId?: number,
   actionType: string,
-  addedAt: Date,
+  initiatedAt: Date,
   error?: object,
 }
 
