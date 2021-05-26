@@ -18,6 +18,11 @@ type ConfigData = {
   }
 }
 
+type DocumentContent = {
+  contentType: string,
+  content: ArrayBuffer,
+}
+
 type ActionData = {
   actionId?: number,
   actionType: string,
@@ -47,6 +52,11 @@ type TransferRecord =
   & UserRef
   & Transfer
 
+type DocumentRecord =
+  & UserRef
+  & ObjectReference
+  & DocumentContent
+
 type ActionRecord =
   & UserRef
   & ActionData
@@ -75,9 +85,10 @@ type DeleteTransferAction =
 
 class LocalDb extends Dexie {
   users: Dexie.Table<UserRecord, number>
-  debtors: Dexie.Table<DebtorRecord, number>
-  configs: Dexie.Table<DebtorConfigRecord, number>
-  transfers: Dexie.Table<TransferRecord, number>
+  debtors: Dexie.Table<DebtorRecord, string>
+  configs: Dexie.Table<DebtorConfigRecord, string>
+  transfers: Dexie.Table<TransferRecord, string>
+  documents: Dexie.Table<DocumentRecord, string>
   actions: Dexie.Table<ActionRecord, number>
 
   constructor() {
@@ -88,6 +99,7 @@ class LocalDb extends Dexie {
       debtors: 'uri,&userId',
       configs: 'uri,&userId',
       transfers: 'uri,userId',
+      documents: 'uri,userId',
       actions: '++actionId,userId',
     })
 
@@ -95,6 +107,7 @@ class LocalDb extends Dexie {
     this.debtors = this.table('debtors')
     this.configs = this.table('configs')
     this.transfers = this.table('transfers')
+    this.documents = this.table('documents')
     this.actions = this.table('actions')
   }
 }
