@@ -3,51 +3,47 @@ import type {
   ObjectReference,
   Debtor,
   DebtorConfig,
+  DebtorConfigUpdateRequest,
   Transfer,
   TransferCreationRequest,
 } from '../server-api'
 
 
-type UserRecord = {
+type User = {
   id?: number,
   debtorUrl: string,
 }
 
-type DebtorRecord = Omit<Debtor, 'config'> & {
+type UserRecord = {
   userId: number,
+}
+
+type DebtorRecord = UserRecord & Omit<Debtor, 'config'> & {
   config: ObjectReference,
 }
 
-type DebtorConfigRecord = DebtorConfig & {
-  userId: number,
-}
+type DebtorConfigRecord = UserRecord & DebtorConfig
 
-type TransferRecord = Transfer & {
-  userId: number,
-}
+type TransferRecord = UserRecord & Transfer
 
-type PendingAction = {
+type ActionRecord = UserRecord & {
   id?: number,
-  userId: number,
   addedAt: Date,
   actionType: string,
   error?: object,
 }
 
-type UpdateConfigAction = PendingAction & {
-  // configData = '{
-  //   "type": "RootConfigData",
-  //   "rate": 10.0,
-  //   "info": {
-  //     "type": "DebtorInfo",
-  //     "iri": "https://example.com/debtors/1/",
-  //     "contentType": "text/html",
-  //     "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
-  //   }
-  // }'
-
-  actionType: 'UpdateConfig',
-  latestUpdateId: bigint,
+// Will be serialized to something like this: '{
+//   "type": "RootConfigData",
+//   "rate": 10.0,
+//   "info": {
+//     "type": "DebtorInfo",
+//     "iri": "https://example.com/debtors/1/",
+//     "contentType": "text/html",
+//     "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+//   }
+// }'
+type ConfigData = {
   rate: number,
   info: {
     iri: string | ArrayBuffer,
@@ -56,27 +52,34 @@ type UpdateConfigAction = PendingAction & {
   }
 }
 
-type CreateTransferAction = PendingAction & Omit<TransferCreationRequest, "type"> & {
-  actionType: 'CreateTransfer',
-}
+type UpdateConfigAction =
+  & Omit<DebtorConfigUpdateRequest, 'configData'>
+  & ConfigData
+  & ActionRecord
+  & { actionType: 'UpdateConfig' }
 
-type CancelTransferAction = PendingAction & {
-  actionType: 'CancelTransfer',
-  uri: string,
-}
+type CreateTransferAction =
+  & TransferCreationRequest
+  & ActionRecord
+  & { actionType: 'CreateTransfer' }
 
-type DeleteTransferAction = PendingAction & {
-  actionType: 'DeleteTransfer',
-  uri: string,
-}
+type CancelTransferAction =
+  & ObjectReference
+  & ActionRecord
+  & { actionType: 'CancelTransfer' }
+
+type DeleteTransferAction =
+  & ObjectReference
+  & ActionRecord
+  & { actionType: 'DeleteTransfer' }
 
 
 class LocalDb extends Dexie {
-  users: Dexie.Table<UserRecord, number>
+  users: Dexie.Table<User, number>
   debtors: Dexie.Table<DebtorRecord, number>
   configs: Dexie.Table<DebtorConfigRecord, number>
   transfers: Dexie.Table<TransferRecord, number>
-  actions: Dexie.Table<PendingAction, number>
+  actions: Dexie.Table<ActionRecord, number>
 
   constructor() {
     super('local-db')
