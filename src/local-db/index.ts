@@ -1,6 +1,8 @@
 import Dexie from 'dexie'
 import type {
+  ObjectReference,
   Debtor,
+  DebtorConfig,
   Transfer,
   TransferCreationRequest,
 } from '../server-api'
@@ -9,10 +11,14 @@ import type {
 type UserRecord = {
   id?: number,
   debtorUrl: string,
-  lastUse?: Date,
 }
 
-type DebtorRecord = Debtor & {
+type DebtorRecord = Omit<Debtor, 'config'> & {
+  userId: number,
+  config: ObjectReference,
+}
+
+type DebtorConfigRecord = DebtorConfig & {
   userId: number,
 }
 
@@ -68,6 +74,7 @@ type DeleteTransferAction = PendingAction & {
 class LocalDb extends Dexie {
   users: Dexie.Table<UserRecord, number>
   debtors: Dexie.Table<DebtorRecord, number>
+  configs: Dexie.Table<DebtorConfigRecord, number>
   transfers: Dexie.Table<TransferRecord, number>
   actions: Dexie.Table<PendingAction, number>
 
@@ -75,14 +82,16 @@ class LocalDb extends Dexie {
     super('local-db')
 
     this.version(1).stores({
-      users: '++id,debtorUrl',
-      debtors: 'userId',
-      transfers: '++id,userId',
+      users: '++id,&debtorUrl',
+      debtors: 'uri,&userId',
+      configs: 'uri,&userId',
+      transfers: 'uri,userId',
       actions: '++id,userId',
     })
 
     this.users = this.table('users')
     this.debtors = this.table('debtors')
+    this.configs = this.table('configs')
     this.transfers = this.table('transfers')
     this.actions = this.table('actions')
   }

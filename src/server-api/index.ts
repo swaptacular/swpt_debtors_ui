@@ -1,6 +1,7 @@
 import axios from 'axios'
 import type { AxiosInstance, AxiosRequestConfig, AxiosError, AxiosResponse } from 'axios'
 import type {
+  ObjectReference,
   Debtor,
   DebtorConfig,
   Transfer,
@@ -13,6 +14,7 @@ import { parse, stringify } from '../json-bigint/index.js'
 
 
 export type {
+  ObjectReference,
   Debtor,
   DebtorConfig,
   Transfer,
