@@ -9,18 +9,15 @@ import type {
 } from '../server-api'
 
 
-type ConfigData = {
-  rate: number,
-  info: {
-    iri: string | ArrayBuffer,
-    contentType: string,
-    sha256: string,
-  }
-}
-
-type DocumentContent = {
+type DocumentUri = string
+type DocumentData = {
   contentType: string,
   content: ArrayBuffer,
+}
+
+type ConfigData = {
+  rate: number,
+  info: DocumentUri | DocumentData,
 }
 
 type ActionData = {
@@ -55,7 +52,7 @@ type TransferRecord =
 type DocumentRecord =
   & UserRef
   & ObjectReference
-  & DocumentContent
+  & DocumentData
 
 type ActionRecord =
   & UserRef
