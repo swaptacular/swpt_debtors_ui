@@ -11,8 +11,9 @@ import type {
 
 type DocumentUri = string
 type DocumentData = {
-  contentType: string,
   content: ArrayBuffer,
+  contentType: string,
+  sha256: string,
 }
 
 type ConfigData = {
