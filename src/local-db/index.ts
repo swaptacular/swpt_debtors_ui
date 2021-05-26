@@ -20,13 +20,15 @@ type TransferRecord = Transfer & {
   userId: number,
 }
 
-type ActionRecord = {
-  type: 'update-config' | 'new-transfer' | 'delete-transfer' | 'cancel-transfer',
-  status: 'pending' | 'successful' | 'failed'
-  createdAt: Date,
+type PendingAction = {
+  id?: number,
+  userId: number,
+  addedAt: Date,
+  actionType: string,
+  error?: object,
 }
 
-type DebtorConfigUpdateAction = ActionRecord & {
+type UpdateConfigAction = PendingAction & {
   // configData = '{
   //   "type": "RootConfigData",
   //   "rate": 10.0,
@@ -38,7 +40,7 @@ type DebtorConfigUpdateAction = ActionRecord & {
   //   }
   // }'
 
-  type: 'update-config',
+  actionType: 'UpdateConfig',
   latestUpdateId: bigint,
   rate: number,
   info: {
@@ -48,16 +50,18 @@ type DebtorConfigUpdateAction = ActionRecord & {
   }
 }
 
-type CreateTransferAction = ActionRecord & Omit<TransferCreationRequest, "type"> & {
-  type: 'create-transfer',
+type CreateTransferAction = PendingAction & Omit<TransferCreationRequest, "type"> & {
+  actionType: 'CreateTransfer',
 }
 
-type CancelTransferAction = ActionRecord & {
-  type: 'cancel-transfer',
+type CancelTransferAction = PendingAction & {
+  actionType: 'CancelTransfer',
+  uri: string,
 }
 
-type DeleteTransferAction = ActionRecord & {
-  type: 'delete-transfer',
+type DeleteTransferAction = PendingAction & {
+  actionType: 'DeleteTransfer',
+  uri: string,
 }
 
 
@@ -65,7 +69,7 @@ class LocalDb extends Dexie {
   users: Dexie.Table<UserRecord, number>
   debtors: Dexie.Table<DebtorRecord, number>
   transfers: Dexie.Table<TransferRecord, number>
-  actions: Dexie.Table<ActionRecord, number>
+  actions: Dexie.Table<PendingAction, number>
 
   constructor() {
     super('local-db')
@@ -73,8 +77,8 @@ class LocalDb extends Dexie {
     this.version(1).stores({
       users: '++id,debtorUrl',
       debtors: 'userId',
-      transfers: '',
-      actions: '',
+      transfers: '++id,userId',
+      actions: '++id,userId',
     })
 
     this.users = this.table('users')
