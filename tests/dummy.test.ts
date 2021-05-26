@@ -1,6 +1,7 @@
 import App from '../src/App.svelte'
 import { stringify, parse } from '../src/json-bigint/index.js'
 import { ServerSession, HttpError, AuthTokenSource } from '../src/server-api/index.js'
+import { testPut } from '../src/local-db/index.js'
 
 const authToken = '3x-KAxNWrYPJUWNKTbpnTWxoR0Arr0gG_uEqeWUNDkk.B-Iqy02FM7rK1rKSb4I7D9gaqGFXc2vdyJQ6Uuv3EF4'
 
@@ -92,4 +93,9 @@ test.skip("Try to save document", async () => {
   expect(response.url.length > 0).toBeTruthy()
   expect(response.headers['content-type']).toBe('application/octet-stream')
   expect(typeof response.data).toBe('object')  // ArrayBuffer or Buffer
+})
+
+test("Dexie testPut", async () => {
+  const id = await testPut()
+  expect(id).toBe(1)
 })
