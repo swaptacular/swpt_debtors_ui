@@ -1,10 +1,27 @@
 import Dexie from 'dexie'
 
-var db = new Dexie('local-db');
-db.version(1).stores({
-  debtors: '++id,debtorUrl'
-});
+type User = {
+  id?: number,
+  debtorUrl: string,
+  lastUse?: Date,
+}
+
+class LocalDb extends Dexie {
+  users: Dexie.Table<User, number>
+
+  constructor() {
+    super('local-db')
+
+    this.version(1).stores({
+      users: '++id,debtorUrl',
+    })
+
+    this.users = this.table('users')
+  }
+}
+
+const db = new LocalDb();
 
 export async function testPut() {
-  return await db.debtors.put({ debtorUrl: 'xxxx' })
+  return await db.users.put({ debtorUrl: 'xxxx' })
 }
