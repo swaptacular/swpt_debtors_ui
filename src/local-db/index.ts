@@ -28,7 +28,7 @@ type ActionData = {
   error?: object,
 }
 
-type UserRef = {
+type UserId = {
   userId: number,
 }
 
@@ -38,25 +38,25 @@ type UserRecord = {
 }
 
 type DebtorRecord =
-  & UserRef
+  & UserId
   & Omit<Debtor, 'config'>
   & { config: ObjectReference }
 
 type DebtorConfigRecord =
-  & UserRef
+  & UserId
   & DebtorConfig
 
 type TransferRecord =
-  & UserRef
+  & UserId
   & Transfer
 
 type DocumentRecord =
-  & UserRef
+  & UserId
   & ObjectReference
   & DocumentData
 
 type ActionRecord =
-  & UserRef
+  & UserId
   & ActionData
 
 type UpdateConfigAction =
