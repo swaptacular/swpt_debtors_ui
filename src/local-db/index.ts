@@ -13,7 +13,6 @@ type DocumentUri = string
 type DocumentData = {
   content: ArrayBuffer,
   contentType: string,
-  sha256: string,
 }
 
 type ConfigData = {
