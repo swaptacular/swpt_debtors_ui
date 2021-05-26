@@ -9,40 +9,6 @@ import type {
 } from '../server-api'
 
 
-type User = {
-  id?: number,
-  debtorUrl: string,
-}
-
-type UserRecord = {
-  userId: number,
-}
-
-type DebtorRecord = UserRecord & Omit<Debtor, 'config'> & {
-  config: ObjectReference,
-}
-
-type DebtorConfigRecord = UserRecord & DebtorConfig
-
-type TransferRecord = UserRecord & Transfer
-
-type ActionRecord = UserRecord & {
-  id?: number,
-  addedAt: Date,
-  actionType: string,
-  error?: object,
-}
-
-// Will be serialized to something like this: '{
-//   "type": "RootConfigData",
-//   "rate": 10.0,
-//   "info": {
-//     "type": "DebtorInfo",
-//     "iri": "https://example.com/debtors/1/",
-//     "contentType": "text/html",
-//     "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
-//   }
-// }'
 type ConfigData = {
   rate: number,
   info: {
@@ -52,30 +18,63 @@ type ConfigData = {
   }
 }
 
+type ActionData = {
+  actionId?: number,
+  actionType: string,
+  addedAt: Date,
+  error?: object,
+}
+
+type UserRef = {
+  userId: number,
+}
+
+type UserRecord = {
+  userId?: number,
+  debtorUrl: string,
+}
+
+type DebtorRecord =
+  & UserRef
+  & Omit<Debtor, 'config'>
+  & { config: ObjectReference }
+
+type DebtorConfigRecord =
+  & UserRef
+  & DebtorConfig
+
+type TransferRecord =
+  & UserRef
+  & Transfer
+
+type ActionRecord =
+  & UserRef
+  & ActionData
+
 type UpdateConfigAction =
-  & Omit<DebtorConfigUpdateRequest, 'configData'>
-  & ConfigData
   & ActionRecord
   & { actionType: 'UpdateConfig' }
+  & Omit<DebtorConfigUpdateRequest, 'configData'>
+  & ConfigData
 
 type CreateTransferAction =
-  & TransferCreationRequest
   & ActionRecord
   & { actionType: 'CreateTransfer' }
+  & TransferCreationRequest
 
 type CancelTransferAction =
-  & ObjectReference
   & ActionRecord
   & { actionType: 'CancelTransfer' }
+  & ObjectReference
 
 type DeleteTransferAction =
-  & ObjectReference
   & ActionRecord
   & { actionType: 'DeleteTransfer' }
+  & ObjectReference
 
 
 class LocalDb extends Dexie {
-  users: Dexie.Table<User, number>
+  users: Dexie.Table<UserRecord, number>
   debtors: Dexie.Table<DebtorRecord, number>
   configs: Dexie.Table<DebtorConfigRecord, number>
   transfers: Dexie.Table<TransferRecord, number>
@@ -85,11 +84,11 @@ class LocalDb extends Dexie {
     super('local-db')
 
     this.version(1).stores({
-      users: '++id,&debtorUrl',
+      users: '++userId,&debtorUrl',
       debtors: 'uri,&userId',
       configs: 'uri,&userId',
       transfers: 'uri,userId',
-      actions: '++id,userId',
+      actions: '++actionId,userId',
     })
 
     this.users = this.table('users')
@@ -105,3 +104,14 @@ const db = new LocalDb();
 export async function testPut() {
   return await db.users.put({ debtorUrl: 'xxxx' })
 }
+
+// The `ConfigData` will be serialized to something like this: '{
+//   "type": "RootConfigData",
+//   "rate": 10.0,
+//   "info": {
+//     "type": "DebtorInfo",
+//     "iri": "https://example.com/debtors/1/",
+//     "contentType": "text/html",
+//     "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+//   }
+// }'
