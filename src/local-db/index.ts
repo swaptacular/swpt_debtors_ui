@@ -133,40 +133,17 @@ export class LocalDb extends Dexie {
   }): Promise<number> {
     const { debtor, transfers, actions, document } = kw
     const debtorUrl = debtor.uri
-    await this.deleteUser(debtorUrl)
 
     return await this.transaction('rw', this.all_tables, async () => {
+      await this.deleteUser(debtorUrl)
       const userId = await this.users.add({ debtorUrl })
-      const config = debtor.config
-
-      await this.debtors.add({
-        userId,
-        ...debtor,
-        config: { uri: config.uri },
-      })
-
-      await this.configs.add({
-        userId,
-        ...config,
-      })
-
-      await this.transfers.bulkAdd(transfers.map(transfer => ({
-        userId,
-        ...transfer
-      })))
-
-      await this.actions.bulkAdd(actions.map(action => ({
-        userId,
-        ...action
-      })))
-
+      await this.debtors.add({ userId, ...debtor, config: { uri: debtor.config.uri } })
+      await this.configs.add({ userId, ...debtor.config, uri: new URL(debtor.config.uri, debtorUrl).href })
+      await this.transfers.bulkAdd(transfers.map(transfer => ({ userId, ...transfer })))
+      await this.actions.bulkAdd(actions.map(action => ({ userId, ...action })))
       if (document) {
-        await this.documents.add({
-          userId,
-          ...document,
-        })
+        await this.documents.add({ userId, ...document })
       }
-
       return userId
     })
   }
