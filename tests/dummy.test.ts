@@ -1,7 +1,7 @@
 import App from '../src/App.svelte'
 import { stringify, parse } from '../src/json-bigint/index.js'
 import { ServerSession, HttpError, AuthTokenSource } from '../src/server-api/index.js'
-import { LocalDb } from '../src/local-db/index.js'
+import { LocalDb, DebtorRecord } from '../src/local-db/index.js'
 
 const authToken = '3x-KAxNWrYPJUWNKTbpnTWxoR0Arr0gG_uEqeWUNDkk.B-Iqy02FM7rK1rKSb4I7D9gaqGFXc2vdyJQ6Uuv3EF4'
 
@@ -95,19 +95,31 @@ test.skip("Try to save document", async () => {
   expect(typeof response.data).toBe('object')  // ArrayBuffer or Buffer
 })
 
-test("Obtain user ID", async () => {
-  let debtorUrl = 'http://example.com/1/'
-  const fakeSession = {
-    getDebtorUrl() {
-      return debtorUrl
-    }
-  } as unknown as ServerSession
-
+test("Install user", async () => {
+  const debtor = {
+    type: 'Debtor',
+    uri: 'https://example.com/1/',
+    createTransfer: { uri: 'https://example.com/1/transfers/' },
+    saveDocument: { uri: 'https://example.com/1/documents/' },
+    publicInfoDocument: { uri: 'https:/example.com/1/public' },
+    transfersList: { uri: 'https://example.com/1/transfers/' },
+    noteMaxBytes: 200n,
+    identity: { type: 'DebtorIdentity', uri: 'swpt:1234' },
+    balance: 20000n,
+    createdAt: '2020-01-01T00:00:00Z',
+    config: {
+      uri: 'config',
+      latestUpdateAt: '2020-01-01T00:00:00Z',
+      latestUpdateId: 1n,
+      configData: '',
+      debtor: { uri: 'https://example.com/1/' }
+    },
+  }
   const db = new LocalDb();
-  const userId = await db.obtainUserId(fakeSession)
-  expect(typeof userId).toBe('number')
-  expect(await db.obtainUserId(fakeSession)).toBe(userId)
-
-  debtorUrl = 'http://example.com/2/'
-  expect(await db.obtainUserId(fakeSession)).toBe(userId + 1)
+  const userId = await db.installUser({ debtor, transfers: [], actions: [] })
+  const debtorRecord = await db.getDebtorRecord(userId) as DebtorRecord
+  expect(typeof debtorRecord).toBe('object')
+  expect(typeof debtorRecord?.userId).toBe('number')
+  expect(debtorRecord.config.uri).toBe('config')
+  expect(debtorRecord.config).toEqual({ uri: 'config' })
 })
