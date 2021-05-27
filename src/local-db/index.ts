@@ -1,5 +1,6 @@
 import Dexie from 'dexie'
 import type {
+  ServerSession,
   ObjectReference,
   Debtor,
   DebtorConfig,
@@ -80,7 +81,7 @@ type DeleteTransferAction =
   & ObjectReference
 
 
-class LocalDb extends Dexie {
+export class LocalDb extends Dexie {
   users: Dexie.Table<UserRecord, number>
   debtors: Dexie.Table<DebtorRecord, string>
   configs: Dexie.Table<DebtorConfigRecord, string>
@@ -107,12 +108,91 @@ class LocalDb extends Dexie {
     this.documents = this.table('documents')
     this.actions = this.table('actions')
   }
-}
 
-const db = new LocalDb();
+  async getUser(debtorUrl: string): Promise<UserRecord | undefined> {
+    return await this.users.where({ debtorUrl }).first()
+  }
 
-export async function testPut() {
-  return await db.users.put({ debtorUrl: 'xxxx' })
+  async deleteUser(debtorUrl: string): Promise<void> {
+    await this.transaction('rw', this.all_tables, async () => {
+      const user = await this.getUser(debtorUrl)
+      if (user) {
+        const userId = user.userId
+        for (const table of this.all_tables) {
+          await table.where({ userId }).delete()
+        }
+      }
+    })
+  }
+
+  async createUser(kw: {
+    debtor: Debtor,
+    transfers: Transfer[],
+    actions: ActionData[],
+    document?: ObjectReference & DocumentData,
+  }): Promise<number> {
+    const { debtor, transfers, actions, document } = kw
+    const debtorUrl = debtor.uri
+    await this.deleteUser(debtorUrl)
+
+    return await this.transaction('rw', this.all_tables, async () => {
+      const userId = await this.users.add({ debtorUrl })
+      const config = debtor.config
+
+      await this.debtors.add({
+        userId,
+        ...debtor,
+        config: { uri: config.uri },
+      })
+
+      await this.configs.add({
+        userId,
+        ...config,
+      })
+
+      await this.transfers.bulkAdd(transfers.map(transfer => ({
+        userId,
+        ...transfer
+      })))
+
+      await this.actions.bulkAdd(actions.map(action => ({
+        userId,
+        ...action
+      })))
+
+      if (document) {
+        await this.documents.add({
+          userId,
+          ...document,
+        })
+      }
+
+      return userId
+    })
+  }
+
+  async obtainUserId(session: ServerSession): Promise<number> {
+    const debtorUrl = await session.getDebtorUrl()
+    const userId = await this.transaction('rw', this.users, async () => {
+      // If a user with the given `debtorUrl` exists, return its
+      // primary key (the userId). Otherwise, add a new record and
+      // return the auto-generated userId.
+      const userIds = await this.users.where({ debtorUrl }).primaryKeys()
+      switch (userIds.length) {
+        case 0:
+          return await this.users.add({ debtorUrl })
+        case 1:
+          return userIds[0]
+        default:
+          throw Error('database inconsistency')
+      }
+    })
+    return userId
+  }
+
+  private get all_tables() {
+    return [this.users, this.debtors, this.configs, this.transfers, this.documents, this.actions]
+  }
 }
 
 // The `ConfigData` will be serialized to something like this: '{

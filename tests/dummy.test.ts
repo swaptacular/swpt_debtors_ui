@@ -1,7 +1,7 @@
 import App from '../src/App.svelte'
 import { stringify, parse } from '../src/json-bigint/index.js'
 import { ServerSession, HttpError, AuthTokenSource } from '../src/server-api/index.js'
-import { testPut } from '../src/local-db/index.js'
+import { LocalDb } from '../src/local-db/index.js'
 
 const authToken = '3x-KAxNWrYPJUWNKTbpnTWxoR0Arr0gG_uEqeWUNDkk.B-Iqy02FM7rK1rKSb4I7D9gaqGFXc2vdyJQ6Uuv3EF4'
 
@@ -95,7 +95,19 @@ test.skip("Try to save document", async () => {
   expect(typeof response.data).toBe('object')  // ArrayBuffer or Buffer
 })
 
-test("Dexie testPut", async () => {
-  const id = await testPut()
-  expect(id).toBe(1)
+test("Obtain user ID", async () => {
+  let debtorUrl = 'http://example.com/1/'
+  const fakeSession = {
+    getDebtorUrl() {
+      return debtorUrl
+    }
+  } as unknown as ServerSession
+
+  const db = new LocalDb();
+  const userId = await db.obtainUserId(fakeSession)
+  expect(typeof userId).toBe('number')
+  expect(await db.obtainUserId(fakeSession)).toBe(userId)
+
+  debtorUrl = 'http://example.com/2/'
+  expect(await db.obtainUserId(fakeSession)).toBe(userId + 1)
 })
