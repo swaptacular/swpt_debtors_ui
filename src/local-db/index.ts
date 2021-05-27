@@ -27,30 +27,37 @@ export type ActionData = {
   error?: object,
 }
 
-export type UserId = {
+export type CompleteUserData = {
+  debtor: Debtor,
+  transfers: Transfer[],
+  actions: ActionData[],
+  document?: ObjectReference & DocumentData,
+}
+
+export type UserReference = {
   userId: number,
 }
 
 export type DebtorRecord =
-  & Partial<UserId>
+  & Partial<UserReference>
   & Omit<Debtor, 'config'>
   & { config: ObjectReference }
 
 export type DebtorConfigRecord =
-  & UserId
+  & UserReference
   & DebtorConfig
 
 export type TransferRecord =
-  & UserId
+  & UserReference
   & Transfer
 
 export type DocumentRecord =
-  & UserId
+  & UserReference
   & ObjectReference
   & DocumentData
 
 export type ActionRecord =
-  & UserId
+  & UserReference
   & ActionData
 
 export type UpdateConfigAction =
@@ -73,13 +80,6 @@ export type DeleteTransferAction =
   & ActionRecord
   & { actionType: 'DeleteTransfer' }
   & ObjectReference
-
-export type CompleteUserData = {
-  debtor: Debtor,
-  transfers: Transfer[],
-  actions: ActionData[],
-  document?: ObjectReference & DocumentData,
-}
 
 
 export class LocalDb extends Dexie {
