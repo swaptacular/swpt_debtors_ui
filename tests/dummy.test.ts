@@ -95,7 +95,7 @@ test.skip("Try to save document", async () => {
   expect(typeof response.data).toBe('object')  // ArrayBuffer or Buffer
 })
 
-test("Install user", async () => {
+test("Install and uninstall user", async () => {
   const debtor = {
     type: 'Debtor',
     uri: 'https://example.com/1/',
@@ -122,4 +122,7 @@ test("Install user", async () => {
   expect(typeof debtorRecord?.userId).toBe('number')
   expect(debtorRecord.config.uri).toBe('config')
   expect(debtorRecord.config).toEqual({ uri: 'config' })
+
+  await db.uninstallUser(userId)
+  expect(await db.getDebtorRecord(userId)).toBeUndefined
 })
