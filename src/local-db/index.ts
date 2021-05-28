@@ -87,6 +87,11 @@ export class UserAlreadyInstalled extends Error {
 }
 
 
+export class UserDoesNotExist extends Error {
+  name = 'UserDoesNotExist'
+}
+
+
 export class LocalDb extends Dexie {
   debtors: Dexie.Table<DebtorRecord, number>
   configs: Dexie.Table<DebtorConfigRecord, string>
@@ -112,11 +117,21 @@ export class LocalDb extends Dexie {
     this.actions = this.table('actions')
   }
 
+  async isUserInstalled(userId: number): Promise<boolean>
+  async isUserInstalled(uri: string): Promise<boolean>
+  async isUserInstalled(keyValue: number | string): Promise<boolean> {
+    const keyName = typeof keyValue === 'number' ? 'userId' : 'uri'
+    return await this.debtors.where(keyName).equals(keyValue).count() === 1
+  }
+
+  // Note that the `uri` property in `debtor` and `transfers` objects
+  // must contain absolute URIs. The server may return relative URIs
+  // in the responses, which must be transformed to absolute ones,
+  // before passed to this method.
   async installUser({ debtor, transfers, document }: UserInstallationData): Promise<number> {
     return await this.transaction('rw', this.allTables, async () => {
-      const debtorRecord = await this.getDebtorRecord(debtor.uri)
-      if (debtorRecord) {
-        throw new UserAlreadyInstalled(`userId=${debtorRecord.userId}`)
+      if (await this.isUserInstalled(debtor.uri)) {
+        throw new UserAlreadyInstalled(debtor.uri)
       }
       const userId = await this.debtors.add({ ...debtor, config: { uri: debtor.config.uri } })
       await this.configs.add({ userId, ...debtor.config, uri: new URL(debtor.config.uri, debtor.uri).href })
@@ -136,13 +151,44 @@ export class LocalDb extends Dexie {
     })
   }
 
-  async getDebtorRecord(userId: number): Promise<DebtorRecord | undefined>
-  async getDebtorRecord(debtorUri: string): Promise<DebtorRecord | undefined>
-  async getDebtorRecord(key: number | string): Promise<DebtorRecord | undefined> {
-    if (typeof key === 'number') {
-      return await this.debtors.get(key)
+  async getUserId(debtorUri: string): Promise<number | undefined> {
+    return (await this.debtors.where({ uri: debtorUri }).primaryKeys())[0]
+  }
+
+  async getDebtorRecord(userId: number): Promise<DebtorRecord> {
+    const debtorRecord = await this.debtors.get(userId)
+    if (!debtorRecord) {
+      throw new UserDoesNotExist(`userId=${userId}`)
     }
-    return await this.debtors.where({ uri: key }).first()
+    return debtorRecord
+  }
+
+  async getDebtorConfigRecord(userId: number): Promise<DebtorConfigRecord> {
+    const debtorConfigRecord = await this.configs.where({ userId }).first()
+    if (!debtorConfigRecord) {
+      throw new UserDoesNotExist(`userId=${userId}`)
+    }
+    return debtorConfigRecord
+  }
+
+  async getTransferRecords(userId: number): Promise<TransferRecord[]> {
+    const transferRecords = await this.transfers.where({ userId }).toArray()
+    if (transferRecords.length === 0 && !await this.isUserInstalled(userId)) {
+      throw new UserDoesNotExist(`userId=${userId}`)
+    }
+    return transferRecords
+  }
+
+  async getActionRecords(userId: number): Promise<ActionRecord[]> {
+    const actionRecords = await this.actions.where({ userId }).toArray()
+    if (actionRecords.length === 0 && !await this.isUserInstalled(userId)) {
+      throw new UserDoesNotExist(`userId=${userId}`)
+    }
+    return actionRecords
+  }
+
+  async getDocument(uri: string): Promise<DocumentRecord | undefined> {
+    return await this.documents.get({ uri })
   }
 
   private get allTables() {
