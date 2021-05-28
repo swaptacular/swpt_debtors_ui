@@ -132,38 +132,31 @@ test("Install and uninstall user", async () => {
     content: new ArrayBuffer(4),
   }
   const db = new LocalDb();
-  expect(db.getUserId(debtor.uri)).resolves.toBeUndefined
-  expect(db.isUserInstalled(debtor.uri)).resolves.toBeFalsy
-  expect(db.isUserInstalled(123)).resolves.toBeFalsy
-  expect(db.getDebtorRecord(123)).rejects.toBeInstanceOf(UserDoesNotExist)
-  expect(db.getDebtorConfigRecord(123)).rejects.toBeInstanceOf(UserDoesNotExist)
-  expect(db.getTransferRecords(123)).rejects.toBeInstanceOf(UserDoesNotExist)
-  expect(db.getActionRecords(123)).rejects.toBeInstanceOf(UserDoesNotExist)
   const userId = await db.installUser({ debtor, transfers, document })
-  expect(db.getUserId(debtor.uri)).resolves.toBeDefined
-  expect(db.isUserInstalled(debtor.uri)).resolves.toBeTruthy
-  expect(db.isUserInstalled(userId)).resolves.toBeTruthy
   const debtorRecord = await db.getDebtorRecord(userId) as DebtorRecord
   expect(debtorRecord.userId).toEqual(userId)
   expect(debtorRecord.config.uri).toBe('config')
   expect(debtorRecord.config).toEqual({ uri: 'config' })
-  expect(db.getDebtorConfigRecord(userId)).resolves.toEqual({
+  await expect(db.getUserId(debtor.uri)).resolves.toBeDefined()
+  await expect(db.isUserInstalled(debtor.uri)).resolves.toBeTruthy()
+  await expect(db.isUserInstalled(userId)).resolves.toBeTruthy()
+  await expect(db.getDebtorConfigRecord(userId)).resolves.toEqual({
     ...debtor.config,
     uri: 'https://example.com/1/config',
     userId,
   })
-  expect(db.getTransferRecords(userId)).resolves.toEqual(transfers.map(t => ({ ...t, userId })))
-  expect(db.getDocument('https://example.com/1/documents/123')).resolves.toEqual({ ...document, userId })
-  expect(db.getActionRecords(userId)).resolves.toEqual([])
-  expect(db.installUser({ debtor, transfers: [] })).rejects.toBeInstanceOf(UserAlreadyInstalled)
-
-  // The next statement ensures that all promises are resolved before
-  // uninstalling the user.
-  await db.isUserInstalled(userId)
+  await expect(db.getTransferRecords(userId)).resolves.toEqual(transfers.map(t => ({ ...t, userId })))
+  await expect(db.getDocument('https://example.com/1/documents/123')).resolves.toEqual({ ...document, userId })
+  await expect(db.getActionRecords(userId)).resolves.toEqual([])
+  await expect(db.installUser({ debtor, transfers: [] })).rejects.toBeInstanceOf(UserAlreadyInstalled)
 
   await db.uninstallUser(userId)
-  expect(db.getUserId(debtor.uri)).resolves.toBeUndefined
-  expect(db.isUserInstalled(debtor.uri)).resolves.toBeFalsy
-  expect(db.isUserInstalled(userId)).resolves.toBeFalsy
-  expect(db.getDebtorRecord(userId)).rejects.toBeInstanceOf(UserDoesNotExist)
+  await expect(db.getUserId(debtor.uri)).resolves.toBeUndefined()
+  await expect(db.isUserInstalled(debtor.uri)).resolves.toBeFalsy()
+  await expect(db.isUserInstalled(userId)).resolves.toBeFalsy()
+  await expect(db.getDebtorRecord(userId)).rejects.toBeInstanceOf(UserDoesNotExist)
+  await expect(db.getDebtorConfigRecord(userId)).rejects.toBeInstanceOf(UserDoesNotExist)
+  await expect(db.getTransferRecords(userId)).rejects.toBeInstanceOf(UserDoesNotExist)
+  await expect(db.getActionRecords(userId)).rejects.toBeInstanceOf(UserDoesNotExist)
+  await expect(db.getDocument('https://example.com/1/documents/123')).resolves.toEqual(undefined)
 })
