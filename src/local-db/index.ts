@@ -124,11 +124,8 @@ export class LocalDb extends Dexie {
     this.actions = this.table('actions')
   }
 
-  async isUserInstalled(userId: number): Promise<boolean>
-  async isUserInstalled(uri: string): Promise<boolean>
-  async isUserInstalled(keyValue: number | string): Promise<boolean> {
-    const keyName = typeof keyValue === 'number' ? 'userId' : 'uri'
-    return await this.debtors.where(keyName).equals(keyValue).count() === 1
+  async isUserInstalled(userId: number): Promise<boolean> {
+    return await this.debtors.where({ userId }).count() === 1
   }
 
   // Note that the `uri` property in `debtor` and `transfers` objects
@@ -137,10 +134,11 @@ export class LocalDb extends Dexie {
   // before passed to this method.
   async installUser({ debtor, transfers, document }: UserInstallationData): Promise<number> {
     return await this.transaction('rw', this.allTables, async () => {
-      if (await this.isUserInstalled(debtor.uri)) {
-        throw new UserAlreadyInstalled(debtor.uri)
+      const existingUserId = await this.getUserId(debtor.uri)
+      if (existingUserId) {
+        throw new UserAlreadyInstalled(`ID ${existingUserId}`)
       }
-      const userId = await this.debtors.add({ ...debtor, config: { uri: debtor.config.uri } })
+      const userId = await this.debtors.add({ ...debtor, userId: undefined, config: { uri: debtor.config.uri } })
       await this.configs.add({ userId, ...debtor.config, uri: new URL(debtor.config.uri, debtor.uri).href })
       await this.transfers.bulkAdd(transfers.map(transfer => ({ userId, ...transfer })))
       if (document) {
@@ -195,7 +193,8 @@ export class LocalDb extends Dexie {
   }
 
   async getDocument(uri: string): Promise<DocumentRecord | undefined> {
-    return await this.documents.get({ uri })
+    return await this.documents.get(uri)
+  }
   }
 
   private get allTables() {
