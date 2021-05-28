@@ -1,6 +1,6 @@
 import Dexie from 'dexie'
 import type {
-  ObjectReference,
+  ObjectReference as ResourceReference,
   Debtor,
   DebtorConfig,
   DebtorConfigUpdateRequest,
@@ -9,41 +9,47 @@ import type {
 } from '../server-api'
 
 
-type DocumentUri = string
+type UserReference = {
+  userId: number,
+}
 
 type DocumentData = {
   content: ArrayBuffer,
   contentType: string,
 }
 
+type Document =
+  & ResourceReference
+  & DocumentData
+
+type DocumentUri = string
+
 type ConfigData = {
   rate: number,
   info: DocumentUri | DocumentData,
 }
 
-type ActionData = {
-  actionId?: number,
-  actionType: string,
-  initiatedAt: Date,
-  error?: object,
-}
+type ActionData =
+  & UserReference
+  & {
+    actionId?: number,
+    actionType: string,
+    initiatedAt: Date,
+    error?: object,
+  }
 
 export type UserInstallationData = {
   debtor: Debtor,
   transfers: Transfer[],
-  document?: ObjectReference & DocumentData,
-}
-
-export type UserReference = {
-  userId: number,
+  document?: ResourceReference & DocumentData,
 }
 
 export type DebtorRecord =
   & Partial<UserReference>
   & Omit<Debtor, 'config'>
-  & { config: ObjectReference }
+  & { config: ResourceReference }
 
-export type DebtorConfigRecord =
+export type ConfigRecord =
   & UserReference
   & DebtorConfig
 
@@ -53,33 +59,34 @@ export type TransferRecord =
 
 export type DocumentRecord =
   & UserReference
-  & ObjectReference
-  & DocumentData
+  & Document
 
 export type ActionRecord =
-  & UserReference
-  & ActionData
+  | UpdateConfigAction
+  | CreateTransferAction
+  | CancelTransferAction
+  | DeleteTransferAction
 
-export type UpdateConfigActionRecord =
-  & ActionRecord
+export type UpdateConfigAction =
+  & ActionData
   & { actionType: 'UpdateConfig' }
   & Omit<DebtorConfigUpdateRequest, 'configData'>
   & ConfigData
 
-export type CreateTransferActionRecord =
-  & ActionRecord
+export type CreateTransferAction =
+  & ActionData
   & { actionType: 'CreateTransfer' }
   & TransferCreationRequest
 
-export type CancelTransferActionRecord =
-  & ActionRecord
+export type CancelTransferAction =
+  & ActionData
   & { actionType: 'CancelTransfer' }
-  & ObjectReference
+  & ResourceReference
 
-export type DeleteTransferActionRecord =
-  & ActionRecord
+export type DeleteTransferAction =
+  & ActionData
   & { actionType: 'DeleteTransfer' }
-  & ObjectReference
+  & ResourceReference
 
 
 export class UserAlreadyInstalled extends Error {
@@ -94,7 +101,7 @@ export class UserDoesNotExist extends Error {
 
 export class LocalDb extends Dexie {
   debtors: Dexie.Table<DebtorRecord, number>
-  configs: Dexie.Table<DebtorConfigRecord, string>
+  configs: Dexie.Table<ConfigRecord, string>
   transfers: Dexie.Table<TransferRecord, string>
   documents: Dexie.Table<DocumentRecord, string>
   actions: Dexie.Table<ActionRecord, number>
@@ -163,12 +170,12 @@ export class LocalDb extends Dexie {
     return debtorRecord
   }
 
-  async getDebtorConfigRecord(userId: number): Promise<DebtorConfigRecord> {
-    const debtorConfigRecord = await this.configs.where({ userId }).first()
-    if (!debtorConfigRecord) {
+  async getConfigRecord(userId: number): Promise<ConfigRecord> {
+    const configRecord = await this.configs.where({ userId }).first()
+    if (!configRecord) {
       throw new UserDoesNotExist(`userId=${userId}`)
     }
-    return debtorConfigRecord
+    return configRecord
   }
 
   async getTransferRecords(userId: number): Promise<TransferRecord[]> {

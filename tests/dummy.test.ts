@@ -140,7 +140,7 @@ test("Install and uninstall user", async () => {
   await expect(db.getUserId(debtor.uri)).resolves.toBeDefined()
   await expect(db.isUserInstalled(debtor.uri)).resolves.toBeTruthy()
   await expect(db.isUserInstalled(userId)).resolves.toBeTruthy()
-  await expect(db.getDebtorConfigRecord(userId)).resolves.toEqual({
+  await expect(db.getConfigRecord(userId)).resolves.toEqual({
     ...debtor.config,
     uri: 'https://example.com/1/config',
     userId,
@@ -155,7 +155,7 @@ test("Install and uninstall user", async () => {
   await expect(db.isUserInstalled(debtor.uri)).resolves.toBeFalsy()
   await expect(db.isUserInstalled(userId)).resolves.toBeFalsy()
   await expect(db.getDebtorRecord(userId)).rejects.toBeInstanceOf(UserDoesNotExist)
-  await expect(db.getDebtorConfigRecord(userId)).rejects.toBeInstanceOf(UserDoesNotExist)
+  await expect(db.getConfigRecord(userId)).rejects.toBeInstanceOf(UserDoesNotExist)
   await expect(db.getTransferRecords(userId)).rejects.toBeInstanceOf(UserDoesNotExist)
   await expect(db.getActionRecords(userId)).rejects.toBeInstanceOf(UserDoesNotExist)
   await expect(db.getDocument('https://example.com/1/documents/123')).resolves.toEqual(undefined)
