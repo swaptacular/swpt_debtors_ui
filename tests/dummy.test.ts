@@ -1,7 +1,13 @@
 import App from '../src/App.svelte'
 import { stringify, parse } from '../src/json-bigint/index.js'
 import { ServerSession, HttpError, AuthTokenSource } from '../src/server-api/index.js'
-import { LocalDb, DebtorRecord, UserDoesNotExist, UserAlreadyInstalled } from '../src/local-db/index.js'
+import {
+  LocalDb,
+  DebtorRecord,
+  UserDoesNotExist,
+  UserAlreadyInstalled,
+  AlreadyResolvedAction,
+} from '../src/local-db/index.js'
 
 const authToken = '3x-KAxNWrYPJUWNKTbpnTWxoR0Arr0gG_uEqeWUNDkk.B-Iqy02FM7rK1rKSb4I7D9gaqGFXc2vdyJQ6Uuv3EF4'
 
@@ -148,6 +154,27 @@ test("Install and uninstall user", async () => {
   await expect(db.getDocument('https://example.com/1/documents/123')).resolves.toEqual({ ...document, userId })
   await expect(db.getActionRecords(userId)).resolves.toEqual([])
   await expect(db.installUser({ debtor, transfers: [] })).rejects.toBeInstanceOf(UserAlreadyInstalled)
+
+  const actionRecord = {
+    userId,
+    actionType: 'DeleteTransfer',
+    initiatedAt: new Date(),
+    uri: 'https://example.com/1/transfers/xxxxxxxx',
+  } as const
+  await expect(db.getActionRecord(456)).resolves.toBeUndefined()
+  let actionId = await db.addActionRecord(actionRecord)
+  expect(actionId).toBeDefined()
+  await expect(db.getActionRecord(actionId)).resolves.toBeDefined()
+  await db.resolveAction(actionId)
+  await expect(db.getActionRecord(actionId)).resolves.toBeUndefined()
+  await expect(db.resolveAction(actionId)).rejects.toBeInstanceOf(AlreadyResolvedAction)
+
+  actionId = await db.addActionRecord(actionRecord)
+  await db.resolveAction(actionId, { errorCode: 666 })
+  await expect(db.getActionRecord(actionId)).resolves.toEqual({ ...actionRecord, actionId, error: { errorCode: 666 } })
+  await expect(db.resolveAction(actionId)).rejects.toBeInstanceOf(AlreadyResolvedAction)
+  await expect(db.resolveAction(actionId, { errorCode: 666 })).rejects.toBeInstanceOf(AlreadyResolvedAction)
+  await expect(db.resolveAction(actionId, { errorCode: 777 })).rejects.toBeInstanceOf(AlreadyResolvedAction)
 
   await db.uninstallUser(userId)
   await expect(db.getUserId(debtor.uri)).resolves.toBeUndefined()

@@ -99,6 +99,11 @@ export class UserDoesNotExist extends Error {
 }
 
 
+export class AlreadyResolvedAction extends Error {
+  name = 'AlreadyResolvedAction'
+}
+
+
 export class LocalDb extends Dexie {
   debtors: Dexie.Table<DebtorRecord, number>
   configs: Dexie.Table<ConfigRecord, string>
@@ -124,8 +129,8 @@ export class LocalDb extends Dexie {
     this.actions = this.table('actions')
   }
 
-  async isUserInstalled(userId: number): Promise<boolean> {
-    return await this.debtors.where({ userId }).count() === 1
+  async getUserId(debtorUri: string): Promise<number | undefined> {
+    return (await this.debtors.where({ uri: debtorUri }).primaryKeys())[0]
   }
 
   // Note that the `uri` property in `debtor` and `transfers` objects
@@ -136,7 +141,7 @@ export class LocalDb extends Dexie {
     return await this.transaction('rw', this.allTables, async () => {
       const existingUserId = await this.getUserId(debtor.uri)
       if (existingUserId) {
-        throw new UserAlreadyInstalled(`ID ${existingUserId}`)
+        throw new UserAlreadyInstalled(`userId=${existingUserId}`)
       }
       const userId = await this.debtors.add({ ...debtor, userId: undefined, config: { uri: debtor.config.uri } })
       await this.configs.add({ userId, ...debtor.config, uri: new URL(debtor.config.uri, debtor.uri).href })
@@ -156,8 +161,8 @@ export class LocalDb extends Dexie {
     })
   }
 
-  async getUserId(debtorUri: string): Promise<number | undefined> {
-    return (await this.debtors.where({ uri: debtorUri }).primaryKeys())[0]
+  async isUserInstalled(userId: number): Promise<boolean> {
+    return await this.debtors.where({ userId }).count() === 1
   }
 
   async getDebtorRecord(userId: number): Promise<DebtorRecord> {
@@ -192,9 +197,34 @@ export class LocalDb extends Dexie {
     return actionRecords
   }
 
+  async getActionRecord(actionId: number): Promise<ActionRecord | undefined> {
+    return await this.actions.get(actionId)
+  }
+
+  async addActionRecord(action: ActionRecord): Promise<number> {
+    const actionId = await this.actions.add({ ...action, actionId: undefined })
+    return actionId
+  }
+
+  // When the action has been successful, its action record gets
+  // removed. Otherwise, the reason for the failure is written to
+  // the `error` property of the action record.
+  async resolveAction(actionId: number, error?: object): Promise<void> {
+    return await this.transaction('rw', this.actions, async () => {
+      const actionRecord = await this.actions.get(actionId)
+      if (!actionRecord || actionRecord.error) {
+        throw new AlreadyResolvedAction(`actionId=${actionId}`)
+      }
+      if (!error) {
+        await this.actions.delete(actionId)
+      } else {
+        await this.actions.update(actionId, { error })
+      }
+    })
+  }
+
   async getDocument(uri: string): Promise<DocumentRecord | undefined> {
     return await this.documents.get(uri)
-  }
   }
 
   private get allTables() {
