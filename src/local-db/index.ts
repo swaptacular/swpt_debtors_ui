@@ -205,7 +205,7 @@ export class LocalDb extends Dexie {
     if (action.actionId !== undefined) {
       throw new Error('wrong actionId value')
     }
-    const actionId = await this.actions.add({ ...action })
+    const actionId = await this.actions.add(action)
     return actionId
   }
 
