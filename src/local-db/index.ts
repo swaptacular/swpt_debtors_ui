@@ -203,7 +203,7 @@ export class LocalDb extends Dexie {
 
   async initiateAction(action: ActionRecord): Promise<number> {
     if (action.actionId !== undefined) {
-      throw new Error('wrong actionId')
+      throw new Error('wrong actionId value')
     }
     const actionId = await this.actions.add({ ...action })
     return actionId
