@@ -9,28 +9,28 @@ import type {
 } from '../server-api'
 
 
-export type DocumentUri = string
-export type DocumentData = {
+type DocumentUri = string
+
+type DocumentData = {
   content: ArrayBuffer,
   contentType: string,
 }
 
-export type ConfigData = {
+type ConfigData = {
   rate: number,
   info: DocumentUri | DocumentData,
 }
 
-export type ActionData = {
+type ActionData = {
   actionId?: number,
   actionType: string,
   initiatedAt: Date,
   error?: object,
 }
 
-export type CompleteUserData = {
+export type UserInstallationData = {
   debtor: Debtor,
   transfers: Transfer[],
-  actions: ActionData[],
   document?: ObjectReference & DocumentData,
 }
 
@@ -60,26 +60,31 @@ export type ActionRecord =
   & UserReference
   & ActionData
 
-export type UpdateConfigAction =
+export type UpdateConfigActionRecord =
   & ActionRecord
   & { actionType: 'UpdateConfig' }
   & Omit<DebtorConfigUpdateRequest, 'configData'>
   & ConfigData
 
-export type CreateTransferAction =
+export type CreateTransferActionRecord =
   & ActionRecord
   & { actionType: 'CreateTransfer' }
   & TransferCreationRequest
 
-export type CancelTransferAction =
+export type CancelTransferActionRecord =
   & ActionRecord
   & { actionType: 'CancelTransfer' }
   & ObjectReference
 
-export type DeleteTransferAction =
+export type DeleteTransferActionRecord =
   & ActionRecord
   & { actionType: 'DeleteTransfer' }
   & ObjectReference
+
+
+export class UserAlreadyInstalled extends Error {
+  name = 'UserAlreadyInstalled'
+}
 
 
 export class LocalDb extends Dexie {
@@ -107,16 +112,15 @@ export class LocalDb extends Dexie {
     this.actions = this.table('actions')
   }
 
-  async installUser({ debtor, transfers, actions, document }: CompleteUserData): Promise<number> {
+  async installUser({ debtor, transfers, document }: UserInstallationData): Promise<number> {
     return await this.transaction('rw', this.allTables, async () => {
-      const existingRecord = await this.getDebtorRecord(debtor.uri)
-      if (existingRecord) {
-        await this.uninstallUser(existingRecord.userId as number)
+      const debtorRecord = await this.getDebtorRecord(debtor.uri)
+      if (debtorRecord) {
+        throw new UserAlreadyInstalled(`userId=${debtorRecord.userId}`)
       }
       const userId = await this.debtors.add({ ...debtor, config: { uri: debtor.config.uri } })
       await this.configs.add({ userId, ...debtor.config, uri: new URL(debtor.config.uri, debtor.uri).href })
       await this.transfers.bulkAdd(transfers.map(transfer => ({ userId, ...transfer })))
-      await this.actions.bulkAdd(actions.map(action => ({ userId, ...action })))
       if (document) {
         await this.documents.add({ userId, ...document })
       }
