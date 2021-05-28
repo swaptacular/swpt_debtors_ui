@@ -162,14 +162,14 @@ test("Install and uninstall user", async () => {
     uri: 'https://example.com/1/transfers/xxxxxxxx',
   } as const
   await expect(db.getActionRecord(456)).resolves.toBeUndefined()
-  let actionId = await db.addActionRecord(actionRecord)
+  let actionId = await db.initiateAction(actionRecord)
   expect(actionId).toBeDefined()
   await expect(db.getActionRecord(actionId)).resolves.toBeDefined()
   await db.resolveAction(actionId)
   await expect(db.getActionRecord(actionId)).resolves.toBeUndefined()
   await expect(db.resolveAction(actionId)).rejects.toBeInstanceOf(AlreadyResolvedAction)
 
-  actionId = await db.addActionRecord(actionRecord)
+  actionId = await db.initiateAction(actionRecord)
   await db.resolveAction(actionId, { errorCode: 666 })
   await expect(db.getActionRecord(actionId)).resolves.toEqual({ ...actionRecord, actionId, error: { errorCode: 666 } })
   await expect(db.resolveAction(actionId)).rejects.toBeInstanceOf(AlreadyResolvedAction)

@@ -201,7 +201,7 @@ export class LocalDb extends Dexie {
     return await this.actions.get(actionId)
   }
 
-  async addActionRecord(action: ActionRecord): Promise<number> {
+  async initiateAction(action: ActionRecord): Promise<number> {
     const actionId = await this.actions.add({ ...action, actionId: undefined })
     return actionId
   }
@@ -221,6 +221,10 @@ export class LocalDb extends Dexie {
         await this.actions.update(actionId, { error })
       }
     })
+  }
+
+  async replaceAction(action: ActionRecord): Promise<void> {
+    // TODO:
   }
 
   async getDocument(uri: string): Promise<DocumentRecord | undefined> {
