@@ -548,6 +548,10 @@ export class OAuth2AuthCodePKCE {
 
         if (!res.ok) {
           return jsonPromise.then(({ error }: any) => {
+            this.state.hasAuthCodeBeenExchangedForAccessToken = true;
+            this.authCodeForAccessTokenRequest = undefined;
+            localStorage.setItem(LOCALSTORAGE_STATE, JSON.stringify(this.state));
+
             switch (error) {
               case 'invalid_grant':
                 onInvalidGrant(() => this.fetchAuthorizationCode());
