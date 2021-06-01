@@ -42,21 +42,23 @@ class Oauth2TokenSource implements AuthTokenSource {
   }
 
   async init(): Promise<void> {
-    this.helper = new OAuth2AuthCodePKCE({
-      authorizationUrl: appConfig.oauth2.authorizationUrl,
-      tokenUrl: appConfig.oauth2.tokenUrl,
-      clientId: appConfig.oauth2.clientId,
-      redirectUrl: appConfig.oauth2.redirectUrl,
-      extraAuthorizationParams: {},
-      scopes: ['access'],
-      onAccessTokenExpiry(refreshAccessToken) {
-        return refreshAccessToken()
-      },
-      onInvalidGrant(_RedirectToAuthServer) {
-        // return _RedirectToAuthServer()
-      }
-    })
-    await this.helper.isReturningFromAuthServer()
+    if (!this.helper) {
+      this.helper = new OAuth2AuthCodePKCE({
+        authorizationUrl: appConfig.oauth2.authorizationUrl,
+        tokenUrl: appConfig.oauth2.tokenUrl,
+        clientId: appConfig.oauth2.clientId,
+        redirectUrl: appConfig.oauth2.redirectUrl,
+        extraAuthorizationParams: {},
+        scopes: ['access'],
+        onAccessTokenExpiry(refreshAccessToken) {
+          return refreshAccessToken()
+        },
+        onInvalidGrant(_RedirectToAuthServer) {
+          // return _RedirectToAuthServer()
+        }
+      })
+      await this.helper.isReturningFromAuthServer()
+    }
   }
 
 }
