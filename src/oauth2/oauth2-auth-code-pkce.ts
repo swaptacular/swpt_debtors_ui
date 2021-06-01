@@ -29,7 +29,7 @@ export interface State {
   codeChallenge?: string;
   codeVerifier?: string;
   explicitlyExposedTokens?: ObjStringDict;
-  hasAuthCodeBeenExchangedForAccessToken?: boolean;
+  canAuthCodeBeExchangedForAccessToken?: boolean;
   refreshToken?: RefreshToken;
   stateQueryParam?: string;
   scopes?: string[];
@@ -188,7 +188,6 @@ const PKCE_CHARSET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz012345
 export class OAuth2AuthCodePKCE {
   private config!: Configuration;
   private state: State = {};
-  private authCodeForAccessTokenRequest?: Promise<AccessContext>;
 
   constructor(config: Configuration) {
     this.config = config;
@@ -268,7 +267,7 @@ export class OAuth2AuthCodePKCE {
     }
 
     state.authorizationCode = code;
-    state.hasAuthCodeBeenExchangedForAccessToken = false;
+    state.canAuthCodeBeExchangedForAccessToken = true;
 
     this.setState(state);
     return Promise.resolve(true);
@@ -338,7 +337,7 @@ export class OAuth2AuthCodePKCE {
       accessToken,
       authorizationCode,
       explicitlyExposedTokens,
-      hasAuthCodeBeenExchangedForAccessToken,
+      canAuthCodeBeExchangedForAccessToken,
       refreshToken,
       scopes
     } = this.state;
@@ -347,13 +346,8 @@ export class OAuth2AuthCodePKCE {
       return Promise.reject(new ErrorNoAuthCode());
     }
 
-    if (this.authCodeForAccessTokenRequest) {
-      return this.authCodeForAccessTokenRequest;
-    }
-
-    if (!this.isAuthorized() || !hasAuthCodeBeenExchangedForAccessToken) {
-      this.authCodeForAccessTokenRequest = this.exchangeAuthCodeForAccessToken();
-      return this.authCodeForAccessTokenRequest;
+    if (canAuthCodeBeExchangedForAccessToken) {
+      return this.exchangeAuthCodeForAccessToken();
     }
 
     // Depending on the server (and config), refreshToken may not be available.
@@ -493,7 +487,6 @@ export class OAuth2AuthCodePKCE {
    */
   public reset() {
     this.setState({});
-    this.authCodeForAccessTokenRequest = undefined;
   }
 
   /**
@@ -548,8 +541,7 @@ export class OAuth2AuthCodePKCE {
 
         if (!res.ok) {
           return jsonPromise.then(({ error }: any) => {
-            this.state.hasAuthCodeBeenExchangedForAccessToken = true;
-            this.authCodeForAccessTokenRequest = undefined;
+            this.state.canAuthCodeBeExchangedForAccessToken = false;
             localStorage.setItem(LOCALSTORAGE_STATE, JSON.stringify(this.state));
 
             switch (error) {
@@ -568,8 +560,7 @@ export class OAuth2AuthCodePKCE {
           const { explicitlyExposedTokens } = this.config;
           let scopes = [];
           let tokensToExpose = {};
-          this.state.hasAuthCodeBeenExchangedForAccessToken = true;
-          this.authCodeForAccessTokenRequest = undefined;
+          this.state.canAuthCodeBeExchangedForAccessToken = false;
 
           const accessToken: AccessToken = {
             value: access_token,
