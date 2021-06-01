@@ -347,6 +347,12 @@ export class OAuth2AuthCodePKCE {
       return Promise.reject(new ErrorNoAuthCode());
     }
 
+    // We use `this.authCodeForAccessTokenRequest` to allow several
+    // parallel `getAccessToken()` calls to reuse the same promise,
+    // instead of making multiple requests to the auth server (of
+    // which only the first would successfully obtain a token). TODO:
+    // we probably have to use the same trick when using the refresh
+    // token.
     if (this.authCodeForAccessTokenRequest) {
       return this.authCodeForAccessTokenRequest;
     }
