@@ -29,7 +29,7 @@ export interface State {
   codeChallenge?: string;
   codeVerifier?: string;
   explicitlyExposedTokens?: ObjStringDict;
-  canAuthCodeBeExchangedForAccessToken?: boolean;
+  canExchangeAuthorizationCodeForAccessToken?: boolean;
   refreshToken?: RefreshToken;
   stateQueryParam?: string;
   scopes?: string[];
@@ -188,7 +188,7 @@ const PKCE_CHARSET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz012345
 export class OAuth2AuthCodePKCE {
   private config!: Configuration;
   private state: State = {};
-  private authCodeForAccessTokenRequest?: Promise<AccessContext>;
+  private authorizationCodeForAccessTokenRequest?: Promise<AccessContext>;
 
   constructor(config: Configuration) {
     this.config = config;
@@ -268,7 +268,7 @@ export class OAuth2AuthCodePKCE {
     }
 
     state.authorizationCode = code;
-    state.canAuthCodeBeExchangedForAccessToken = true;
+    state.canExchangeAuthorizationCodeForAccessToken = true;
 
     this.setState(state);
     return Promise.resolve(true);
@@ -338,7 +338,7 @@ export class OAuth2AuthCodePKCE {
       accessToken,
       authorizationCode,
       explicitlyExposedTokens,
-      canAuthCodeBeExchangedForAccessToken,
+      canExchangeAuthorizationCodeForAccessToken,
       refreshToken,
       scopes
     } = this.state;
@@ -347,19 +347,19 @@ export class OAuth2AuthCodePKCE {
       return Promise.reject(new ErrorNoAuthCode());
     }
 
-    // We use `this.authCodeForAccessTokenRequest` to allow several
-    // parallel `getAccessToken()` calls to reuse the same promise,
-    // instead of making multiple requests to the auth server (of
-    // which only the first would successfully obtain a token). TODO:
-    // we probably have to use the same trick when using the refresh
-    // token.
-    if (this.authCodeForAccessTokenRequest) {
-      return this.authCodeForAccessTokenRequest;
+    // We use `this.authorizationCodeForAccessTokenRequest` to allow
+    // several parallel `getAccessToken()` calls to reuse the same
+    // promise, instead of making multiple requests to the auth server
+    // (of which only the first would successfully obtain a
+    // token). TODO: we probably have to use the same trick when using
+    // the refresh token.
+    if (this.authorizationCodeForAccessTokenRequest) {
+      return this.authorizationCodeForAccessTokenRequest;
     }
 
-    if (canAuthCodeBeExchangedForAccessToken) {
-      this.authCodeForAccessTokenRequest = this.exchangeAuthCodeForAccessToken();
-      return this.authCodeForAccessTokenRequest;
+    if (!this.isAuthorized() && canExchangeAuthorizationCodeForAccessToken) {
+      this.authorizationCodeForAccessTokenRequest = this.exchangeAuthorizationCodeForAccessToken();
+      return this.authorizationCodeForAccessTokenRequest;
     }
 
     // Depending on the server (and config), refreshToken may not be available.
@@ -499,7 +499,7 @@ export class OAuth2AuthCodePKCE {
    */
   public reset() {
     this.setState({});
-    this.authCodeForAccessTokenRequest = undefined;
+    this.authorizationCodeForAccessTokenRequest = undefined;
   }
 
   /**
@@ -517,7 +517,7 @@ export class OAuth2AuthCodePKCE {
    * Fetch an access token from the remote service. You may pass a custom
    * authorization grant code for any reason, but this is non-standard usage.
    */
-  private exchangeAuthCodeForAccessToken(
+  private exchangeAuthorizationCodeForAccessToken(
     codeOverride?: string
   ): Promise<AccessContext> {
     this.assertStateAndConfigArePresent();
@@ -554,8 +554,8 @@ export class OAuth2AuthCodePKCE {
 
         if (!res.ok) {
           return jsonPromise.then(({ error }: any) => {
-            this.state.canAuthCodeBeExchangedForAccessToken = false;
-            this.authCodeForAccessTokenRequest = undefined;
+            this.state.canExchangeAuthorizationCodeForAccessToken = false;
+            this.authorizationCodeForAccessTokenRequest = undefined;
             localStorage.setItem(LOCALSTORAGE_STATE, JSON.stringify(this.state));
 
             switch (error) {
@@ -574,8 +574,8 @@ export class OAuth2AuthCodePKCE {
           const { explicitlyExposedTokens } = this.config;
           let scopes = [];
           let tokensToExpose = {};
-          this.state.canAuthCodeBeExchangedForAccessToken = false;
-          this.authCodeForAccessTokenRequest = undefined;
+          this.state.canExchangeAuthorizationCodeForAccessToken = false;
+          this.authorizationCodeForAccessTokenRequest = undefined;
 
           const accessToken: AccessToken = {
             value: access_token,

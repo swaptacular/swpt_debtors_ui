@@ -51,6 +51,7 @@ class Oauth2TokenSource implements AuthTokenSource {
         extraAuthorizationParams: {},
         scopes: ['access'],
         onAccessTokenExpiry(refreshAccessToken) {
+          console.warn('Using refresh token is not tested and may not work.');
           return refreshAccessToken()
         },
         onInvalidGrant(_RedirectToAuthServer) {
