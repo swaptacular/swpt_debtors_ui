@@ -1,5 +1,5 @@
 <script lang="ts">
-  import {oauth2TokenSource} from './oauth2'
+  import {oauth2TokenSource} from './oauth2/index.js'
 
   let token = oauth2TokenSource.getToken({attemptLogin: false})
 

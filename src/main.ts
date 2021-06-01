@@ -1,4 +1,4 @@
-import { oauth2TokenSource } from './oauth2.js'
+import { oauth2TokenSource } from './oauth2/index.js'
 import App from './App.svelte'
 
 oauth2TokenSource.init()

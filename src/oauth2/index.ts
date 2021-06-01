@@ -1,5 +1,5 @@
-import { OAuth2AuthCodePKCE } from './oauth2-auth-code-pkce/index.js'
-import type { AuthTokenSource, GetTokenOptions } from './server-api/index.js'
+import { OAuth2AuthCodePKCE } from './oauth2-auth-code-pkce.js'
+import type { AuthTokenSource, GetTokenOptions } from '../server-api/index.js'
 
 
 class Oauth2TokenSource implements AuthTokenSource {
