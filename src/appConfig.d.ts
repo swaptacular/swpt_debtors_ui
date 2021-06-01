@@ -2,7 +2,10 @@
 declare var appConfig = {
   serverApiBaseUrl: string,
   serverApiTimeout: number,
-  authorizationUrl: string,
-  tokenUrl: string,
-  clientId: string,
+  oauth2: {
+    authorizationUrl: string,
+    tokenUrl: string,
+    clientId: string,
+    redirectUrl: string,
+  }
 }

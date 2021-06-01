@@ -1,10 +1,7 @@
-import { handleOauth2Redirect } from './oauth2.js'
+import { oauth2TokenSource } from './oauth2.js'
 import App from './App.svelte'
 
-handleOauth2Redirect().catch(e => {
-  console.error(e)
-  alert('An unexpected authentication error has occurred.')
-})
+oauth2TokenSource.init()
 
 const app = new App({
   target: document.body,

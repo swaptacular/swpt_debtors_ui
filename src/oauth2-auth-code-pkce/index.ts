@@ -283,7 +283,7 @@ export class OAuth2AuthCodePKCE {
    * parameters during the authorization code fetching process, usually for
    * values which need to change at run-time.
    */
-  public async fetchAuthorizationCode(oneTimeParams?: ObjStringDict): Promise<void> {
+  public async fetchAuthorizationCode(oneTimeParams?: ObjStringDict): Promise<never> {
     this.assertStateAndConfigArePresent();
 
     const { clientId, extraAuthorizationParams, redirectUrl, scopes } = this.config;
@@ -321,6 +321,7 @@ export class OAuth2AuthCodePKCE {
     }
 
     location.replace(url);
+    return new Promise(() => { })
   }
 
   /**
@@ -635,24 +636,17 @@ export class OAuth2AuthCodePKCE {
    * Extracts a query string parameter.
    */
   static extractParamFromUrl(url: URL, param: string): string {
-    let queryString = url.split('?');
-    if (queryString.length < 2) {
-      return '';
+    const urlParts = url.split('?');
+    if (urlParts.length >= 2) {
+      const queryString = urlParts[1].split('#')[0];
+      for (const kvPair of queryString.split('&')) {
+        const [key, value] = kvPair.split('=')
+        if (key === param) {
+          return decodeURIComponent(value ?? '')
+        }
+      }
     }
-
-    // Account for hash URLs that SPAs usually use.
-    queryString = queryString[1].split('#');
-
-    const parts = queryString[0]
-      .split('&')
-      .reduce((a: string[], s: string) => a.concat(s.split('=')), []);
-
-    if (parts.length < 2) {
-      return '';
-    }
-
-    const paramIdx = parts.indexOf(param);
-    return decodeURIComponent(paramIdx >= 0 ? parts[paramIdx + 1] : '');
+    return ''
   }
 
   /**

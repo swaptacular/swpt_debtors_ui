@@ -24,7 +24,7 @@ export type {
   DebtorConfigUpdateRequest,
 }
 
-type GetTokenOptions = {
+export type GetTokenOptions = {
   attemptLogin?: boolean,
 }
 
