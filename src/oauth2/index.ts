@@ -11,11 +11,10 @@ class Oauth2TokenSource implements AuthTokenSource {
     extraAuthorizationParams: {},
     scopes: ['access'],
     onAccessTokenExpiry(refreshAccessToken) {
-      return refreshAccessToken();
+      return refreshAccessToken()
     },
     onInvalidGrant(_RedirectToAuthServer) {
-      console.log("Auth code or refresh token needs to be renewed.");
-      // return RedirectToAuthServer();
+      // return _RedirectToAuthServer()
     }
   })
 
