@@ -24,8 +24,16 @@ export type {
   DebtorConfigUpdateRequest,
 }
 
+type GetTokenOptions = {
+  attemptLogin?: boolean,
+}
+
+export type RequestConfig =
+  & AxiosRequestConfig
+  & GetTokenOptions
+
 export type AuthTokenSource = {
-  getToken: () => string | Promise<string>,
+  getToken: (options?: GetTokenOptions) => string | Promise<string>,
   invalidateToken: (token: string) => void | Promise<void>,
 }
 
@@ -101,15 +109,17 @@ export class ServerSession {
     return url
   }
 
-  async get(url: string, config?: AxiosRequestConfig): Promise<HttpResponse> {
+  async get(url: string, config?: RequestConfig): Promise<HttpResponse> {
     return await this.makeRequest(
-      async client => new HttpResponse(await client.get(url, config))
+      async client => new HttpResponse(await client.get(url, config)),
+      config,
     )
   }
 
-  async post(url: string, data?: any, config?: AxiosRequestConfig): Promise<HttpResponse> {
+  async post(url: string, data?: any, config?: RequestConfig): Promise<HttpResponse> {
     return await this.makeRequest(
-      async client => new HttpResponse(await client.post(url, data, config))
+      async client => new HttpResponse(await client.post(url, data, config)),
+      config,
     )
   }
 
@@ -125,22 +135,24 @@ export class ServerSession {
     return await this.post(url, content, config)
   }
 
-  async patch(url: string, data?: any, config?: AxiosRequestConfig): Promise<HttpResponse> {
+  async patch(url: string, data?: any, config?: RequestConfig): Promise<HttpResponse> {
     return await this.makeRequest(
-      async client => new HttpResponse(await client.patch(url, data, config))
+      async client => new HttpResponse(await client.patch(url, data, config)),
+      config,
     )
   }
 
-  async delete(url: string, config?: AxiosRequestConfig): Promise<HttpResponse> {
+  async delete(url: string, config?: RequestConfig): Promise<HttpResponse> {
     return await this.makeRequest(
-      async client => new HttpResponse(await client.delete(url, config))
+      async client => new HttpResponse(await client.delete(url, config)),
+      config,
     )
   }
 
-  private async authenticate() {
+  private async authenticate(options?: GetTokenOptions) {
     let token
     try {
-      token = await this.tokenSource.getToken()
+      token = await this.tokenSource.getToken(options)
     } catch {
       throw new AuthenticationError('can not obtain token')
     }
@@ -178,8 +190,8 @@ export class ServerSession {
     return { authData, debtorUrl }
   }
 
-  private async makeRequest<T>(reqfunc: (client: AxiosInstance) => Promise<T>): Promise<T> {
-    const authData = this.authData ?? (await this.authenticate()).authData
+  private async makeRequest<T>(reqfunc: (client: AxiosInstance) => Promise<T>, options?: GetTokenOptions): Promise<T> {
+    const authData = this.authData ?? (await this.authenticate(options)).authData
 
     try {
       return await reqfunc(authData.client)
@@ -202,7 +214,7 @@ export class ServerSession {
           this.authData = undefined
         }
 
-        return await this.makeRequest(reqfunc)
+        return await this.makeRequest(reqfunc, options)
       }
 
       throw error
