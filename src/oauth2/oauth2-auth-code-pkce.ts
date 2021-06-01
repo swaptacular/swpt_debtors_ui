@@ -269,7 +269,6 @@ export class OAuth2AuthCodePKCE {
 
     state.authorizationCode = code;
     state.hasAuthCodeBeenExchangedForAccessToken = false;
-    localStorage.setItem(LOCALSTORAGE_STATE, JSON.stringify(state));
 
     this.setState(state);
     return Promise.resolve(true);
