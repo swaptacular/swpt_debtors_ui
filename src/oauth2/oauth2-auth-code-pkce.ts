@@ -351,7 +351,7 @@ export class OAuth2AuthCodePKCE {
       return this.authCodeForAccessTokenRequest;
     }
 
-    if (!this.isAuthorized() || !hasAuthCodeBeenExchangedForAccessToken) {
+    if (!this.isAuthorized() && !hasAuthCodeBeenExchangedForAccessToken) {
       this.authCodeForAccessTokenRequest = this.exchangeAuthCodeForAccessToken();
       return this.authCodeForAccessTokenRequest;
     }
