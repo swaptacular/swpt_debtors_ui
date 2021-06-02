@@ -24,7 +24,7 @@ class Oauth2TokenSource implements AuthTokenSource {
     try {
       isReturningFromAuthServer = this.helper.isReturningFromAuthServer()
     } catch (e: unknown) {
-      alert(e)
+      console.log(e)
     }
     if (isReturningFromAuthServer) {
       // Try to exchange the authentication code for access token as
