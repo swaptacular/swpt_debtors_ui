@@ -43,10 +43,6 @@ class Oauth2TokenSource implements AuthTokenSource {
     return accessContext.token?.value
   }
 
-  private invalidateCurrentToken() {
-    this.helper.reset()
-  }
-
   private async redirectToLoginPage(): Promise<never> {
     return await this.helper.fetchAuthorizationCode()
   }
@@ -63,12 +59,13 @@ class Oauth2TokenSource implements AuthTokenSource {
     return token
   }
 
-  async invalidateToken(token: string): Promise<void> {
-    if (await this.getCurrentToken() === token) {
-      this.invalidateCurrentToken()
-    }
+  invalidateToken(token: string): void {
+    this.helper.invalidateAccessToken(token)
   }
 
+  logout(): void {
+    this.helper.reset()
+  }
 }
 
 

@@ -35,6 +35,7 @@ export type RequestConfig =
 export type AuthTokenSource = {
   getToken: (options?: GetTokenOptions) => string | Promise<string>,
   invalidateToken: (token: string) => void | Promise<void>,
+  logout: () => void | Promise<void>
 }
 
 
@@ -99,6 +100,11 @@ export class ServerSession {
 
   constructor(s: AuthTokenSource) {
     this.tokenSource = s
+  }
+
+  async logout(): Promise<void> {
+    await this.tokenSource.logout()
+    await ServerSession.redirectHome()
   }
 
   async getDebtorUrl(): Promise<string> {
@@ -181,7 +187,7 @@ export class ServerSession {
     // the debtor URL must stay the same.
     const debtorUrl = await ServerSession.getDebtorUrl(client)
     if (this.debtorUrl !== undefined && this.debtorUrl !== debtorUrl) {
-      throw new Error("unexpected debtor URL change")
+      await ServerSession.redirectHome()
     }
 
     const authData = { client, token }
@@ -266,5 +272,10 @@ export class ServerSession {
     }
 
     throw new AuthenticationError('debtor not found')  // status code 204
+  }
+
+  private static redirectHome(): Promise<never> {
+    location.replace(appConfig.oauth2.redirectUrl)
+    return new Promise(() => { })
   }
 }

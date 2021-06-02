@@ -427,7 +427,16 @@ export class OAuth2AuthCodePKCE {
    */
   public isAccessTokenExpired(): boolean {
     const { accessToken } = this.state;
-    return Boolean(accessToken && (new Date()) >= (new Date(accessToken.expiry)));
+    return Boolean(!accessToken || (new Date()) >= (new Date(accessToken.expiry)));
+  }
+
+  public invalidateAccessToken(tokenValue: string) {
+    this.recoverState()
+    const state = this.state
+    if (state.accessToken?.value === tokenValue) {
+      state.accessToken = undefined
+    }
+    this.setState(state)
   }
 
   /**

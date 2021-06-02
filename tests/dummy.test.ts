@@ -30,6 +30,8 @@ class SingleToken implements AuthTokenSource {
       this.token = undefined
     }
   }
+
+  logout() { }
 }
 
 
