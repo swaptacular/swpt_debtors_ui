@@ -24,7 +24,6 @@ class Oauth2TokenSource implements AuthTokenSource {
     try {
       isReturningFromAuthServer = this.helper.isReturningFromAuthServer()
     } catch (e: unknown) {
-      this.helper.reset()
       alert(e)
     }
     if (isReturningFromAuthServer) {
