@@ -23,13 +23,11 @@ export interface PKCECodes {
 }
 
 export interface State {
-  isHTTPDecoratorActive?: boolean;
   accessToken?: AccessToken;
   authorizationCode?: string;
   codeChallenge?: string;
   codeVerifier?: string;
   explicitlyExposedTokens?: ObjStringDict;
-  canExchangeAuthorizationCodeForAccessToken?: boolean;
   refreshToken?: RefreshToken;
   stateQueryParam?: string;
   scopes?: string[];
@@ -144,12 +142,6 @@ export function fromWWWAuthenticateHeaderStringToObject(
 }
 
 /**
- * HTTP headers that we need to access.
- */
-const HEADER_AUTHORIZATION = "Authorization";
-const HEADER_WWW_AUTHENTICATE = "WWW-Authenticate";
-
-/**
  * To store the OAuth client's data between websites due to redirection.
  */
 export const LOCALSTORAGE_ID = `oauth2authcodepkce`;
@@ -197,66 +189,19 @@ export class OAuth2AuthCodePKCE {
   }
 
   /**
-   * Attach the OAuth logic to all fetch requests and translate errors (either
-   * returned as json or through the WWW-Authenticate header) into nice error
-   * classes.
-   */
-  public decorateFetchHTTPClient(fetch: HttpClient): HttpClient {
-    return (url: string, config: any, ...rest) => {
-      if (!this.state.isHTTPDecoratorActive) {
-        return fetch(url, config, ...rest);
-      }
-
-      return this
-        .getAccessToken()
-        .then(({ token }: AccessContext) => {
-          const configNew: any = Object.assign({}, config);
-          if (!configNew.headers) {
-            configNew.headers = {};
-          }
-
-          configNew.headers[HEADER_AUTHORIZATION] = `Bearer ${token!.value}`;
-          return fetch(url, configNew, ...rest);
-        })
-        .then((res) => {
-          if (res.ok) {
-            return res;
-          }
-
-          if (!res.headers.has(HEADER_WWW_AUTHENTICATE.toLowerCase())) {
-            return res;
-          }
-
-          const error = toErrorClass(
-            fromWWWAuthenticateHeaderStringToObject(
-              res.headers.get(HEADER_WWW_AUTHENTICATE.toLowerCase())
-            ).error
-          );
-
-          if (error instanceof ErrorInvalidToken) {
-            this.config
-              .onAccessTokenExpiry(() => this.exchangeRefreshTokenForAccessToken());
-          }
-
-          return Promise.reject(error);
-        });
-    };
-  }
-
-  /**
    * If there is an error, it will be passed back as a rejected Promise.
    * If there is no code, the user should be redirected via
    * [fetchAuthorizationCode].
    */
-  public isReturningFromAuthServer(): Promise<boolean> {
+  public isReturningFromAuthServer(): boolean {
     const error = OAuth2AuthCodePKCE.extractParamFromUrl(location.href, 'error');
     if (error) {
-      return Promise.reject(toErrorClass(error));
+      throw toErrorClass(error);
     }
 
     const code = OAuth2AuthCodePKCE.extractParamFromUrl(location.href, 'code');
     if (!code) {
-      return Promise.resolve(false);
+      return false;
     }
 
     const state = JSON.parse(localStorage.getItem(LOCALSTORAGE_STATE) || '{}');
@@ -264,14 +209,12 @@ export class OAuth2AuthCodePKCE {
     const stateQueryParam = OAuth2AuthCodePKCE.extractParamFromUrl(location.href, 'state');
     if (stateQueryParam !== state.stateQueryParam) {
       console.warn("state query string parameter doesn't match the one sent! Possible malicious activity somewhere.");
-      return Promise.reject(new ErrorInvalidReturnedStateParam());
+      throw new ErrorInvalidReturnedStateParam();
     }
 
     state.authorizationCode = code;
-    state.canExchangeAuthorizationCodeForAccessToken = true;
-
     this.setState(state);
-    return Promise.resolve(true);
+    return true;
   }
 
   /**
@@ -296,7 +239,6 @@ export class OAuth2AuthCodePKCE {
       codeChallenge,
       codeVerifier,
       stateQueryParam,
-      isHTTPDecoratorActive: true
     };
 
     localStorage.setItem(LOCALSTORAGE_STATE, JSON.stringify(this.state));
@@ -338,14 +280,9 @@ export class OAuth2AuthCodePKCE {
       accessToken,
       authorizationCode,
       explicitlyExposedTokens,
-      canExchangeAuthorizationCodeForAccessToken,
       refreshToken,
       scopes
     } = this.state;
-
-    if (!authorizationCode) {
-      return Promise.reject(new ErrorNoAuthCode());
-    }
 
     // We use `this.authorizationCodeForAccessTokenRequest` to allow
     // several parallel `getAccessToken()` calls to reuse the same
@@ -357,7 +294,7 @@ export class OAuth2AuthCodePKCE {
       return this.authorizationCodeForAccessTokenRequest;
     }
 
-    if (!this.isAuthorized() && canExchangeAuthorizationCodeForAccessToken) {
+    if (authorizationCode) {
       this.authorizationCodeForAccessTokenRequest = this.exchangeAuthorizationCodeForAccessToken();
       return this.authorizationCodeForAccessTokenRequest;
     }
@@ -470,14 +407,6 @@ export class OAuth2AuthCodePKCE {
   }
 
   /**
-   * Signals if OAuth HTTP decorating should be active or not.
-   */
-  public isHTTPDecoratorActive(isActive: boolean) {
-    this.state.isHTTPDecoratorActive = isActive;
-    localStorage.setItem(LOCALSTORAGE_STATE, JSON.stringify(this.state));
-  }
-
-  /**
    * Tells if the client is authorized or not. This means the client has at
    * least once successfully fetched an access token. The access token could be
    * expired.
@@ -522,6 +451,14 @@ export class OAuth2AuthCodePKCE {
   ): Promise<AccessContext> {
     this.assertStateAndConfigArePresent();
 
+    const killAuthorizationCode = () => {
+      this.state.authorizationCode = undefined;
+      this.authorizationCodeForAccessTokenRequest = undefined;
+      this.state.codeChallenge = undefined;
+      this.state.codeVerifier = undefined;
+      this.state.stateQueryParam = undefined;
+    }
+
     const {
       authorizationCode = codeOverride,
       codeVerifier = ''
@@ -554,8 +491,7 @@ export class OAuth2AuthCodePKCE {
 
         if (!res.ok) {
           return jsonPromise.then(({ error }: any) => {
-            this.state.canExchangeAuthorizationCodeForAccessToken = false;
-            this.authorizationCodeForAccessTokenRequest = undefined;
+            killAuthorizationCode()
             localStorage.setItem(LOCALSTORAGE_STATE, JSON.stringify(this.state));
 
             switch (error) {
@@ -574,8 +510,7 @@ export class OAuth2AuthCodePKCE {
           const { explicitlyExposedTokens } = this.config;
           let scopes = [];
           let tokensToExpose = {};
-          this.state.canExchangeAuthorizationCodeForAccessToken = false;
-          this.authorizationCodeForAccessTokenRequest = undefined;
+          killAuthorizationCode()
 
           const accessToken: AccessToken = {
             value: access_token,
