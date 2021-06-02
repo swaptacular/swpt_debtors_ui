@@ -273,6 +273,13 @@ export class OAuth2AuthCodePKCE {
    * is easier.
    */
   public getAccessToken(): Promise<AccessContext> {
+    // TODO: This reads the current state from the local storage,
+    // which fixes the most annoying problems when two instances of
+    // the app run together and update the current state. A real fix
+    // would be to use indexedDB to store the state, and perform every
+    // state change in a transaction.
+    this.recoverState()
+
     this.assertStateAndConfigArePresent();
 
     const { onAccessTokenExpiry } = this.config;
