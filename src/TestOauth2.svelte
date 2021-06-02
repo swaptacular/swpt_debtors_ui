@@ -22,5 +22,5 @@
 {:catch e}
   <h1>{e.message}</h1>
 {/await}
-<button on:click={authorize}>Test!</button>
+<button on:click={authorize}>Login</button>
 <button on:click={logout}>Logout</button>

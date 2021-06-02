@@ -10,12 +10,14 @@ class Oauth2TokenSource implements AuthTokenSource {
     redirectUrl: appConfig.oauth2.redirectUrl,
     extraAuthorizationParams: {},
     scopes: ['access'],
-    onAccessTokenExpiry(refreshAccessToken) {
-      console.warn('Using refresh token is not tested and may not work.');
-      return refreshAccessToken()
+    onAccessTokenExpiry(_refreshAccessToken) {
+      const message = 'Using refresh tokens is disabled.'
+      console.warn(message);
+      return Promise.reject(new Error(message))
+      // return _refreshAccessToken()
     },
-    onInvalidGrant(_RedirectToAuthServer) {
-      // return _RedirectToAuthServer()
+    onInvalidGrant(_redirectToAuthServer) {
+      // return _redirectToAuthServer()
     }
   })
 
@@ -31,20 +33,6 @@ class Oauth2TokenSource implements AuthTokenSource {
       // soon as possible.
       this.getCurrentToken()
     }
-  }
-
-  private async getCurrentToken(): Promise<string | undefined> {
-    let accessContext
-    try {
-      accessContext = await this.helper.getAccessToken()
-    } catch {
-      return
-    }
-    return accessContext.token?.value
-  }
-
-  private async redirectToLoginPage(): Promise<never> {
-    return await this.helper.fetchAuthorizationCode()
   }
 
   async getToken(options?: GetTokenOptions): Promise<string> {
@@ -66,6 +54,21 @@ class Oauth2TokenSource implements AuthTokenSource {
   logout(): void {
     this.helper.reset()
   }
+
+  private async getCurrentToken(): Promise<string | undefined> {
+    let accessContext
+    try {
+      accessContext = await this.helper.getAccessToken()
+    } catch {
+      return
+    }
+    return accessContext.token?.value
+  }
+
+  private async redirectToLoginPage(): Promise<never> {
+    return await this.helper.fetchAuthorizationCode()
+  }
+
 }
 
 
