@@ -51,38 +51,38 @@ type ObjStringDict = { [_: string]: string };
  * A list of OAuth2AuthCodePKCE errors.
  */
 // To "namespace" all errors.
-export class OAuth2Error extends Error { name = 'OAuth2Error' }
+export class OAuth2Error extends Error { name = 'OAuth2Error'; }
 
 // For really unknown errors.
-class UnknownError extends OAuth2Error { name = 'UnknownError' }
+class UnknownError extends OAuth2Error { name = 'UnknownError'; }
 
 // Some generic, internal errors that can happen.
-class InvalidReturnedStateParam extends OAuth2Error { name = 'InvalidReturnedStateParam' }
-class InvalidJson extends OAuth2Error { name = 'InvalidJson' }
+class InvalidReturnedStateParam extends OAuth2Error { name = 'InvalidReturnedStateParam'; }
+class InvalidJson extends OAuth2Error { name = 'InvalidJson'; }
 
 // Errors that occur across many endpoints
-class InvalidScope extends OAuth2Error { name = 'InvalidScope' }
-class InvalidRequest extends OAuth2Error { name = 'InvalidRequest' }
-class InvalidToken extends OAuth2Error { name = 'InvalidToken' }
+class InvalidScope extends OAuth2Error { name = 'InvalidScope'; }
+class InvalidRequest extends OAuth2Error { name = 'InvalidRequest'; }
+class InvalidToken extends OAuth2Error { name = 'InvalidToken'; }
 
 /**
  * Possible authorization grant errors given by the redirection from the
  * authorization server.
  */
-class AuthenticationGrantError extends OAuth2Error { name = 'AuthenticationGrantError' }
-class UnauthorizedClient extends AuthenticationGrantError { name = 'UnauthorizedClient' }
-class AccessDenied extends AuthenticationGrantError { name = 'AccessDenied' }
-class UnsupportedResponseType extends AuthenticationGrantError { name = 'UnsupportedResponseType' }
-class ServerError extends AuthenticationGrantError { name = 'ServerError' }
-class TemporarilyUnavailable extends AuthenticationGrantError { name = 'TemporarilyUnavailable' }
+class AuthenticationGrantError extends OAuth2Error { name = 'AuthenticationGrantError'; }
+class UnauthorizedClient extends AuthenticationGrantError { name = 'UnauthorizedClient'; }
+class AccessDenied extends AuthenticationGrantError { name = 'AccessDenied'; }
+class UnsupportedResponseType extends AuthenticationGrantError { name = 'UnsupportedResponseType'; }
+class ServerError extends AuthenticationGrantError { name = 'ServerError'; }
+class TemporarilyUnavailable extends AuthenticationGrantError { name = 'TemporarilyUnavailable'; }
 
 /**
  * A list of possible access token response errors.
  */
-class AccessTokenResponseError extends OAuth2Error { toString(): string { return 'AccessTokenResponseError'; } }
-class InvalidClient extends AccessTokenResponseError { toString(): string { return 'InvalidClient'; } }
-class InvalidGrant extends AccessTokenResponseError { toString(): string { return 'InvalidGrant'; } }
-class UnsupportedGrantType extends AccessTokenResponseError { toString(): string { return 'UnsupportedGrantType'; } }
+class AccessTokenResponseError extends OAuth2Error { name = 'AccessTokenResponseError'; }
+class InvalidClient extends AccessTokenResponseError { name = 'InvalidClient'; }
+class InvalidGrant extends AccessTokenResponseError { name = 'InvalidGrant'; }
+class UnsupportedGrantType extends AccessTokenResponseError { name = 'UnsupportedGrantType'; }
 
 /**
  * WWW-Authenticate error object structure for less error prone handling.
