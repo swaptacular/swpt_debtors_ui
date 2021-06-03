@@ -4,26 +4,21 @@
  * Derived from https://github.com/BitySA/oauth2-auth-code-pkce
  */
 
-export interface Configuration {
-  authorizationUrl: URL;
+export type Configuration = {
+  authorizationUrl: string;
   clientId: string;
   fetchTimeout: number,
   explicitlyExposedTokens?: string[];
   onAccessTokenExpiry: (refreshAccessToken: () => Promise<AccessContext>) => Promise<AccessContext>;
   onInvalidGrant: (refreshAuthCodeOrRefreshToken: () => Promise<never>) => void;
-  redirectUrl: URL;
+  redirectUrl: string;
   scopes: string[];
-  tokenUrl: URL;
+  tokenUrl: string;
   extraAuthorizationParams?: ObjStringDict;
   extraRefreshParams?: ObjStringDict;
 }
 
-export interface PKCECodes {
-  codeChallenge: string;
-  codeVerifier: string;
-}
-
-export interface State {
+export type State = {
   accessToken?: AccessToken;
   authorizationCode?: string;
   codeChallenge?: string;
@@ -34,65 +29,61 @@ export interface State {
   scopes?: string[];
 }
 
-export interface RefreshToken {
+export type RefreshToken = {
   value: string;
 };
 
-export interface AccessToken {
+export type AccessToken = {
   value: string;
   expiry: string;
 };
 
-export type Scopes = string[];
-
-export interface AccessContext {
+export type AccessContext = {
   token?: AccessToken;
   explicitlyExposedTokens?: ObjStringDict;
-  scopes?: Scopes;
+  scopes?: string[];
   refreshToken?: RefreshToken;
 };
 
-export type ObjStringDict = { [_: string]: string };
-export type HttpClient = ((...args: any[]) => Promise<any>);
-export type URL = string;
+type ObjStringDict = { [_: string]: string };
 
 /**
  * A list of OAuth2AuthCodePKCE errors.
  */
 // To "namespace" all errors.
-export class ErrorOAuth2 { toString(): string { return 'ErrorOAuth2'; } }
+export class ErrorOAuth2 extends Error { name = 'ErrorOAuth2' }
 
 // For really unknown errors.
-export class ErrorUnknown extends ErrorOAuth2 { toString(): string { return 'ErrorUnknown'; } }
+export class UnknownError extends ErrorOAuth2 { name = 'UnknownError' }
 
 // Some generic, internal errors that can happen.
-export class ErrorNoAuthCode extends ErrorOAuth2 { toString(): string { return 'ErrorNoAuthCode'; } }
-export class ErrorInvalidReturnedStateParam extends ErrorOAuth2 { toString(): string { return 'ErrorInvalidReturnedStateParam'; } }
-export class ErrorInvalidJson extends ErrorOAuth2 { toString(): string { return 'ErrorInvalidJson'; } }
+export class NoAuthCode extends ErrorOAuth2 { name = 'NoAuthCode' }
+export class InvalidReturnedStateParam extends ErrorOAuth2 { name = 'InvalidReturnedStateParam' }
+export class InvalidJson extends ErrorOAuth2 { name = 'InvalidJson' }
 
 // Errors that occur across many endpoints
-export class ErrorInvalidScope extends ErrorOAuth2 { toString(): string { return 'ErrorInvalidScope'; } }
-export class ErrorInvalidRequest extends ErrorOAuth2 { toString(): string { return 'ErrorInvalidRequest'; } }
-export class ErrorInvalidToken extends ErrorOAuth2 { toString(): string { return 'ErrorInvalidToken'; } }
+export class InvalidScope extends ErrorOAuth2 { name = 'InvalidScope' }
+export class InvalidRequest extends ErrorOAuth2 { name = 'InvalidRequest' }
+export class InvalidToken extends ErrorOAuth2 { name = 'InvalidToken' }
 
 /**
  * Possible authorization grant errors given by the redirection from the
  * authorization server.
  */
-export class ErrorAuthenticationGrant extends ErrorOAuth2 { toString(): string { return 'ErrorAuthenticationGrant'; } }
-export class ErrorUnauthorizedClient extends ErrorAuthenticationGrant { toString(): string { return 'ErrorUnauthorizedClient'; } }
-export class ErrorAccessDenied extends ErrorAuthenticationGrant { toString(): string { return 'ErrorAccessDenied'; } }
-export class ErrorUnsupportedResponseType extends ErrorAuthenticationGrant { toString(): string { return 'ErrorUnsupportedResponseType'; } }
-export class ErrorServerError extends ErrorAuthenticationGrant { toString(): string { return 'ErrorServerError'; } }
-export class ErrorTemporarilyUnavailable extends ErrorAuthenticationGrant { toString(): string { return 'ErrorTemporarilyUnavailable'; } }
+export class AuthenticationGrantError extends ErrorOAuth2 { name = 'AuthenticationGrantError' }
+export class UnauthorizedClient extends AuthenticationGrantError { name = 'UnauthorizedClient' }
+export class AccessDenied extends AuthenticationGrantError { name = 'AccessDenied' }
+export class UnsupportedResponseType extends AuthenticationGrantError { name = 'UnsupportedResponseType' }
+export class ServerError extends AuthenticationGrantError { name = 'ServerError' }
+export class TemporarilyUnavailable extends AuthenticationGrantError { name = 'TemporarilyUnavailable' }
 
 /**
  * A list of possible access token response errors.
  */
-export class ErrorAccessTokenResponse extends ErrorOAuth2 { toString(): string { return 'ErrorAccessTokenResponse'; } }
-export class ErrorInvalidClient extends ErrorAccessTokenResponse { toString(): string { return 'ErrorInvalidClient'; } }
-export class ErrorInvalidGrant extends ErrorAccessTokenResponse { toString(): string { return 'ErrorInvalidGrant'; } }
-export class ErrorUnsupportedGrantType extends ErrorAccessTokenResponse { toString(): string { return 'ErrorUnsupportedGrantType'; } }
+export class AccessTokenResponseError extends ErrorOAuth2 { toString(): string { return 'AccessTokenResponseError'; } }
+export class InvalidClient extends AccessTokenResponseError { toString(): string { return 'InvalidClient'; } }
+export class InvalidGrant extends AccessTokenResponseError { toString(): string { return 'InvalidGrant'; } }
+export class UnsupportedGrantType extends AccessTokenResponseError { toString(): string { return 'UnsupportedGrantType'; } }
 
 /**
  * WWW-Authenticate error object structure for less error prone handling.
@@ -103,25 +94,25 @@ export class ErrorWWWAuthenticate {
 }
 
 export const RawErrorToErrorClassMap: { [_: string]: any } = {
-  invalid_request: ErrorInvalidRequest,
-  invalid_grant: ErrorInvalidGrant,
-  unauthorized_client: ErrorUnauthorizedClient,
-  access_denied: ErrorAccessDenied,
-  unsupported_response_type: ErrorUnsupportedResponseType,
-  invalid_scope: ErrorInvalidScope,
-  server_error: ErrorServerError,
-  temporarily_unavailable: ErrorTemporarilyUnavailable,
-  invalid_client: ErrorInvalidClient,
-  unsupported_grant_type: ErrorUnsupportedGrantType,
-  invalid_json: ErrorInvalidJson,
-  invalid_token: ErrorInvalidToken,
+  invalid_request: InvalidRequest,
+  invalid_grant: InvalidGrant,
+  unauthorized_client: UnauthorizedClient,
+  access_denied: AccessDenied,
+  unsupported_response_type: UnsupportedResponseType,
+  invalid_scope: InvalidScope,
+  server_error: ServerError,
+  temporarily_unavailable: TemporarilyUnavailable,
+  invalid_client: InvalidClient,
+  unsupported_grant_type: UnsupportedGrantType,
+  invalid_json: InvalidJson,
+  invalid_token: InvalidToken,
 };
 
 /**
  * Translate the raw error strings returned from the server into error classes.
  */
 export function toErrorClass(rawError: string): ErrorOAuth2 {
-  return new (RawErrorToErrorClassMap[rawError] || ErrorUnknown)();
+  return new (RawErrorToErrorClassMap[rawError] || UnknownError)();
 }
 
 /**
@@ -227,7 +218,7 @@ export class OAuth2AuthCodePKCE {
     const stateQueryParam = OAuth2AuthCodePKCE.extractParamFromUrl(location.href, 'state');
     if (stateQueryParam !== state.stateQueryParam) {
       console.warn("State query string parameter doesn't match the one sent. Possible malicious activity somewhere.");
-      throw new ErrorInvalidReturnedStateParam();
+      throw new InvalidReturnedStateParam();
     }
 
     this.setState({ ...state, authorizationCode });
@@ -320,17 +311,11 @@ export class OAuth2AuthCodePKCE {
     });
   }
 
-  /**
-   * Checks to see if the access token has expired.
-   */
-  static isAccessTokenExpired(accessToken?: AccessToken): boolean {
-    return Boolean(!accessToken || (new Date()) >= (new Date(accessToken.expiry)));
-  }
-
   public invalidateAccessToken(tokenValue: string) {
     const state = this.recoverState()
     if (state.accessToken?.value === tokenValue) {
-      this.setState({ ...state, accessToken: undefined })
+      state.accessToken = undefined;
+      this.setState(state)
     }
   }
 
@@ -425,7 +410,7 @@ export class OAuth2AuthCodePKCE {
   /**
    * Refresh an access token from the remote service.
    */
-  public exchangeRefreshTokenForAccessToken(): Promise<AccessContext> {
+  private exchangeRefreshTokenForAccessToken(): Promise<AccessContext> {
     // TODO: This method currently does not work and can not be used.
 
     const state = this.recoverState()
@@ -537,9 +522,16 @@ export class OAuth2AuthCodePKCE {
   }
 
   /**
+   * Checks to see if the access token has expired.
+   */
+  static isAccessTokenExpired(accessToken?: AccessToken): boolean {
+    return Boolean(!accessToken || (new Date()) >= (new Date(accessToken.expiry)));
+  }
+
+  /**
    * Extracts a query string parameter.
    */
-  static extractParamFromUrl(url: URL, param: string): string {
+  static extractParamFromUrl(url: string, param: string): string {
     const urlParts = url.split('?');
     if (urlParts.length >= 2) {
       const queryString = urlParts[1].split('#')[0];
@@ -566,7 +558,7 @@ export class OAuth2AuthCodePKCE {
   /**
    * Generates a code_verifier and code_challenge, as specified in rfc7636.
    */
-  static async generatePKCECodes(): Promise<PKCECodes> {
+  static async generatePKCECodes() {
     const output = crypto.getRandomValues(new Uint32Array(RECOMMENDED_CODE_VERIFIER_LENGTH));
     const codeVerifier = OAuth2AuthCodePKCE.base64urlEncode(Array
       .from(output)
