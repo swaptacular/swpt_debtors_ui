@@ -51,39 +51,38 @@ type ObjStringDict = { [_: string]: string };
  * A list of OAuth2AuthCodePKCE errors.
  */
 // To "namespace" all errors.
-export class ErrorOAuth2 extends Error { name = 'ErrorOAuth2' }
+export class OAuth2Error extends Error { name = 'OAuth2Error' }
 
 // For really unknown errors.
-export class UnknownError extends ErrorOAuth2 { name = 'UnknownError' }
+class UnknownError extends OAuth2Error { name = 'UnknownError' }
 
 // Some generic, internal errors that can happen.
-export class NoAuthCode extends ErrorOAuth2 { name = 'NoAuthCode' }
-export class InvalidReturnedStateParam extends ErrorOAuth2 { name = 'InvalidReturnedStateParam' }
-export class InvalidJson extends ErrorOAuth2 { name = 'InvalidJson' }
+class InvalidReturnedStateParam extends OAuth2Error { name = 'InvalidReturnedStateParam' }
+class InvalidJson extends OAuth2Error { name = 'InvalidJson' }
 
 // Errors that occur across many endpoints
-export class InvalidScope extends ErrorOAuth2 { name = 'InvalidScope' }
-export class InvalidRequest extends ErrorOAuth2 { name = 'InvalidRequest' }
-export class InvalidToken extends ErrorOAuth2 { name = 'InvalidToken' }
+class InvalidScope extends OAuth2Error { name = 'InvalidScope' }
+class InvalidRequest extends OAuth2Error { name = 'InvalidRequest' }
+class InvalidToken extends OAuth2Error { name = 'InvalidToken' }
 
 /**
  * Possible authorization grant errors given by the redirection from the
  * authorization server.
  */
-export class AuthenticationGrantError extends ErrorOAuth2 { name = 'AuthenticationGrantError' }
-export class UnauthorizedClient extends AuthenticationGrantError { name = 'UnauthorizedClient' }
-export class AccessDenied extends AuthenticationGrantError { name = 'AccessDenied' }
-export class UnsupportedResponseType extends AuthenticationGrantError { name = 'UnsupportedResponseType' }
-export class ServerError extends AuthenticationGrantError { name = 'ServerError' }
-export class TemporarilyUnavailable extends AuthenticationGrantError { name = 'TemporarilyUnavailable' }
+class AuthenticationGrantError extends OAuth2Error { name = 'AuthenticationGrantError' }
+class UnauthorizedClient extends AuthenticationGrantError { name = 'UnauthorizedClient' }
+class AccessDenied extends AuthenticationGrantError { name = 'AccessDenied' }
+class UnsupportedResponseType extends AuthenticationGrantError { name = 'UnsupportedResponseType' }
+class ServerError extends AuthenticationGrantError { name = 'ServerError' }
+class TemporarilyUnavailable extends AuthenticationGrantError { name = 'TemporarilyUnavailable' }
 
 /**
  * A list of possible access token response errors.
  */
-export class AccessTokenResponseError extends ErrorOAuth2 { toString(): string { return 'AccessTokenResponseError'; } }
-export class InvalidClient extends AccessTokenResponseError { toString(): string { return 'InvalidClient'; } }
-export class InvalidGrant extends AccessTokenResponseError { toString(): string { return 'InvalidGrant'; } }
-export class UnsupportedGrantType extends AccessTokenResponseError { toString(): string { return 'UnsupportedGrantType'; } }
+class AccessTokenResponseError extends OAuth2Error { toString(): string { return 'AccessTokenResponseError'; } }
+class InvalidClient extends AccessTokenResponseError { toString(): string { return 'InvalidClient'; } }
+class InvalidGrant extends AccessTokenResponseError { toString(): string { return 'InvalidGrant'; } }
+class UnsupportedGrantType extends AccessTokenResponseError { toString(): string { return 'UnsupportedGrantType'; } }
 
 /**
  * WWW-Authenticate error object structure for less error prone handling.
@@ -111,7 +110,7 @@ export const RawErrorToErrorClassMap: { [_: string]: any } = {
 /**
  * Translate the raw error strings returned from the server into error classes.
  */
-export function toErrorClass(rawError: string): ErrorOAuth2 {
+export function toErrorClass(rawError: string): OAuth2Error {
   return new (RawErrorToErrorClassMap[rawError] || UnknownError)();
 }
 
@@ -513,7 +512,7 @@ export class OAuth2AuthCodePKCE {
    * Implements *base64url-encode* (RFC 4648 § 5) without padding, which is NOT
    * the same as regular base64 encoding.
    */
-  static base64urlEncode(value: string): string {
+  private static base64urlEncode(value: string): string {
     let base64 = btoa(value);
     base64 = base64.replace(/\+/g, '-');
     base64 = base64.replace(/\//g, '_');
@@ -524,14 +523,14 @@ export class OAuth2AuthCodePKCE {
   /**
    * Checks to see if the access token has expired.
    */
-  static isAccessTokenExpired(accessToken?: AccessToken): boolean {
+  private static isAccessTokenExpired(accessToken?: AccessToken): boolean {
     return Boolean(!accessToken || (new Date()) >= (new Date(accessToken.expiry)));
   }
 
   /**
    * Extracts a query string parameter.
    */
-  static extractParamFromUrl(url: string, param: string): string {
+  private static extractParamFromUrl(url: string, param: string): string {
     const urlParts = url.split('?');
     if (urlParts.length >= 2) {
       const queryString = urlParts[1].split('#')[0];
@@ -548,7 +547,7 @@ export class OAuth2AuthCodePKCE {
   /**
    * Converts the keys and values of an object to a url query string
    */
-  static objectToQueryString(dict: ObjStringDict): string {
+  private static objectToQueryString(dict: ObjStringDict): string {
     return Object
       .entries(dict)
       .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
@@ -558,7 +557,7 @@ export class OAuth2AuthCodePKCE {
   /**
    * Generates a code_verifier and code_challenge, as specified in rfc7636.
    */
-  static async generatePKCECodes() {
+  private static async generatePKCECodes() {
     const output = crypto.getRandomValues(new Uint32Array(RECOMMENDED_CODE_VERIFIER_LENGTH));
     const codeVerifier = OAuth2AuthCodePKCE.base64urlEncode(Array
       .from(output)
@@ -579,7 +578,7 @@ export class OAuth2AuthCodePKCE {
   /**
    * Generates random state to be passed for anti-csrf.
    */
-  static generateRandomState(lengthOfState: number): string {
+  private static generateRandomState(lengthOfState: number): string {
     const output = crypto.getRandomValues(new Uint32Array(lengthOfState));
     return Array
       .from(output)
