@@ -6,7 +6,7 @@ import type {
   DebtorConfigUpdateRequest,
   Transfer,
   TransferCreationRequest,
-} from '../server-api'
+} from '../server-api/index.js'
 
 
 type UserReference = {

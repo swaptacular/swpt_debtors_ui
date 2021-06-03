@@ -9,7 +9,7 @@ export interface Configuration {
   clientId: string;
   explicitlyExposedTokens?: string[];
   onAccessTokenExpiry: (refreshAccessToken: () => Promise<AccessContext>) => Promise<AccessContext>;
-  onInvalidGrant: (refreshAuthCodeOrRefreshToken: () => Promise<void>) => void;
+  onInvalidGrant: (refreshAuthCodeOrRefreshToken: () => Promise<never>) => void;
   redirectUrl: URL;
   scopes: string[];
   tokenUrl: URL;

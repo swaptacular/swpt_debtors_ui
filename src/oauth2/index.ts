@@ -11,13 +11,20 @@ class Oauth2TokenSource implements AuthTokenSource {
     extraAuthorizationParams: {},
     scopes: ['access'],
     async onAccessTokenExpiry(_refreshAccessToken) {
+      // This function is called when the access token has expired,
+      // and there is a refresh token. If the result of
+      // `_refreshAccessToken()` is returned, an attempt will be made
+      // to obtain a new access token. This functionality in not
+      // tested, and not needed, so we throw an error here.
       const message = 'Using refresh tokens is disabled.'
       console.warn(message);
       throw new Error(message)
-      // return _refreshAccessToken()
     },
     onInvalidGrant(_redirectToAuthServer) {
-      // return _redirectToAuthServer()
+      // This function is called when the authorization code can not
+      // be exchanged for a token. If `_redirectToAuthServer` is
+      // called it will redirect to the authentication server. In our
+      // case, we do not want this, so we do nothing here.
     }
   })
 
