@@ -47,44 +47,27 @@ export type AccessContext = {
 
 type ObjStringDict = { [_: string]: string };
 
-/**
- * A list of OAuth2AuthCodePKCE errors.
- */
-// To "namespace" all errors.
 export class OAuth2Error extends Error { name = 'OAuth2Error'; }
-
-// For really unknown errors.
 class UnknownError extends OAuth2Error { name = 'UnknownError'; }
-
-// Some generic, internal errors that can happen.
-class InvalidReturnedStateParam extends OAuth2Error { name = 'InvalidReturnedStateParam'; }
 class InvalidJson extends OAuth2Error { name = 'InvalidJson'; }
-
-// Errors that occur across many endpoints
 class InvalidScope extends OAuth2Error { name = 'InvalidScope'; }
 class InvalidRequest extends OAuth2Error { name = 'InvalidRequest'; }
 class InvalidToken extends OAuth2Error { name = 'InvalidToken'; }
-
-/**
- * Possible authorization grant errors given by the redirection from the
- * authorization server.
- */
+class InvalidReturnedStateParam extends OAuth2Error { name = 'InvalidReturnedStateParam'; }
 class AuthenticationGrantError extends OAuth2Error { name = 'AuthenticationGrantError'; }
+class AccessTokenResponseError extends OAuth2Error { name = 'AccessTokenResponseError'; }
+
 class UnauthorizedClient extends AuthenticationGrantError { name = 'UnauthorizedClient'; }
 class AccessDenied extends AuthenticationGrantError { name = 'AccessDenied'; }
 class UnsupportedResponseType extends AuthenticationGrantError { name = 'UnsupportedResponseType'; }
 class ServerError extends AuthenticationGrantError { name = 'ServerError'; }
 class TemporarilyUnavailable extends AuthenticationGrantError { name = 'TemporarilyUnavailable'; }
 
-/**
- * A list of possible access token response errors.
- */
-class AccessTokenResponseError extends OAuth2Error { name = 'AccessTokenResponseError'; }
 class InvalidClient extends AccessTokenResponseError { name = 'InvalidClient'; }
 class InvalidGrant extends AccessTokenResponseError { name = 'InvalidGrant'; }
 class UnsupportedGrantType extends AccessTokenResponseError { name = 'UnsupportedGrantType'; }
 
-export const RawErrorToErrorClassMap: { [_: string]: any } = {
+export const ERROR_STRING_TO_ERROR_CLASS_MAP: { [_: string]: new (message?: string) => Error } = {
   invalid_request: InvalidRequest,
   invalid_grant: InvalidGrant,
   unauthorized_client: UnauthorizedClient,
@@ -102,13 +85,10 @@ export const RawErrorToErrorClassMap: { [_: string]: any } = {
 /**
  * Translate the raw error strings returned from the server into error classes.
  */
-export function toErrorClass(rawError: string): OAuth2Error {
-  return new (RawErrorToErrorClassMap[rawError] || UnknownError)();
+export function createErrorInstance(rawError: string): OAuth2Error {
+  return new (ERROR_STRING_TO_ERROR_CLASS_MAP[rawError] || UnknownError)();
 }
 
-/**
- * To store the OAuth client's data between websites due to redirection.
- */
 export const LOCALSTORAGE_ID = `oauth2authcodepkce`;
 export const LOCALSTORAGE_STATE = `${LOCALSTORAGE_ID}-state`;
 
@@ -155,14 +135,6 @@ async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { 
 
 /**
  * OAuth 2.0 client that ONLY supports authorization code flow, with PKCE.
- *
- * Many applications structure their OAuth usage in different ways. This class
- * aims to provide both flexible and easy ways to use this configuration of
- * OAuth.
- *
- * See `example.ts` for how you'd typically use this.
- *
- * For others, review this class's methods.
  */
 export class OAuth2AuthCodePKCE {
   private config: Configuration;
@@ -173,15 +145,10 @@ export class OAuth2AuthCodePKCE {
     this.recoverState();
   }
 
-  /**
-   * If there is an error, it will be passed back as a rejected Promise.
-   * If there is no code, the user should be redirected via
-   * [fetchAuthorizationCode].
-   */
   public isReturningFromAuthServer(): boolean {
     const error = OAuth2AuthCodePKCE.extractParamFromUrl(location.href, 'error');
     if (error) {
-      throw toErrorClass(error);
+      throw createErrorInstance(error);
     }
 
     const authorizationCode = OAuth2AuthCodePKCE.extractParamFromUrl(location.href, 'code');
@@ -203,10 +170,6 @@ export class OAuth2AuthCodePKCE {
   /**
    * Fetch an authorization grant via redirection. In a sense this function
    * doesn't return because of the redirect behavior (uses `location.replace`).
-   *
-   * @param oneTimeParams A way to specify "one time" used query string
-   * parameters during the authorization code fetching process, usually for
-   * values which need to change at run-time.
    */
   public async fetchAuthorizationCode(): Promise<never> {
     const { clientId, extraAuthorizationParams, redirectUrl, scopes } = this.config;
@@ -239,7 +202,7 @@ export class OAuth2AuthCodePKCE {
 
   /**
    * Tries to get the current access token. If there is none
-   * it will fetch another one. If it is expired, it will fire
+   * it will try to fetch another one. If it is expired, it will fire
    * [onAccessTokenExpiry] but it's up to the user to call the refresh token
    * function. This is because sometimes not using the refresh token facilities
    * is easier.
@@ -316,8 +279,7 @@ export class OAuth2AuthCodePKCE {
   }
 
   /**
-   * Fetch an access token from the remote service. You may pass a custom
-   * authorization grant code for any reason, but this is non-standard usage.
+   * Fetch an access token from the remote service.
    */
   private async exchangeAuthorizationCodeForAccessToken(): Promise<AccessContext> {
     let error;
@@ -350,7 +312,7 @@ export class OAuth2AuthCodePKCE {
         } catch {
           error = 'invalid_json';
         }
-        throw toErrorClass(error);
+        throw createErrorInstance(error);
       }
 
       const json = await response.json();
@@ -389,7 +351,7 @@ export class OAuth2AuthCodePKCE {
    * Refresh an access token from the remote service.
    */
   private exchangeRefreshTokenForAccessToken(): Promise<AccessContext> {
-    // TODO: This method currently does not work and can not be used.
+    // TODO: This method currently does not work and should not be used.
 
     const state = this.recoverState()
     const { refreshToken } = state;
@@ -470,7 +432,7 @@ export class OAuth2AuthCodePKCE {
           default:
             break;
         }
-        return Promise.reject(toErrorClass(error));
+        return Promise.reject(createErrorInstance(error));
       });
   }
 
@@ -504,16 +466,10 @@ export class OAuth2AuthCodePKCE {
     return base64;
   }
 
-  /**
-   * Checks to see if the access token has expired.
-   */
   private static isAccessTokenExpired(accessToken?: AccessToken): boolean {
     return Boolean(!accessToken || (new Date()) >= (new Date(accessToken.expiry)));
   }
 
-  /**
-   * Extracts a query string parameter.
-   */
   private static extractParamFromUrl(url: string, param: string): string {
     const urlParts = url.split('?');
     if (urlParts.length >= 2) {
@@ -528,9 +484,6 @@ export class OAuth2AuthCodePKCE {
     return ''
   }
 
-  /**
-   * Converts the keys and values of an object to a url query string
-   */
   private static objectToQueryString(dict: ObjStringDict): string {
     return Object
       .entries(dict)
