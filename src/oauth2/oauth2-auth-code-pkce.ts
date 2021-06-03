@@ -145,6 +145,12 @@ export class OAuth2AuthCodePKCE {
     this.recoverState();
   }
 
+  /**
+   * Tells whether we are redirected by authorization server, so that
+   * we are expected to exchange an authorization code for an access
+   * token. Will throw an error if the authorization server responded
+   * with an error.
+   */
   public isReturningFromAuthServer(): boolean {
     const error = OAuth2AuthCodePKCE.extractParamFromUrl(location.href, 'error');
     if (error) {
