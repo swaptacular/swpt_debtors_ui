@@ -355,10 +355,10 @@ export class OAuth2AuthCodePKCE {
 
   /**
    * Refresh an access token from the remote service.
+   *
+   * TODO: This method currently does not work and should not be used.
    */
   private exchangeRefreshTokenForAccessToken(): Promise<AccessContext> {
-    // TODO: This method currently does not work and should not be used.
-
     const state = this.recoverState()
     const { refreshToken } = state;
     const { extraRefreshParams, clientId, tokenUrl } = this.config;
