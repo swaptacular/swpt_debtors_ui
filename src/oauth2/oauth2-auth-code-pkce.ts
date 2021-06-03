@@ -486,113 +486,73 @@ export class OAuth2AuthCodePKCE {
    * Fetch an access token from the remote service. You may pass a custom
    * authorization grant code for any reason, but this is non-standard usage.
    */
-  private exchangeAuthorizationCodeForAccessToken(
-    codeOverride?: string
-  ): Promise<AccessContext> {
-    this.assertStateAndConfigArePresent();
+  private async exchangeAuthorizationCodeForAccessToken(): Promise<AccessContext> {
+    const { authorizationCode, codeVerifier } = this.state;
+    const { clientId, onInvalidGrant, redirectUrl, explicitlyExposedTokens } = this.config;
 
-    const killAuthorizationCode = () => {
-      this.state.authorizationCode = undefined;
-      this.authorizationCodeForAccessTokenRequest = undefined;
-      this.state.codeChallenge = undefined;
-      this.state.codeVerifier = undefined;
-      this.state.stateQueryParam = undefined;
-    }
-
-    const {
-      authorizationCode = codeOverride,
-      codeVerifier = ''
-    } = this.state;
-    const { clientId, onInvalidGrant, redirectUrl } = this.config;
-
-    if (!codeVerifier) {
-      console.warn('No code verifier is being sent.');
-    } else if (!authorizationCode) {
-      console.warn('No authorization grant code is being passed.');
-    }
-
-    const url = this.config.tokenUrl;
     const body = `grant_type=authorization_code&`
       + `code=${encodeURIComponent(authorizationCode || '')}&`
       + `redirect_uri=${encodeURIComponent(redirectUrl)}&`
       + `client_id=${encodeURIComponent(clientId)}&`
-      + `code_verifier=${codeVerifier}`;
+      + `code_verifier=${codeVerifier || ''}`;
 
-    return fetchWithTimeout(url, {
+    const response = await fetchWithTimeout(this.config.tokenUrl, {
       method: 'POST',
-      body,
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       timeout: this.config.fetchTimeout,
-    })
-      .then(res => {
-        const jsonPromise = res.json()
-          .catch(_ => ({ error: 'invalid_json' }));
+      body,
+    });
 
-        if (!res.ok) {
-          return jsonPromise.then(({ error }: any) => {
-            killAuthorizationCode()
-            localStorage.setItem(LOCALSTORAGE_STATE, JSON.stringify(this.state));
+    this.state.authorizationCode = undefined;
+    this.authorizationCodeForAccessTokenRequest = undefined;
+    this.state.codeChallenge = undefined;
+    this.state.codeVerifier = undefined;
+    this.state.stateQueryParam = undefined;
 
-            switch (error) {
-              case 'invalid_grant':
-                onInvalidGrant(() => this.fetchAuthorizationCode());
-                break;
-              default:
-                break;
-            }
-            return Promise.reject(toErrorClass(error));
-          });
-        }
+    if (!response.ok) {
+      localStorage.setItem(LOCALSTORAGE_STATE, JSON.stringify(this.state));
 
-        return jsonPromise.then((json) => {
-          const { access_token, expires_in, refresh_token, scope } = json;
-          const { explicitlyExposedTokens } = this.config;
-          let scopes = [];
-          let tokensToExpose = {};
-          killAuthorizationCode()
+      let error;
+      try {
+        error = (await response.json())?.error;
+      } catch {
+        error = 'invalid_json';
+      }
+      if (error === 'invalid_grant') {
+        onInvalidGrant(() => this.fetchAuthorizationCode());
+      }
+      throw toErrorClass(error);
+    }
 
-          const accessToken: AccessToken = {
-            value: access_token,
-            expiry: (new Date(Date.now() + (parseInt(expires_in) * 1000))).toString()
-          };
-          this.state.accessToken = accessToken;
+    try {
+      const json = await response.json();
+      const extractTokens = (tokenNames: string[]): ObjStringDict => Object.fromEntries(tokenNames
+        .map((name) => [name, json[name]])
+        .filter(([_name, value]) => value !== undefined)
+      );
+      const { access_token, expires_in, refresh_token, scope } = json;
 
-          if (refresh_token) {
-            const refreshToken: RefreshToken = {
-              value: refresh_token
-            };
-            this.state.refreshToken = refreshToken;
-          }
+      this.state = {
+        ...this.state,
+        accessToken: {
+          value: String(access_token),
+          expiry: (new Date(Date.now() + (Number(expires_in) * 1000))).toString(),
+        },
+        refreshToken: refresh_token ? { value: String(refresh_token) } : undefined,
+        scopes: scope ? String(scope).split(' ') : undefined,
+        explicitlyExposedTokens: explicitlyExposedTokens ? extractTokens(explicitlyExposedTokens) : undefined,
+      }
 
-          if (explicitlyExposedTokens) {
-            tokensToExpose = Object.fromEntries(
-              explicitlyExposedTokens
-                .map((tokenName: string): [string, string | undefined] => [tokenName, json[tokenName]])
-                .filter(([_, tokenValue]: [string, string | undefined]) => tokenValue !== undefined)
-            );
-            this.state.explicitlyExposedTokens = tokensToExpose;
-          }
+    } finally {
+      localStorage.setItem(LOCALSTORAGE_STATE, JSON.stringify(this.state));
+    }
 
-          if (scope) {
-            // Multiple scopes are passed and delimited by spaces,
-            // despite using the singular name "scope".
-            scopes = scope.split(' ');
-            this.state.scopes = scopes;
-          }
-
-          localStorage.setItem(LOCALSTORAGE_STATE, JSON.stringify(this.state));
-
-          let accessContext: AccessContext = { token: accessToken, scopes };
-          if (explicitlyExposedTokens) {
-            accessContext.explicitlyExposedTokens = tokensToExpose;
-          }
-          return accessContext;
-        });
-      });
+    return {
+      token: this.state.accessToken,
+      scopes: this.state.scopes,
+      explicitlyExposedTokens: this.state.explicitlyExposedTokens,
+    };
   }
-
 
   private recoverState(): this {
     this.state = JSON.parse(localStorage.getItem(LOCALSTORAGE_STATE) || '{}');
