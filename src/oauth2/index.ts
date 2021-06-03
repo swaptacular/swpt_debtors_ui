@@ -4,6 +4,7 @@ import type { AuthTokenSource, GetTokenOptions } from '../server-api/index.js'
 
 class Oauth2TokenSource implements AuthTokenSource {
   private helper = new OAuth2AuthCodePKCE({
+    fetchTimeout: appConfig.serverApiTimeout,
     authorizationUrl: appConfig.oauth2.authorizationUrl,
     tokenUrl: appConfig.oauth2.tokenUrl,
     clientId: appConfig.oauth2.clientId,
@@ -37,7 +38,7 @@ class Oauth2TokenSource implements AuthTokenSource {
     }
     if (isReturningFromAuthServer) {
       // Try to exchange the authentication code for access token as
-      // soon as possible.
+      // soon as possible, not awaiting the result.
       this.getCurrentToken()
     }
   }

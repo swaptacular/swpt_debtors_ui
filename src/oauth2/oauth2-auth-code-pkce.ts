@@ -7,6 +7,7 @@
 export interface Configuration {
   authorizationUrl: URL;
   clientId: string;
+  fetchTimeout: number,
   explicitlyExposedTokens?: string[];
   onAccessTokenExpiry: (refreshAccessToken: () => Promise<AccessContext>) => Promise<AccessContext>;
   onInvalidGrant: (refreshAuthCodeOrRefreshToken: () => Promise<never>) => void;
@@ -165,6 +166,28 @@ export const RECOMMENDED_STATE_LENGTH = 32;
  * Character set to generate code verifier defined in rfc7636.
  */
 const PKCE_CHARSET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+
+
+/**
+ * Add `timeout` to fetch's options.
+ */
+async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number }) {
+  const { timeout } = options;
+
+  if (timeout === undefined) {
+    return await fetch(resource, options);
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  const response = await fetch(resource, {
+    ...options,
+    signal: controller.signal
+  });
+  clearTimeout(timeoutId);
+
+  return response;
+}
 
 /**
  * OAuth 2.0 client that ONLY supports authorization code flow, with PKCE.
@@ -341,12 +364,13 @@ export class OAuth2AuthCodePKCE {
       body = `${url}&${OAuth2AuthCodePKCE.objectToQueryString(extraRefreshParams)}`
     }
 
-    return fetch(url, {
+    return fetchWithTimeout(url, {
       method: 'POST',
       body,
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
-      }
+      },
+      timeout: this.config.fetchTimeout,
     })
       .then(res => res.status >= 400 ? res.json().then(data => Promise.reject(data)) : res.json())
       .then((json) => {
@@ -494,12 +518,13 @@ export class OAuth2AuthCodePKCE {
       + `client_id=${encodeURIComponent(clientId)}&`
       + `code_verifier=${codeVerifier}`;
 
-    return fetch(url, {
+    return fetchWithTimeout(url, {
       method: 'POST',
       body,
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
-      }
+      },
+      timeout: this.config.fetchTimeout,
     })
       .then(res => {
         const jsonPromise = res.json()
