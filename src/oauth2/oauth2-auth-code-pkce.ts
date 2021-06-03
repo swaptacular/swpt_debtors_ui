@@ -123,8 +123,8 @@ export function fromWWWAuthenticateHeaderStringToObject(a: string): ErrorWWWAuth
   const obj = a
     .slice("Bearer ".length)
     .replace(/"/g, '')
-    .split(', ')
-    .map(tokens => { const [k, v] = tokens.split('='); return { [k]: v }; })
+    .split(',')
+    .map(tokens => { const [k, v] = tokens.split('='); return { [k.trim()]: v.trim() }; })
     .reduce((a, c) => ({ ...a, ...c }), {});
 
   return { realm: obj.realm, error: obj.error };
