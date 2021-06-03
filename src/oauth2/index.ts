@@ -22,12 +22,10 @@ class Oauth2TokenSource implements AuthTokenSource {
       throw new Error(message)
     },
     onInvalidGrant(_redirectToAuthServer) {
-      // This function is called when the authorization code can not
-      // be exchanged for a token due to invalid grant. If
-      // `_redirectToAuthServer` is called it will redirect to the
-      // authentication server's login page. In our case, we just show
-      // an error.
-      alert('An unexpected authentication error has occurred. Please, try again later.')
+      // This function is called when an access token can not be
+      // obtained due to invalid grant. If `_redirectToAuthServer` is
+      // called it will redirect to the authentication server's login
+      // page. In our case, we just do nothing.
     }
   })
 

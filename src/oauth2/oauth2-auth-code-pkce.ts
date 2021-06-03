@@ -290,7 +290,7 @@ export class OAuth2AuthCodePKCE {
   private async exchangeAuthorizationCodeForAccessToken(): Promise<AccessContext> {
     let error;
     let state = this.recoverState();
-    const { clientId, onInvalidGrant, redirectUrl, explicitlyExposedTokens, fetchTimeout } = this.config;
+    const { clientId, onInvalidGrant, redirectUrl, explicitlyExposedTokens, tokenUrl, fetchTimeout } = this.config;
 
     try {
       const { authorizationCode, codeVerifier } = state;
@@ -300,9 +300,12 @@ export class OAuth2AuthCodePKCE {
         + `client_id=${encodeURIComponent(clientId)}&`
         + `code_verifier=${codeVerifier || ''}`;
 
-      const response = await fetchWithTimeout(this.config.tokenUrl, {
+      const response = await fetchWithTimeout(tokenUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json',
+        },
         timeout: fetchTimeout,
         body,
       });
@@ -356,90 +359,73 @@ export class OAuth2AuthCodePKCE {
   /**
    * Refresh an access token from the remote service.
    *
-   * TODO: This method currently does not work and should not be used.
    */
-  private exchangeRefreshTokenForAccessToken(): Promise<AccessContext> {
-    const state = this.recoverState()
-    const { refreshToken } = state;
-    const { extraRefreshParams, clientId, tokenUrl } = this.config;
+  private async exchangeRefreshTokenForAccessToken(): Promise<AccessContext> {
+    let error;
+    let state = this.recoverState()
+    const { extraRefreshParams, clientId, tokenUrl, explicitlyExposedTokens, onInvalidGrant, fetchTimeout } = this.config;
 
-    if (!refreshToken) {
-      console.warn('No refresh token is present.');
-    }
+    try {
+      const { refreshToken } = state;
+      let body = `grant_type=refresh_token&`
+        + `refresh_token=${refreshToken?.value || ''}&`
+        + `client_id=${clientId}`;
 
-    const url = tokenUrl;
-    let body = `grant_type=refresh_token&`
-      + `refresh_token=${refreshToken?.value}&`
-      + `client_id=${clientId}`;
+      if (extraRefreshParams) {
+        body += `&${OAuth2AuthCodePKCE.objectToQueryString(extraRefreshParams)}`
+      }
 
-    if (extraRefreshParams) {
-      body = `${url}&${OAuth2AuthCodePKCE.objectToQueryString(extraRefreshParams)}`
-    }
-
-    return fetchWithTimeout(url, {
-      method: 'POST',
-      body,
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      timeout: this.config.fetchTimeout,
-    })
-      .then(res => res.status >= 400 ? res.json().then(data => Promise.reject(data)) : res.json())
-      .then((json) => {
-        const { access_token, expires_in, refresh_token, scope } = json;
-        const { explicitlyExposedTokens } = this.config;
-        let scopes = [];
-        let tokensToExpose = {};
-
-        const accessToken: AccessToken = {
-          value: access_token,
-          expiry: (new Date(Date.now() + (parseInt(expires_in) * 1000))).toString()
-        };
-        state.accessToken = accessToken;
-
-        if (refresh_token) {
-          const refreshToken: RefreshToken = {
-            value: refresh_token
-          };
-          state.refreshToken = refreshToken;
-        }
-
-        if (explicitlyExposedTokens) {
-          tokensToExpose = Object.fromEntries(
-            explicitlyExposedTokens
-              .map((tokenName: string): [string, string | undefined] => [tokenName, json[tokenName]])
-              .filter(([_, tokenValue]: [string, string | undefined]) => tokenValue !== undefined)
-          );
-          state.explicitlyExposedTokens = tokensToExpose;
-        }
-
-        if (scope) {
-          // Multiple scopes are passed and delimited by spaces,
-          // despite using the singular name "scope".
-          scopes = scope.split(' ');
-          state.scopes = scopes;
-        }
-
-        localStorage.setItem(LOCALSTORAGE_STATE, JSON.stringify(state));
-
-        let accessContext: AccessContext = { token: accessToken, scopes };
-        if (explicitlyExposedTokens) {
-          accessContext.explicitlyExposedTokens = tokensToExpose;
-        }
-        return accessContext;
-      })
-      .catch(data => {
-        const { onInvalidGrant } = this.config;
-        const error = data.error || 'There was a network error.';
-        switch (error) {
-          case 'invalid_grant':
-            onInvalidGrant(() => this.fetchAuthorizationCode());
-            break;
-          default:
-            break;
-        }
-        return Promise.reject(createErrorInstance(error));
+      const response = await fetchWithTimeout(tokenUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json',
+        },
+        timeout: fetchTimeout,
+        body,
       });
+
+      state.refreshToken = undefined;
+
+      if (!response.ok) {
+        try {
+          error = (await response.json())?.error;
+        } catch {
+          error = 'invalid_json';
+        }
+        throw createErrorInstance(error);
+      }
+
+      const json = await response.json();
+      const extractTokens = (tokenNames: string[]): ObjStringDict => Object.fromEntries(tokenNames
+        .map((name) => [name, json[name]])
+        .filter(([_name, value]) => value !== undefined)
+      );
+      const { access_token, expires_in, refresh_token, scope } = json;
+
+      state = {
+        ...state,
+        accessToken: {
+          value: String(access_token),
+          expiry: (new Date(Date.now() + (Number(expires_in) * 1000))).toString(),
+        },
+        refreshToken: refresh_token ? { value: String(refresh_token) } : undefined,
+        scopes: scope ? String(scope).split(' ') : undefined,
+        explicitlyExposedTokens: explicitlyExposedTokens ? extractTokens(explicitlyExposedTokens) : undefined,
+      }
+
+      return {
+        token: state.accessToken,
+        scopes: state.scopes,
+        explicitlyExposedTokens: state.explicitlyExposedTokens,
+      };
+
+    } finally {
+      this.setState(state);
+      if (error === 'invalid_grant') {
+        onInvalidGrant(() => this.fetchAuthorizationCode());
+      }
+    }
   }
 
   private recoverState(): State {
