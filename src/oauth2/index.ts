@@ -60,13 +60,13 @@ class Oauth2TokenSource implements AuthTokenSource {
   }
 
   logout(): void {
-    this.helper.reset()
+    this.helper.resetState()
   }
 
   private async getCurrentToken(): Promise<string | undefined> {
     let accessContext
     try {
-      accessContext = await this.helper.getAccessToken()
+      accessContext = await this.helper.getAccessContext()
     } catch {
       return
     }

@@ -84,14 +84,6 @@ class InvalidClient extends AccessTokenResponseError { name = 'InvalidClient'; }
 class InvalidGrant extends AccessTokenResponseError { name = 'InvalidGrant'; }
 class UnsupportedGrantType extends AccessTokenResponseError { name = 'UnsupportedGrantType'; }
 
-/**
- * WWW-Authenticate error object structure for less error prone handling.
- */
-export type ErrorWWWAuthenticate = {
-  realm: string;
-  error: string;
-}
-
 export const RawErrorToErrorClassMap: { [_: string]: any } = {
   invalid_request: InvalidRequest,
   invalid_grant: InvalidGrant,
@@ -112,22 +104,6 @@ export const RawErrorToErrorClassMap: { [_: string]: any } = {
  */
 export function toErrorClass(rawError: string): OAuth2Error {
   return new (RawErrorToErrorClassMap[rawError] || UnknownError)();
-}
-
-/**
- * A convience function to turn, for example, `Bearer realm="bity.com", 
- * error="invalid_client"` into `{ realm: "bity.com", error: "invalid_client"
- * }`.
- */
-export function fromWWWAuthenticateHeaderStringToObject(a: string): ErrorWWWAuthenticate {
-  const obj = a
-    .slice("Bearer ".length)
-    .replace(/"/g, '')
-    .split(',')
-    .map(tokens => { const [k, v] = tokens.split('='); return { [k.trim()]: v.trim() }; })
-    .reduce((a, c) => ({ ...a, ...c }), {});
-
-  return { realm: obj.realm, error: obj.error };
 }
 
 /**
@@ -190,7 +166,7 @@ async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { 
  */
 export class OAuth2AuthCodePKCE {
   private config: Configuration;
-  private authorizationCodeForAccessTokenRequest?: Promise<AccessContext>;
+  private accessContextPromise?: Promise<AccessContext>;
 
   constructor(config: Configuration) {
     this.config = config;
@@ -268,7 +244,7 @@ export class OAuth2AuthCodePKCE {
    * function. This is because sometimes not using the refresh token facilities
    * is easier.
    */
-  public getAccessToken(): Promise<AccessContext> {
+  public getAccessContext(): Promise<AccessContext> {
     const { onAccessTokenExpiry } = this.config;
 
     // This reads the current state from the local storage, which
@@ -284,22 +260,29 @@ export class OAuth2AuthCodePKCE {
       scopes
     } = this.recoverState();
 
-    // We use `this.authorizationCodeForAccessTokenRequest` to allow
-    // several parallel `getAccessToken()` calls to reuse the same
-    // promise, instead of making multiple requests to the auth server
-    // (of which only the first would successfully obtain a token).
-    if (this.authorizationCodeForAccessTokenRequest) {
-      return this.authorizationCodeForAccessTokenRequest;
+    // We use `this.accessContextPromise` to allow several parallel
+    // `getAccessContext()` calls to reuse the same promise, instead
+    // of making multiple requests to the auth server (of which only
+    // the first would successfully obtain a token).
+    if (this.accessContextPromise) {
+      return this.accessContextPromise;
     }
 
     if (authorizationCode) {
-      this.authorizationCodeForAccessTokenRequest = this.exchangeAuthorizationCodeForAccessToken();
-      return this.authorizationCodeForAccessTokenRequest;
+      const p = this.accessContextPromise = this.exchangeAuthorizationCodeForAccessToken();
+      p.finally(() => {
+        this.accessContextPromise = undefined
+      })
+      return p;
     }
 
     // Depending on the server (and config), refreshToken may not be available.
     if (refreshToken && OAuth2AuthCodePKCE.isAccessTokenExpired(accessToken)) {
-      return onAccessTokenExpiry(() => this.exchangeRefreshTokenForAccessToken());
+      const p = this.accessContextPromise = onAccessTokenExpiry(() => this.exchangeRefreshTokenForAccessToken());
+      p.finally(() => {
+        this.accessContextPromise = undefined
+      })
+      return p;
     }
 
     return Promise.resolve({
@@ -321,9 +304,8 @@ export class OAuth2AuthCodePKCE {
   /**
    * Resets the state of the client. Equivalent to "logging out" the user.
    */
-  public reset(): State {
+  public resetState(): State {
     const state = {}
-    this.authorizationCodeForAccessTokenRequest = undefined;
     this.setState(state);
     return state
   }
@@ -333,50 +315,39 @@ export class OAuth2AuthCodePKCE {
    * authorization grant code for any reason, but this is non-standard usage.
    */
   private async exchangeAuthorizationCodeForAccessToken(): Promise<AccessContext> {
+    let error;
     let state = this.recoverState();
-    const { authorizationCode, codeVerifier } = state;
     const { clientId, onInvalidGrant, redirectUrl, explicitlyExposedTokens, fetchTimeout } = this.config;
 
-    const body = `grant_type=authorization_code&`
-      + `code=${encodeURIComponent(authorizationCode || '')}&`
-      + `redirect_uri=${encodeURIComponent(redirectUrl)}&`
-      + `client_id=${encodeURIComponent(clientId)}&`
-      + `code_verifier=${codeVerifier || ''}`;
-
-    let response;
     try {
-      response = await fetchWithTimeout(this.config.tokenUrl, {
+      const { authorizationCode, codeVerifier } = state;
+      const body = `grant_type=authorization_code&`
+        + `code=${encodeURIComponent(authorizationCode || '')}&`
+        + `redirect_uri=${encodeURIComponent(redirectUrl)}&`
+        + `client_id=${encodeURIComponent(clientId)}&`
+        + `code_verifier=${codeVerifier || ''}`;
+
+      const response = await fetchWithTimeout(this.config.tokenUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         timeout: fetchTimeout,
         body,
       });
 
-    } finally {
-      this.authorizationCodeForAccessTokenRequest = undefined;
-    }
+      state.authorizationCode = undefined;
+      state.codeChallenge = undefined;
+      state.codeVerifier = undefined;
+      state.stateQueryParam = undefined;
 
-    state.authorizationCode = undefined;
-    state.codeChallenge = undefined;
-    state.codeVerifier = undefined;
-    state.stateQueryParam = undefined;
-
-    if (!response.ok) {
-      this.setState(state);
-
-      let error;
-      try {
-        error = (await response.json())?.error;
-      } catch {
-        error = 'invalid_json';
+      if (!response.ok) {
+        try {
+          error = (await response.json())?.error;
+        } catch {
+          error = 'invalid_json';
+        }
+        throw toErrorClass(error);
       }
-      if (error === 'invalid_grant') {
-        onInvalidGrant(() => this.fetchAuthorizationCode());
-      }
-      throw toErrorClass(error);
-    }
 
-    try {
       const json = await response.json();
       const extractTokens = (tokenNames: string[]): ObjStringDict => Object.fromEntries(tokenNames
         .map((name) => [name, json[name]])
@@ -395,15 +366,18 @@ export class OAuth2AuthCodePKCE {
         explicitlyExposedTokens: explicitlyExposedTokens ? extractTokens(explicitlyExposedTokens) : undefined,
       }
 
+      return {
+        token: state.accessToken,
+        scopes: state.scopes,
+        explicitlyExposedTokens: state.explicitlyExposedTokens,
+      };
+
     } finally {
       this.setState(state);
+      if (error === 'invalid_grant') {
+        onInvalidGrant(() => this.fetchAuthorizationCode());
+      }
     }
-
-    return {
-      token: state.accessToken,
-      scopes: state.scopes,
-      explicitlyExposedTokens: state.explicitlyExposedTokens,
-    };
   }
 
   /**
@@ -498,9 +472,14 @@ export class OAuth2AuthCodePKCE {
   private recoverState(): State {
     const s = localStorage.getItem(LOCALSTORAGE_STATE) || '{}';
     try {
-      return JSON.parse(s);
+      const state = JSON.parse(s);
+      if (typeof state !== 'object') {
+        throw new TypeError();
+      }
+      return state
+
     } catch {
-      return this.reset()
+      return this.resetState()
     }
   }
 
