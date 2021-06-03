@@ -179,7 +179,7 @@ export class OAuth2AuthCodePKCE {
    * doesn't return because of the redirect behavior (uses `location.replace`).
    */
   public async fetchAuthorizationCode(): Promise<never> {
-    const { clientId, extraAuthorizationParams, redirectUrl, scopes } = this.config;
+    const { clientId, extraAuthorizationParams, redirectUrl, scopes, authorizationUrl } = this.config;
     const { codeChallenge, codeVerifier } = await OAuth2AuthCodePKCE.generatePKCECodes();
     const stateQueryParam = OAuth2AuthCodePKCE.generateRandomState(RECOMMENDED_STATE_LENGTH);
 
@@ -190,7 +190,7 @@ export class OAuth2AuthCodePKCE {
       stateQueryParam,
     });
 
-    let url = this.config.authorizationUrl
+    let url = authorizationUrl
       + `?response_type=code&`
       + `client_id=${encodeURIComponent(clientId)}&`
       + `redirect_uri=${encodeURIComponent(redirectUrl)}&`
