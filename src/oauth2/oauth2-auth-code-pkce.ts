@@ -31,6 +31,7 @@ export type State = {
 
 export type RefreshToken = {
   value: string;
+  obtainedAt: string;
 };
 
 export type AccessToken = {
@@ -246,7 +247,10 @@ export class OAuth2AuthCodePKCE {
     }
 
     // Depending on the server (and config), refreshToken may not be available.
-    if (refreshToken && OAuth2AuthCodePKCE.isAccessTokenExpired(accessToken)) {
+    if (
+      OAuth2AuthCodePKCE.isUsableRefreshToken(refreshToken) &&
+      OAuth2AuthCodePKCE.isAccessTokenExpired(accessToken)
+    ) {
       const p = this.accessContextPromise = onAccessTokenExpiry(() => this.exchangeRefreshTokenForAccessToken());
       p.finally(() => {
         this.accessContextPromise = undefined
@@ -337,7 +341,10 @@ export class OAuth2AuthCodePKCE {
           value: String(access_token),
           expiry: (new Date(Date.now() + (Number(expires_in) * 1000))).toString(),
         },
-        refreshToken: refresh_token ? { value: String(refresh_token) } : undefined,
+        refreshToken: refresh_token ? {
+          value: String(refresh_token),
+          obtainedAt: new Date().toString(),
+        } : undefined,
         scopes: scope ? String(scope).split(' ') : undefined,
         explicitlyExposedTokens: explicitlyExposedTokens ? extractTokens(explicitlyExposedTokens) : undefined,
       }
@@ -358,7 +365,6 @@ export class OAuth2AuthCodePKCE {
 
   /**
    * Refresh an access token from the remote service.
-   *
    */
   private async exchangeRefreshTokenForAccessToken(): Promise<AccessContext> {
     let error;
@@ -409,7 +415,10 @@ export class OAuth2AuthCodePKCE {
           value: String(access_token),
           expiry: (new Date(Date.now() + (Number(expires_in) * 1000))).toString(),
         },
-        refreshToken: refresh_token ? { value: String(refresh_token) } : undefined,
+        refreshToken: refresh_token ? {
+          value: String(refresh_token),
+          obtainedAt: new Date().toString(),
+        } : undefined,
         scopes: scope ? String(scope).split(' ') : undefined,
         explicitlyExposedTokens: explicitlyExposedTokens ? extractTokens(explicitlyExposedTokens) : undefined,
       }
@@ -460,6 +469,19 @@ export class OAuth2AuthCodePKCE {
 
   private static isAccessTokenExpired(accessToken?: AccessToken): boolean {
     return Boolean(!accessToken || (new Date()) >= (new Date(accessToken.expiry)));
+  }
+
+  private static isUsableRefreshToken(refreshToken?: RefreshToken): boolean {
+    if (!refreshToken) {
+      return false;
+    }
+    const millisecondsSinceObtained = Date.now() - new Date(refreshToken.obtainedAt).getTime()
+
+    // It is not allowed to use the refresh token less than 1 minute
+    // since it has been obtained. This prevents the scenario when new
+    // tokens are obtained too frequently, possibly in an infinite
+    // cycle.
+    return millisecondsSinceObtained >= 60000
   }
 
   private static extractParamFromUrl(url: string, param: string): string {
