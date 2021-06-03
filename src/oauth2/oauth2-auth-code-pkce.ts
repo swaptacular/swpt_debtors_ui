@@ -49,6 +49,7 @@ export type AccessContext = {
 type ObjStringDict = { [_: string]: string };
 
 export class OAuth2Error extends Error { name = 'OAuth2Error'; }
+
 class UnknownError extends OAuth2Error { name = 'UnknownError'; }
 class InvalidJson extends OAuth2Error { name = 'InvalidJson'; }
 class InvalidScope extends OAuth2Error { name = 'InvalidScope'; }
@@ -86,12 +87,12 @@ export const ERROR_STRING_TO_ERROR_CLASS_MAP: { [_: string]: new (message?: stri
 /**
  * Translate the raw error strings returned from the server into error classes.
  */
-export function createErrorInstance(rawError: string): OAuth2Error {
+function createErrorInstance(rawError: string): OAuth2Error {
   return new (ERROR_STRING_TO_ERROR_CLASS_MAP[rawError] || UnknownError)();
 }
 
-export const LOCALSTORAGE_ID = `oauth2authcodepkce`;
-export const LOCALSTORAGE_STATE = `${LOCALSTORAGE_ID}-state`;
+const LOCALSTORAGE_ID = `oauth2authcodepkce`;
+const LOCALSTORAGE_STATE = `${LOCALSTORAGE_ID}-state`;
 
 /**
  * The maximum length for a code verifier for the best security we can offer.
@@ -100,12 +101,12 @@ export const LOCALSTORAGE_STATE = `${LOCALSTORAGE_ID}-state`;
  * encoded will be 43 bytes, or 96 bytes encoded will be 128 bytes. So 96 bytes
  * is the highest valid value that can be used.
  */
-export const RECOMMENDED_CODE_VERIFIER_LENGTH = 96;
+const RECOMMENDED_CODE_VERIFIER_LENGTH = 96;
 
 /**
  * A sensible length for the state's length, for anti-csrf.
  */
-export const RECOMMENDED_STATE_LENGTH = 32;
+const RECOMMENDED_STATE_LENGTH = 32;
 
 /**
  * Character set to generate code verifier defined in rfc7636.
