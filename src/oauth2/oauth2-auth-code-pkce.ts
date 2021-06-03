@@ -293,6 +293,11 @@ export class OAuth2AuthCodePKCE {
     });
   }
 
+  /**
+   * Forgets the current access token if its value equals the passed
+   * value. This is useful when we know that the given token is
+   * already useless.
+   */
   public invalidateAccessToken(tokenValue: string) {
     const state = this.recoverState()
     if (state.accessToken?.value === tokenValue) {
