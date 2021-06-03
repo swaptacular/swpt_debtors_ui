@@ -488,7 +488,7 @@ export class OAuth2AuthCodePKCE {
    */
   private async exchangeAuthorizationCodeForAccessToken(): Promise<AccessContext> {
     const { authorizationCode, codeVerifier } = this.state;
-    const { clientId, onInvalidGrant, redirectUrl, explicitlyExposedTokens } = this.config;
+    const { clientId, onInvalidGrant, redirectUrl, explicitlyExposedTokens, fetchTimeout } = this.config;
 
     const body = `grant_type=authorization_code&`
       + `code=${encodeURIComponent(authorizationCode || '')}&`
@@ -499,12 +499,12 @@ export class OAuth2AuthCodePKCE {
     const response = await fetchWithTimeout(this.config.tokenUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      timeout: this.config.fetchTimeout,
+      timeout: fetchTimeout,
       body,
     });
 
-    this.state.authorizationCode = undefined;
     this.authorizationCodeForAccessTokenRequest = undefined;
+    this.state.authorizationCode = undefined;
     this.state.codeChallenge = undefined;
     this.state.codeVerifier = undefined;
     this.state.stateQueryParam = undefined;
