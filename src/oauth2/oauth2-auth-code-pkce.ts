@@ -46,7 +46,7 @@ export type AccessContext = {
   refreshToken?: RefreshToken;
 };
 
-type ObjStringDict = { [_: string]: string };
+export type ObjStringDict = { [_: string]: string };
 
 export class OAuth2Error extends Error { name = 'OAuth2Error'; }
 
@@ -69,7 +69,7 @@ class InvalidClient extends AccessTokenResponseError { name = 'InvalidClient'; }
 class InvalidGrant extends AccessTokenResponseError { name = 'InvalidGrant'; }
 class UnsupportedGrantType extends AccessTokenResponseError { name = 'UnsupportedGrantType'; }
 
-export const ERROR_STRING_TO_ERROR_CLASS_MAP: { [_: string]: new (message?: string) => Error } = {
+const ERROR_STRING_TO_ERROR_CLASS_MAP: { [_: string]: new (message?: string) => Error } = {
   invalid_request: InvalidRequest,
   invalid_grant: InvalidGrant,
   unauthorized_client: UnauthorizedClient,
