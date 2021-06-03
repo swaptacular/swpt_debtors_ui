@@ -4,7 +4,7 @@ import type { AuthTokenSource, GetTokenOptions } from '../server-api/index.js'
 
 class Oauth2TokenSource implements AuthTokenSource {
   private helper = new OAuth2AuthCodePKCE({
-    fetchTimeout: appConfig.serverApiTimeout,
+    fetchTimeout: 2 * appConfig.serverApiTimeout,
     authorizationUrl: appConfig.oauth2.authorizationUrl,
     tokenUrl: appConfig.oauth2.tokenUrl,
     clientId: appConfig.oauth2.clientId,
