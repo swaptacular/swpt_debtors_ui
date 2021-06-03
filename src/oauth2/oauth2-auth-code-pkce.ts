@@ -129,9 +129,7 @@ export function toErrorClass(rawError: string): ErrorOAuth2 {
  * error="invalid_client"` into `{ realm: "bity.com", error: "invalid_client"
  * }`.
  */
-export function fromWWWAuthenticateHeaderStringToObject(
-  a: string
-): ErrorWWWAuthenticate {
+export function fromWWWAuthenticateHeaderStringToObject(a: string): ErrorWWWAuthenticate {
   const obj = a
     .slice("Bearer ".length)
     .replace(/"/g, '')
@@ -201,14 +199,12 @@ async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { 
  * For others, review this class's methods.
  */
 export class OAuth2AuthCodePKCE {
-  private config!: Configuration;
-  private state: State = {};
+  private config: Configuration;
   private authorizationCodeForAccessTokenRequest?: Promise<AccessContext>;
 
   constructor(config: Configuration) {
     this.config = config;
     this.recoverState();
-    return this;
   }
 
   /**
@@ -222,21 +218,19 @@ export class OAuth2AuthCodePKCE {
       throw toErrorClass(error);
     }
 
-    const code = OAuth2AuthCodePKCE.extractParamFromUrl(location.href, 'code');
-    if (!code) {
+    const authorizationCode = OAuth2AuthCodePKCE.extractParamFromUrl(location.href, 'code');
+    if (!authorizationCode) {
       return false;
     }
 
-    const state = JSON.parse(localStorage.getItem(LOCALSTORAGE_STATE) || '{}');
-
+    const state = this.recoverState()
     const stateQueryParam = OAuth2AuthCodePKCE.extractParamFromUrl(location.href, 'state');
     if (stateQueryParam !== state.stateQueryParam) {
-      console.warn("state query string parameter doesn't match the one sent! Possible malicious activity somewhere.");
+      console.warn("State query string parameter doesn't match the one sent. Possible malicious activity somewhere.");
       throw new ErrorInvalidReturnedStateParam();
     }
 
-    state.authorizationCode = code;
-    this.setState(state);
+    this.setState({ ...state, authorizationCode });
     return true;
   }
 
@@ -248,23 +242,17 @@ export class OAuth2AuthCodePKCE {
    * parameters during the authorization code fetching process, usually for
    * values which need to change at run-time.
    */
-  public async fetchAuthorizationCode(oneTimeParams?: ObjStringDict): Promise<never> {
-    this.assertStateAndConfigArePresent();
-
+  public async fetchAuthorizationCode(): Promise<never> {
     const { clientId, extraAuthorizationParams, redirectUrl, scopes } = this.config;
-    const { codeChallenge, codeVerifier } = await OAuth2AuthCodePKCE
-      .generatePKCECodes();
-    const stateQueryParam = OAuth2AuthCodePKCE
-      .generateRandomState(RECOMMENDED_STATE_LENGTH);
+    const { codeChallenge, codeVerifier } = await OAuth2AuthCodePKCE.generatePKCECodes();
+    const stateQueryParam = OAuth2AuthCodePKCE.generateRandomState(RECOMMENDED_STATE_LENGTH);
 
-    this.state = {
-      ...this.state,
+    this.setState({
+      ...this.recoverState(),
       codeChallenge,
       codeVerifier,
       stateQueryParam,
-    };
-
-    localStorage.setItem(LOCALSTORAGE_STATE, JSON.stringify(this.state));
+    });
 
     let url = this.config.authorizationUrl
       + `?response_type=code&`
@@ -275,13 +263,8 @@ export class OAuth2AuthCodePKCE {
       + `code_challenge=${encodeURIComponent(codeChallenge)}&`
       + `code_challenge_method=S256`;
 
-    if (extraAuthorizationParams || oneTimeParams) {
-      const extraParameters: ObjStringDict = {
-        ...extraAuthorizationParams,
-        ...oneTimeParams
-      };
-
-      url = `${url}&${OAuth2AuthCodePKCE.objectToQueryString(extraParameters)}`
+    if (extraAuthorizationParams) {
+      url += `&${OAuth2AuthCodePKCE.objectToQueryString(extraAuthorizationParams)}`
     }
 
     location.replace(url);
@@ -296,30 +279,25 @@ export class OAuth2AuthCodePKCE {
    * is easier.
    */
   public getAccessToken(): Promise<AccessContext> {
-    // TODO: This reads the current state from the local storage,
-    // which fixes the most annoying problems when two instances of
-    // the app run together and update the current state. A real fix
-    // would be to use indexedDB to store the state, and perform every
-    // state change in a transaction.
-    this.recoverState()
-
-    this.assertStateAndConfigArePresent();
-
     const { onAccessTokenExpiry } = this.config;
+
+    // This reads the current state from the local storage, which
+    // fixes the most annoying problems when two instances of the app
+    // run together and update the current state. A real fix would be
+    // to use indexedDB to store the state, and perform every state
+    // change in a transaction.
     const {
       accessToken,
       authorizationCode,
       explicitlyExposedTokens,
       refreshToken,
       scopes
-    } = this.state;
+    } = this.recoverState();
 
     // We use `this.authorizationCodeForAccessTokenRequest` to allow
     // several parallel `getAccessToken()` calls to reuse the same
     // promise, instead of making multiple requests to the auth server
-    // (of which only the first would successfully obtain a
-    // token). TODO: we probably have to use the same trick when using
-    // the refresh token.
+    // (of which only the first would successfully obtain a token).
     if (this.authorizationCodeForAccessTokenRequest) {
       return this.authorizationCodeForAccessTokenRequest;
     }
@@ -330,7 +308,7 @@ export class OAuth2AuthCodePKCE {
     }
 
     // Depending on the server (and config), refreshToken may not be available.
-    if (refreshToken && this.isAccessTokenExpired()) {
+    if (refreshToken && OAuth2AuthCodePKCE.isAccessTokenExpired(accessToken)) {
       return onAccessTokenExpiry(() => this.exchangeRefreshTokenForAccessToken());
     }
 
@@ -343,13 +321,116 @@ export class OAuth2AuthCodePKCE {
   }
 
   /**
+   * Checks to see if the access token has expired.
+   */
+  static isAccessTokenExpired(accessToken?: AccessToken): boolean {
+    return Boolean(!accessToken || (new Date()) >= (new Date(accessToken.expiry)));
+  }
+
+  public invalidateAccessToken(tokenValue: string) {
+    const state = this.recoverState()
+    if (state.accessToken?.value === tokenValue) {
+      this.setState({ ...state, accessToken: undefined })
+    }
+  }
+
+  /**
+   * Resets the state of the client. Equivalent to "logging out" the user.
+   */
+  public reset(): State {
+    const state = {}
+    this.authorizationCodeForAccessTokenRequest = undefined;
+    this.setState(state);
+    return state
+  }
+
+  /**
+   * Fetch an access token from the remote service. You may pass a custom
+   * authorization grant code for any reason, but this is non-standard usage.
+   */
+  private async exchangeAuthorizationCodeForAccessToken(): Promise<AccessContext> {
+    let state = this.recoverState();
+    const { authorizationCode, codeVerifier } = state;
+    const { clientId, onInvalidGrant, redirectUrl, explicitlyExposedTokens, fetchTimeout } = this.config;
+
+    const body = `grant_type=authorization_code&`
+      + `code=${encodeURIComponent(authorizationCode || '')}&`
+      + `redirect_uri=${encodeURIComponent(redirectUrl)}&`
+      + `client_id=${encodeURIComponent(clientId)}&`
+      + `code_verifier=${codeVerifier || ''}`;
+
+    let response;
+    try {
+      response = await fetchWithTimeout(this.config.tokenUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        timeout: fetchTimeout,
+        body,
+      });
+
+    } finally {
+      this.authorizationCodeForAccessTokenRequest = undefined;
+    }
+
+    state.authorizationCode = undefined;
+    state.codeChallenge = undefined;
+    state.codeVerifier = undefined;
+    state.stateQueryParam = undefined;
+
+    if (!response.ok) {
+      this.setState(state);
+
+      let error;
+      try {
+        error = (await response.json())?.error;
+      } catch {
+        error = 'invalid_json';
+      }
+      if (error === 'invalid_grant') {
+        onInvalidGrant(() => this.fetchAuthorizationCode());
+      }
+      throw toErrorClass(error);
+    }
+
+    try {
+      const json = await response.json();
+      const extractTokens = (tokenNames: string[]): ObjStringDict => Object.fromEntries(tokenNames
+        .map((name) => [name, json[name]])
+        .filter(([_name, value]) => value !== undefined)
+      );
+      const { access_token, expires_in, refresh_token, scope } = json;
+
+      state = {
+        ...state,
+        accessToken: {
+          value: String(access_token),
+          expiry: (new Date(Date.now() + (Number(expires_in) * 1000))).toString(),
+        },
+        refreshToken: refresh_token ? { value: String(refresh_token) } : undefined,
+        scopes: scope ? String(scope).split(' ') : undefined,
+        explicitlyExposedTokens: explicitlyExposedTokens ? extractTokens(explicitlyExposedTokens) : undefined,
+      }
+
+    } finally {
+      this.setState(state);
+    }
+
+    return {
+      token: state.accessToken,
+      scopes: state.scopes,
+      explicitlyExposedTokens: state.explicitlyExposedTokens,
+    };
+  }
+
+  /**
    * Refresh an access token from the remote service.
    */
   public exchangeRefreshTokenForAccessToken(): Promise<AccessContext> {
-    this.assertStateAndConfigArePresent();
+    // TODO: This method currently does not work and can not be used.
 
+    const state = this.recoverState()
+    const { refreshToken } = state;
     const { extraRefreshParams, clientId, tokenUrl } = this.config;
-    const { refreshToken } = this.state;
 
     if (!refreshToken) {
       console.warn('No refresh token is present.');
@@ -383,13 +464,13 @@ export class OAuth2AuthCodePKCE {
           value: access_token,
           expiry: (new Date(Date.now() + (parseInt(expires_in) * 1000))).toString()
         };
-        this.state.accessToken = accessToken;
+        state.accessToken = accessToken;
 
         if (refresh_token) {
           const refreshToken: RefreshToken = {
             value: refresh_token
           };
-          this.state.refreshToken = refreshToken;
+          state.refreshToken = refreshToken;
         }
 
         if (explicitlyExposedTokens) {
@@ -398,17 +479,17 @@ export class OAuth2AuthCodePKCE {
               .map((tokenName: string): [string, string | undefined] => [tokenName, json[tokenName]])
               .filter(([_, tokenValue]: [string, string | undefined]) => tokenValue !== undefined)
           );
-          this.state.explicitlyExposedTokens = tokensToExpose;
+          state.explicitlyExposedTokens = tokensToExpose;
         }
 
         if (scope) {
           // Multiple scopes are passed and delimited by spaces,
           // despite using the singular name "scope".
           scopes = scope.split(' ');
-          this.state.scopes = scopes;
+          state.scopes = scopes;
         }
 
-        localStorage.setItem(LOCALSTORAGE_STATE, JSON.stringify(this.state));
+        localStorage.setItem(LOCALSTORAGE_STATE, JSON.stringify(state));
 
         let accessContext: AccessContext = { token: accessToken, scopes };
         if (explicitlyExposedTokens) {
@@ -430,139 +511,17 @@ export class OAuth2AuthCodePKCE {
       });
   }
 
-  /**
-   * Get the scopes that were granted by the authorization server.
-   */
-  public getGrantedScopes(): Scopes | undefined {
-    return this.state.scopes;
-  }
-
-  /**
-   * Tells if the client is authorized or not. This means the client has at
-   * least once successfully fetched an access token. The access token could be
-   * expired.
-   */
-  public isAuthorized(): boolean {
-    return !!this.state.accessToken;
-  }
-
-  /**
-   * Checks to see if the access token has expired.
-   */
-  public isAccessTokenExpired(): boolean {
-    const { accessToken } = this.state;
-    return Boolean(!accessToken || (new Date()) >= (new Date(accessToken.expiry)));
-  }
-
-  public invalidateAccessToken(tokenValue: string) {
-    this.recoverState()
-    const state = this.state
-    if (state.accessToken?.value === tokenValue) {
-      state.accessToken = undefined
-    }
-    this.setState(state)
-  }
-
-  /**
-   * Resets the state of the client. Equivalent to "logging out" the user.
-   */
-  public reset() {
-    this.setState({});
-    this.authorizationCodeForAccessTokenRequest = undefined;
-  }
-
-  /**
-   * If the state or config are missing, it means the client is in a bad state.
-   * This should never happen, but the check is there just in case.
-   */
-  private assertStateAndConfigArePresent() {
-    if (!this.state || !this.config) {
-      console.error('state:', this.state, 'config:', this.config);
-      throw new Error('state or config is not set.');
-    }
-  }
-
-  /**
-   * Fetch an access token from the remote service. You may pass a custom
-   * authorization grant code for any reason, but this is non-standard usage.
-   */
-  private async exchangeAuthorizationCodeForAccessToken(): Promise<AccessContext> {
-    const { authorizationCode, codeVerifier } = this.state;
-    const { clientId, onInvalidGrant, redirectUrl, explicitlyExposedTokens, fetchTimeout } = this.config;
-
-    const body = `grant_type=authorization_code&`
-      + `code=${encodeURIComponent(authorizationCode || '')}&`
-      + `redirect_uri=${encodeURIComponent(redirectUrl)}&`
-      + `client_id=${encodeURIComponent(clientId)}&`
-      + `code_verifier=${codeVerifier || ''}`;
-
-    const response = await fetchWithTimeout(this.config.tokenUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      timeout: fetchTimeout,
-      body,
-    });
-
-    this.authorizationCodeForAccessTokenRequest = undefined;
-    this.state.authorizationCode = undefined;
-    this.state.codeChallenge = undefined;
-    this.state.codeVerifier = undefined;
-    this.state.stateQueryParam = undefined;
-
-    if (!response.ok) {
-      localStorage.setItem(LOCALSTORAGE_STATE, JSON.stringify(this.state));
-
-      let error;
-      try {
-        error = (await response.json())?.error;
-      } catch {
-        error = 'invalid_json';
-      }
-      if (error === 'invalid_grant') {
-        onInvalidGrant(() => this.fetchAuthorizationCode());
-      }
-      throw toErrorClass(error);
-    }
-
+  private recoverState(): State {
+    const s = localStorage.getItem(LOCALSTORAGE_STATE) || '{}';
     try {
-      const json = await response.json();
-      const extractTokens = (tokenNames: string[]): ObjStringDict => Object.fromEntries(tokenNames
-        .map((name) => [name, json[name]])
-        .filter(([_name, value]) => value !== undefined)
-      );
-      const { access_token, expires_in, refresh_token, scope } = json;
-
-      this.state = {
-        ...this.state,
-        accessToken: {
-          value: String(access_token),
-          expiry: (new Date(Date.now() + (Number(expires_in) * 1000))).toString(),
-        },
-        refreshToken: refresh_token ? { value: String(refresh_token) } : undefined,
-        scopes: scope ? String(scope).split(' ') : undefined,
-        explicitlyExposedTokens: explicitlyExposedTokens ? extractTokens(explicitlyExposedTokens) : undefined,
-      }
-
-    } finally {
-      localStorage.setItem(LOCALSTORAGE_STATE, JSON.stringify(this.state));
+      return JSON.parse(s);
+    } catch {
+      return this.reset()
     }
-
-    return {
-      token: this.state.accessToken,
-      scopes: this.state.scopes,
-      explicitlyExposedTokens: this.state.explicitlyExposedTokens,
-    };
   }
 
-  private recoverState(): this {
-    this.state = JSON.parse(localStorage.getItem(LOCALSTORAGE_STATE) || '{}');
-    return this;
-  }
-
-  private setState(state: State): this {
-    this.state = state;
+  private setState(state: State) {
     localStorage.setItem(LOCALSTORAGE_STATE, JSON.stringify(state));
-    return this;
   }
 
   /**
@@ -598,9 +557,10 @@ export class OAuth2AuthCodePKCE {
    * Converts the keys and values of an object to a url query string
    */
   static objectToQueryString(dict: ObjStringDict): string {
-    return Object.entries(dict).map(
-      ([key, val]: [string, string]) => `${key}=${encodeURIComponent(val)}`
-    ).join('&');
+    return Object
+      .entries(dict)
+      .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+      .join('&');
   }
 
   /**
@@ -628,11 +588,10 @@ export class OAuth2AuthCodePKCE {
    * Generates random state to be passed for anti-csrf.
    */
   static generateRandomState(lengthOfState: number): string {
-    const output = new Uint32Array(lengthOfState);
-    crypto.getRandomValues(output);
+    const output = crypto.getRandomValues(new Uint32Array(lengthOfState));
     return Array
       .from(output)
-      .map((num: number) => PKCE_CHARSET[num % PKCE_CHARSET.length])
+      .map((n) => PKCE_CHARSET[n % PKCE_CHARSET.length])
       .join('');
   }
 }
