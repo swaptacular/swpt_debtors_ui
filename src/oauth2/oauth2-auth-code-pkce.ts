@@ -7,7 +7,7 @@
 export type Configuration = {
   authorizationUrl: string;
   clientId: string;
-  fetchTimeout: number,
+  fetchTimeout: number;
   explicitlyExposedTokens?: string[];
   onAccessTokenExpiry: (refreshAccessToken: () => Promise<AccessContext>) => Promise<AccessContext>;
   onInvalidGrant: (refreshAuthCodeOrRefreshToken: () => Promise<never>) => void;
@@ -87,9 +87,9 @@ class UnsupportedGrantType extends AccessTokenResponseError { name = 'Unsupporte
 /**
  * WWW-Authenticate error object structure for less error prone handling.
  */
-export class ErrorWWWAuthenticate {
-  public realm: string = "";
-  public error: string = "";
+export type ErrorWWWAuthenticate = {
+  realm: string;
+  error: string;
 }
 
 export const RawErrorToErrorClassMap: { [_: string]: any } = {
