@@ -11,15 +11,14 @@ class Oauth2TokenSource implements AuthTokenSource {
     redirectUrl: appConfig.oauth2.redirectUrl,
     extraAuthorizationParams: {},
     scopes: ['access'],
-    async onAccessTokenExpiry(_refreshAccessToken) {
+    async onAccessTokenExpiry(refreshAccessToken) {
       // This function is called when the access token has expired,
-      // and there is a refresh token. If the result of
-      // `_refreshAccessToken()` is returned, an attempt will be made
-      // to obtain a new access token. This functionality in not
-      // tested, and not needed, so we throw an error here.
-      const message = 'Using refresh tokens is disabled.'
-      console.warn(message);
-      throw new Error(message)
+      // and a refresh token can be used. If the result of
+      // `refreshAccessToken()` is returned, an attempt will be made
+      // to obtain a new access token.
+      //
+      // TODO: This functionality is not tested and may not work.
+      return refreshAccessToken()
     },
     onInvalidGrant(_redirectToAuthServer) {
       // This function is called when an access token can not be
