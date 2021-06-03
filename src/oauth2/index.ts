@@ -10,10 +10,10 @@ class Oauth2TokenSource implements AuthTokenSource {
     redirectUrl: appConfig.oauth2.redirectUrl,
     extraAuthorizationParams: {},
     scopes: ['access'],
-    onAccessTokenExpiry(_refreshAccessToken) {
+    async onAccessTokenExpiry(_refreshAccessToken) {
       const message = 'Using refresh tokens is disabled.'
       console.warn(message);
-      return Promise.reject(new Error(message))
+      throw new Error(message)
       // return _refreshAccessToken()
     },
     onInvalidGrant(_redirectToAuthServer) {
