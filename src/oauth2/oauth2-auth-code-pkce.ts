@@ -646,28 +646,22 @@ export class OAuth2AuthCodePKCE {
   /**
    * Generates a code_verifier and code_challenge, as specified in rfc7636.
    */
-  static generatePKCECodes(): PromiseLike<PKCECodes> {
-    const output = new Uint32Array(RECOMMENDED_CODE_VERIFIER_LENGTH);
-    crypto.getRandomValues(output);
+  static async generatePKCECodes(): Promise<PKCECodes> {
+    const output = crypto.getRandomValues(new Uint32Array(RECOMMENDED_CODE_VERIFIER_LENGTH));
     const codeVerifier = OAuth2AuthCodePKCE.base64urlEncode(Array
       .from(output)
-      .map((num: number) => PKCE_CHARSET[num % PKCE_CHARSET.length])
-      .join(''));
-
-    return crypto
-      .subtle
-      .digest('SHA-256', (new TextEncoder()).encode(codeVerifier))
-      .then((buffer: ArrayBuffer) => {
-        let hash = new Uint8Array(buffer);
-        let binary = '';
-        let hashLength = hash.byteLength;
-        for (let i: number = 0; i < hashLength; i++) {
-          binary += String.fromCharCode(hash[i]);
-        }
-        return binary;
-      })
-      .then(OAuth2AuthCodePKCE.base64urlEncode)
-      .then((codeChallenge: string) => ({ codeChallenge, codeVerifier }));
+      .map((n) => PKCE_CHARSET[n % PKCE_CHARSET.length])
+      .join('')
+    );
+    const buffer = await crypto.subtle.digest('SHA-256', (new TextEncoder()).encode(codeVerifier))
+    const hash = new Uint8Array(buffer);
+    const hashLength = hash.byteLength;
+    let binary = '';
+    for (let i: number = 0; i < hashLength; i++) {
+      binary += String.fromCharCode(hash[i]);
+    }
+    const codeChallenge = OAuth2AuthCodePKCE.base64urlEncode(binary)
+    return { codeChallenge, codeVerifier };
   }
 
   /**
