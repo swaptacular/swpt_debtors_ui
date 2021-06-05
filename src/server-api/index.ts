@@ -38,6 +38,27 @@ export type AuthTokenSource = {
   logout: () => void | Promise<void>
 }
 
+type UserData = {
+  debtorUrl: string,
+  tokenHash: string,
+}
+
+const LOCALSTORAGE_KEY = 'server-api-user'
+
+
+function buffer2hex(buffer: ArrayBuffer, options = { toUpperCase: true }) {
+  const bytes = [...new Uint8Array(buffer)]
+  const hex = bytes.map(n => n.toString(16).padStart(2, '0')).join('')
+  return options.toUpperCase ? hex.toUpperCase() : hex
+}
+
+
+async function calcSha256(buffer: string | ArrayBuffer): Promise<ArrayBuffer> {
+  if (typeof buffer === 'string') {
+    buffer = new TextEncoder().encode(buffer)
+  }
+  return await crypto.subtle.digest('SHA-256', buffer)
+}
 
 function getRequestUrl(r: AxiosResponse): string {
   let url = r.request.responseURL
@@ -92,7 +113,7 @@ export class AuthenticationError extends ServerSessionError {
 
 export class ServerSession {
   private tokenSource: AuthTokenSource
-  private debtorUrl?: string
+  private context?: { user?: UserData }
   private authData?: {
     client: AxiosInstance,
     token: string,
@@ -102,17 +123,36 @@ export class ServerSession {
     this.tokenSource = s
   }
 
+  async login(): Promise<void> {
+    await this.authenticate({ attemptLogin: true })
+  }
+
   async logout(): Promise<void> {
     await this.tokenSource.logout()
+    ServerSession.setUserData(undefined)
     await ServerSession.redirectHome()
   }
 
-  async getDebtorUrl(): Promise<string> {
-    let url = this.debtorUrl
-    if (url === undefined) {
-      url = (await this.authenticate()).debtorUrl
+  async getDebtorUrl(): Promise<string | undefined> {
+    let debtorUrl
+    try {
+      debtorUrl = (await this.authenticate({ attemptLogin: false })).debtorUrl
+    } catch (e: unknown) {
+      if (e instanceof AuthenticationError) {
+        debtorUrl = this.context!.user?.debtorUrl
+      } else {
+        throw e
+      }
     }
-    return url
+
+    // Note that we must make sure that when we tell the user that
+    // he/she is not logged in (`debtorUrl === undefined`), there will
+    // be no authorization tokens hanging in in the browser local
+    // storage.
+    if (debtorUrl === undefined) {
+      await this.tokenSource.logout()
+    }
+    return debtorUrl
   }
 
   async get(url: string, config?: RequestConfig): Promise<HttpResponse> {
@@ -156,12 +196,17 @@ export class ServerSession {
   }
 
   private async authenticate(options?: GetTokenOptions) {
+    const previosDebtorUrl = this.context ? (this.context.user?.debtorUrl ?? '') : undefined
+    let user = ServerSession.getUserData()
+    this.context = this.context ?? { user }
+
     let token
     try {
       token = await this.tokenSource.getToken(options)
     } catch {
       throw new AuthenticationError('can not obtain token')
     }
+    const tokenHash = buffer2hex(await calcSha256(token))
 
     const client = axios.create({
       baseURL: appConfig.serverApiBaseUrl,
@@ -180,19 +225,29 @@ export class ServerSession {
       },
     })
 
-    // We do not know the URL of the debtor yet. To obtain it, we make
-    // a "redirectToDebtor" HTTP request, and get the debtor URL from
-    // the redirect location. Note that while the authentication token
-    // may change during the lifespan of the `ServerSession` instance,
-    // the debtor URL must stay the same.
-    const debtorUrl = await ServerSession.getDebtorUrl(client)
-    if (this.debtorUrl !== undefined && this.debtorUrl !== debtorUrl) {
+    // We still do not know the URL of the debtor that corresponds to
+    // the new token. We try to obtain it from the saved user data
+    // first. If this fails, we make a "redirectToDebtor" HTTP
+    // request, and get the debtor URL from the redirect location.
+    let debtorUrl
+    if (tokenHash === user?.tokenHash) {
+      debtorUrl = user.debtorUrl
+    } else {
+      debtorUrl = await ServerSession.getDebtorUrl(client)
+      user = { debtorUrl, tokenHash }
+      ServerSession.setUserData(user)
+    }
+
+    // Note that while the authentication token may change during the
+    // lifespan of the `ServerSession` instance, the debtor URL must
+    // always stay the same.
+    if (previosDebtorUrl !== undefined && previosDebtorUrl !== debtorUrl) {
       await ServerSession.redirectHome()
     }
 
     const authData = { client, token }
     this.authData = authData
-    this.debtorUrl = debtorUrl
+    this.context = { user }
     return { authData, debtorUrl }
   }
 
@@ -243,10 +298,16 @@ export class ServerSession {
   }
 
   private static async getDebtorUrl(client: AxiosInstance): Promise<string> {
+    // Normally, when the debtor is found, the response will have
+    // status code 303 (a redirect). Here we try to not follow the
+    // redirect, thus sparing one unnecessary request. Unfortunately,
+    // the "maxRedirects" option in Axios works only in Node, and
+    // therefore we have to be prepared to handle both 303 and 200
+    // status codes.
+
+    let response
     try {
-      // Normally, the debtor will be found, and the next expression
-      // will throw an `AxiosError` with status code 303 (a redirect).
-      await client.get(`.debtor`, { maxRedirects: 0 })
+      response = await client.get(`.debtor`, { maxRedirects: 0 })
 
     } catch (e: unknown) {
       const error = ServerSession.convertError(e)
@@ -265,17 +326,46 @@ export class ServerSession {
         // This function should never throw an `HttpError` to the
         // caller, because it is always executed implicitly, as a part
         // of the authentication process.
-        throw new ServerSessionError(error.message)
+        throw new AuthenticationError(error.message)
       }
 
       throw error
     }
 
-    throw new AuthenticationError('debtor not found')  // status code 204
+    if (response.status !== 200) {
+      throw new AuthenticationError('debtor not found')
+    }
+    return getRequestUrl(response)
   }
 
   private static redirectHome(): Promise<never> {
     location.replace(appConfig.oauth2.redirectUrl)
     return new Promise(() => { })
   }
+
+  private static getUserData(): UserData | undefined {
+    let userData
+    const s = localStorage.getItem(LOCALSTORAGE_KEY)
+    if (s) {
+      try {
+        const obj = JSON.parse(s)
+        userData = {
+          debtorUrl: String(obj.debtorUrl),
+          tokenHash: String(obj.tokenHash),
+        }
+      } catch {
+        localStorage.removeItem(LOCALSTORAGE_KEY)
+      }
+    }
+    return userData
+  }
+
+  private static setUserData(userData?: UserData): void {
+    if (userData) {
+      localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(userData));
+    } else {
+      localStorage.removeItem(LOCALSTORAGE_KEY)
+    }
+  }
+
 }

@@ -3,10 +3,10 @@
   import {ServerSession} from './server-api/index.js'
 
   const session = new ServerSession(oauth2TokenSource)
-  let token = oauth2TokenSource.getToken({attemptLogin: false})
+  const debtorUrlPromise = session.getDebtorUrl()
 
-  async function authorize() {
-    token = oauth2TokenSource.getToken()
+  async function login() {
+    await session.login()
   }
 
   async function logout() {
@@ -15,12 +15,16 @@
 </script>
 
 
-{#await token}
-  <h1>no token</h1>
-{:then t}
-  <h1>{t}</h1>
+{#await debtorUrlPromise}
+  <h1>...</h1>
+{:then debtorUrl}
+  {#if debtorUrl === undefined }
+    <button on:click={login}>Login</button>
+  {:else}
+    <h1>{debtorUrl}</h1>
+    <button on:click={logout}>Logout</button>
+  {/if}
 {:catch e}
   <h1>{e.message}</h1>
 {/await}
-<button on:click={authorize}>Login</button>
-<button on:click={logout}>Logout</button>
+
