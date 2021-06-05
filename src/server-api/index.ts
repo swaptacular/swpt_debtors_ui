@@ -177,6 +177,7 @@ export class ServerSession {
       },
       transformRequest: [],
       responseType: 'arraybuffer' as const,
+      attemptLogin: true,
     }
     return await this.post(url, content, config)
   }
