@@ -1,4 +1,4 @@
-import { OAuth2AuthCodePKCE } from './oauth2-auth-code-pkce.js'
+import { OAuth2AuthCodePKCE, OAuth2Error } from './oauth2-auth-code-pkce.js'
 import type { AuthTokenSource, GetTokenOptions } from '../server-api/index.js'
 
 
@@ -33,7 +33,11 @@ class Oauth2TokenSource implements AuthTokenSource {
     try {
       isReturningFromAuthServer = this.helper.isReturningFromAuthServer()
     } catch (e: unknown) {
-      console.log(e)
+      if (e instanceof OAuth2Error) {
+        console.log(e.toString())
+      } else {
+        throw e
+      }
     }
     if (isReturningFromAuthServer) {
       // Try to exchange the authentication code for access token as

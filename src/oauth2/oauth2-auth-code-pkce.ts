@@ -91,7 +91,7 @@ function createErrorInstance(rawError: string): OAuth2Error {
   return new (ERROR_STRING_TO_ERROR_CLASS_MAP[rawError] || UnknownError)();
 }
 
-const LOCALSTORAGE_ID = `oauth2authcodepkce`;
+const LOCALSTORAGE_ID = `oauth2`;
 const LOCALSTORAGE_STATE = `${LOCALSTORAGE_ID}-state`;
 
 /**
@@ -167,7 +167,6 @@ export class OAuth2AuthCodePKCE {
     const state = this.recoverState()
     const stateQueryParam = OAuth2AuthCodePKCE.extractParamFromUrl(location.href, 'state');
     if (stateQueryParam !== state.stateQueryParam) {
-      console.warn("State query string parameter doesn't match the one sent. Possible malicious activity somewhere.");
       throw new InvalidReturnedStateParam();
     }
 
