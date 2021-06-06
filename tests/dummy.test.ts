@@ -60,7 +60,7 @@ test("Parse bigint", () => {
   expect(o).toEqual({ float: 1, int: 1n, bigint: 123456789012345678901234567890n })
 })
 
-test("Create ServerSession", async () => {
+test.skip("Create ServerSession", async () => {
   const session = new ServerSession(new SingleToken(authToken))
   expect(session).toBeInstanceOf(ServerSession)
 })
