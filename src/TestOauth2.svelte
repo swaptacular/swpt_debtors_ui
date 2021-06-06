@@ -20,8 +20,15 @@
   {#if debtorUrl === undefined }
     <button on:click={login}>Login</button>
   {:else}
-    <h1>{debtorUrl}</h1>
-    <button on:click={logout}>Logout</button>
+    <h3>{debtorUrl}</h3>
+    {#await session.get(debtorUrl)}
+      ...
+    {:then response}
+      <pre>{response.data.account.uri}</pre>
+      <button on:click={logout}>Logout</button>
+    {:catch}
+      error
+    {/await}
   {/if}
 {:catch e}
   <h1>{e.message}</h1>
