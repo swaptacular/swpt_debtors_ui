@@ -122,7 +122,7 @@ export class ServerSession {
 
   constructor(s: AuthTokenSource) {
     this.tokenSource = s
-    this.debtorUrlPromise = this.getDebtorUrl()
+    this.debtorUrlPromise = this.obtainDebtorUrl()
   }
 
   async login(): Promise<void> {
@@ -135,7 +135,7 @@ export class ServerSession {
 
   async logout(): Promise<void> {
     await this.tokenSource.logout()
-    ServerSession.setUserData(undefined)
+    ServerSession.saveUserData(undefined)
     await ServerSession.redirectHome()
   }
 
@@ -183,7 +183,6 @@ export class ServerSession {
   private async authenticate(options?: GetTokenOptions) {
     const token = await this.tokenSource.getToken(options)
     const tokenHash = buffer2hex(await calcSha256(token))
-
     const client = axios.create({
       baseURL: appConfig.serverApiBaseUrl,
       timeout: appConfig.serverApiTimeout,
@@ -206,12 +205,12 @@ export class ServerSession {
     // first. If this fails, we make a "redirectToDebtor" HTTP
     // request, and get the debtor URL from the redirect location.
     let debtorUrl
-    const userData = ServerSession.getUserData()
+    const userData = ServerSession.loadUserData()
     if (tokenHash === userData?.tokenHash) {
       debtorUrl = userData.debtorUrl
     } else {
       debtorUrl = await ServerSession.makeRedirectToDebtorRequest(client)
-      ServerSession.setUserData({ debtorUrl, tokenHash })
+      ServerSession.saveUserData({ debtorUrl, tokenHash })
     }
 
     const authData = { client, token }
@@ -247,13 +246,13 @@ export class ServerSession {
     }
   }
 
-  private async getDebtorUrl(): Promise<string | undefined> {
+  private async obtainDebtorUrl(): Promise<string | undefined> {
     let debtorUrl
     try {
       debtorUrl = (await this.authenticate({ attemptLogin: false })).debtorUrl
     } catch (e: unknown) {
       if (e instanceof AuthenticationError) {
-        debtorUrl = ServerSession.getUserData()?.debtorUrl
+        debtorUrl = ServerSession.loadUserData()?.debtorUrl
       } else {
         throw e
       }
@@ -329,7 +328,7 @@ export class ServerSession {
     return new Promise(() => { })
   }
 
-  private static getUserData(): UserData | undefined {
+  private static loadUserData(): UserData | undefined {
     let userData
     const s = localStorage.getItem(LOCALSTORAGE_KEY)
     if (s) {
@@ -346,7 +345,7 @@ export class ServerSession {
     return userData
   }
 
-  private static setUserData(userData?: UserData): void {
+  private static saveUserData(userData?: UserData): void {
     if (userData) {
       localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(userData));
     } else {
