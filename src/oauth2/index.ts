@@ -47,7 +47,7 @@ class Oauth2TokenSource implements AuthTokenSource {
   }
 
   async getToken(options?: GetTokenOptions): Promise<string> {
-    const { attemptLogin = true } = options ?? {}
+    const { attemptLogin = false } = options ?? {}
     const token = await this.getCurrentToken()
     if (!token) {
       if (attemptLogin) {
