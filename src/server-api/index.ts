@@ -181,12 +181,7 @@ export class ServerSession {
   }
 
   private async authenticate(options?: GetTokenOptions) {
-    let token
-    try {
-      token = await this.tokenSource.getToken(options)
-    } catch {
-      throw new AuthenticationError('can not obtain token')
-    }
+    const token = await this.tokenSource.getToken(options)
     const tokenHash = buffer2hex(await calcSha256(token))
 
     const client = axios.create({

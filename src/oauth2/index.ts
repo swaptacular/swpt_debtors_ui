@@ -1,5 +1,5 @@
 import { OAuth2AuthCodePKCE, OAuth2Error } from './oauth2-auth-code-pkce.js'
-import type { AuthTokenSource, GetTokenOptions } from '../server-api/index.js'
+import { AuthTokenSource, GetTokenOptions, AuthenticationError } from '../server-api/index.js'
 
 
 class Oauth2TokenSource implements AuthTokenSource {
@@ -53,7 +53,7 @@ class Oauth2TokenSource implements AuthTokenSource {
       if (attemptLogin) {
         await this.redirectToLoginPage()  // waits forever
       }
-      throw new Error('can not obtain token')
+      throw new AuthenticationError('can not obtain token')
     }
     return token
   }
@@ -70,7 +70,8 @@ class Oauth2TokenSource implements AuthTokenSource {
     let accessContext
     try {
       accessContext = await this.helper.getAccessContext()
-    } catch {
+    } catch (e: unknown) {
+      console.log(e)
       return
     }
     return accessContext.token?.value

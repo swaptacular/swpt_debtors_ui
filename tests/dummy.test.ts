@@ -67,21 +67,21 @@ test("Create ServerSession", async () => {
 
 test.skip("Get debtor URL", async () => {
   const session = new ServerSession(new SingleToken(authToken))
-  const debtorUrl = await session.getDebtorUrl()
+  const debtorUrl = await session.debtorUrlPromise
   expect(debtorUrl).toContain('/debtors/')
 })
 
 test.skip("Request debtor info", async () => {
   const session = new ServerSession(new SingleToken(authToken))
-  const debtorUrl = await session.getDebtorUrl()
-  const response = await session.get(debtorUrl)
+  const debtorUrl = await session.debtorUrlPromise
+  const response = await session.get(debtorUrl as string)
   expect(response.status).toBe(200)
   expect(response.data).toHaveProperty('identity')
 })
 
 test.skip("Try to cancel non-existing transfer", async () => {
   const session = new ServerSession(new SingleToken(authToken))
-  const debtorUrl = await session.getDebtorUrl()
+  const debtorUrl = await session.debtorUrlPromise
   try {
     await session.post(`${debtorUrl}transfers/123e4567-e89b-12d3-a456-426655440000`)
   } catch (e) {
@@ -93,7 +93,7 @@ test.skip("Try to cancel non-existing transfer", async () => {
 
 test.skip("Try to save document", async () => {
   const session = new ServerSession(new SingleToken(authToken))
-  const debtorUrl = await session.getDebtorUrl()
+  const debtorUrl = await session.debtorUrlPromise
   const buffer = new ArrayBuffer(4)
   const view = new Int32Array(buffer);
   view[0] = 0
