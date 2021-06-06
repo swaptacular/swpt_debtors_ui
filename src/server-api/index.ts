@@ -112,8 +112,9 @@ export class AuthenticationError extends ServerSessionError {
 
 
 export class ServerSession {
+  readonly debtorUrlPromise: Promise<string | undefined>
+
   private tokenSource: AuthTokenSource
-  private context?: { user?: UserData }
   private authData?: {
     client: AxiosInstance,
     token: string,
@@ -121,38 +122,21 @@ export class ServerSession {
 
   constructor(s: AuthTokenSource) {
     this.tokenSource = s
+    this.debtorUrlPromise = this.getDebtorUrl()
   }
 
   async login(): Promise<void> {
-    await this.authenticate({ attemptLogin: true })
+    const debtorUrl = await this.debtorUrlPromise
+    if (!debtorUrl) {
+      await this.authenticate({ attemptLogin: true })
+      await ServerSession.redirectHome()
+    }
   }
 
   async logout(): Promise<void> {
     await this.tokenSource.logout()
     ServerSession.setUserData(undefined)
     await ServerSession.redirectHome()
-  }
-
-  async getDebtorUrl(): Promise<string | undefined> {
-    let debtorUrl
-    try {
-      debtorUrl = (await this.authenticate({ attemptLogin: false })).debtorUrl
-    } catch (e: unknown) {
-      if (e instanceof AuthenticationError) {
-        debtorUrl = this.context!.user?.debtorUrl
-      } else {
-        throw e
-      }
-    }
-
-    // Note that we must make sure that when we tell the user that
-    // he/she is not logged in (`debtorUrl === undefined`), there will
-    // be no authorization tokens hanging in in the browser local
-    // storage.
-    if (debtorUrl === undefined) {
-      await this.tokenSource.logout()
-    }
-    return debtorUrl
   }
 
   async get(url: string, config?: RequestConfig): Promise<HttpResponse> {
@@ -197,10 +181,6 @@ export class ServerSession {
   }
 
   private async authenticate(options?: GetTokenOptions) {
-    const previosDebtorUrl = this.context ? (this.context.user?.debtorUrl ?? '') : undefined
-    let user = ServerSession.getUserData()
-    this.context = this.context ?? { user }
-
     let token
     try {
       token = await this.tokenSource.getToken(options)
@@ -231,28 +211,24 @@ export class ServerSession {
     // first. If this fails, we make a "redirectToDebtor" HTTP
     // request, and get the debtor URL from the redirect location.
     let debtorUrl
-    if (tokenHash === user?.tokenHash) {
-      debtorUrl = user.debtorUrl
+    const userData = ServerSession.getUserData()
+    if (tokenHash === userData?.tokenHash) {
+      debtorUrl = userData.debtorUrl
     } else {
-      debtorUrl = await ServerSession.getDebtorUrl(client)
-      user = { debtorUrl, tokenHash }
-      ServerSession.setUserData(user)
-    }
-
-    // Note that while the authentication token may change during the
-    // lifespan of the `ServerSession` instance, the debtor URL must
-    // always stay the same.
-    if (previosDebtorUrl !== undefined && previosDebtorUrl !== debtorUrl) {
-      await ServerSession.redirectHome()
+      debtorUrl = await ServerSession.makeRedirectToDebtorRequest(client)
+      ServerSession.setUserData({ debtorUrl, tokenHash })
     }
 
     const authData = { client, token }
     this.authData = authData
-    this.context = { user }
     return { authData, debtorUrl }
   }
 
-  private async makeRequest<T>(reqfunc: (client: AxiosInstance) => Promise<T>, options?: GetTokenOptions): Promise<T> {
+  private async makeRequest<T>(
+    reqfunc: (client: AxiosInstance) => Promise<T>,
+    options?: GetTokenOptions,
+    retryOn401: boolean = true,
+  ): Promise<T> {
     const authData = this.authData ?? (await this.authenticate(options)).authData
 
     try {
@@ -262,25 +238,39 @@ export class ServerSession {
       const error = ServerSession.convertError(e)
 
       // If the request failed with status 401, the authentication
-      // token is invalidated, and the request is retried. This should
-      // not result in an infinite loop, because immediately after a
-      // new token is obtained, a "redirectToDebtor" request is made,
-      // verifying the token.
+      // token is invalidated, and the request is retried (only once).
       if (error instanceof HttpError && error.status === 401) {
         await this.tokenSource.invalidateToken(authData.token)
+        this.authData = undefined
 
-        // Before erasing the invalidated `this.AuthData`, we should
-        // make sure that it has not been updated in the mean time by
-        // another task.
-        if (this?.authData?.token === authData.token) {
-          this.authData = undefined
+        if (retryOn401) {
+          return await this.makeRequest(reqfunc, options, false)
         }
-
-        return await this.makeRequest(reqfunc, options)
       }
 
       throw error
     }
+  }
+
+  private async getDebtorUrl(): Promise<string | undefined> {
+    let debtorUrl
+    try {
+      debtorUrl = (await this.authenticate({ attemptLogin: false })).debtorUrl
+    } catch (e: unknown) {
+      if (e instanceof AuthenticationError) {
+        debtorUrl = ServerSession.getUserData()?.debtorUrl
+      } else {
+        throw e
+      }
+    }
+
+    // Note that before we tell the user that he/she is not logged in
+    // (`debtorUrl === undefined`), we must ensure that there are no
+    // authorization tokens remaining in in the browser local storage.
+    if (debtorUrl === undefined) {
+      await this.tokenSource.logout()
+    }
+    return debtorUrl
   }
 
   private static convertError(e: unknown): unknown {
@@ -298,7 +288,7 @@ export class ServerSession {
     return e
   }
 
-  private static async getDebtorUrl(client: AxiosInstance): Promise<string> {
+  private static async makeRedirectToDebtorRequest(client: AxiosInstance): Promise<string> {
     // Normally, when the debtor is found, the response will have
     // status code 303 (a redirect). Here we try to not follow the
     // redirect, thus sparing one unnecessary request. Unfortunately,

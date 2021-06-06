@@ -3,7 +3,6 @@
   import {ServerSession} from './server-api/index.js'
 
   const session = new ServerSession(oauth2TokenSource)
-  const debtorUrlPromise = session.getDebtorUrl()
 
   async function login() {
     await session.login()
@@ -15,7 +14,7 @@
 </script>
 
 
-{#await debtorUrlPromise}
+{#await session.debtorUrlPromise}
   <h1>...</h1>
 {:then debtorUrl}
   {#if debtorUrl === undefined }
