@@ -46,15 +46,20 @@ class Oauth2TokenSource implements AuthTokenSource {
     }
   }
 
-  async getToken(options?: GetTokenOptions): Promise<string> {
-    const { attemptLogin = false } = options ?? {}
+  async getToken(options: GetTokenOptions = {}): Promise<string> {
     const token = await this.getCurrentToken()
     if (!token) {
+      const {
+        attemptLogin = false,
+        onLoginAttempt = (async (login) => await login()),
+      } = options
+
       if (attemptLogin) {
-        await this.redirectToLoginPage()  // waits forever
+        await onLoginAttempt(() => this.redirectToLoginPage())
       }
       throw new AuthenticationError('can not obtain token')
     }
+
     return token
   }
 

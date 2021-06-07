@@ -2,10 +2,16 @@
   import {oauth2TokenSource} from './oauth2/index.js'
   import {ServerSession} from './server-api/index.js'
 
-  const session = new ServerSession(oauth2TokenSource)
+  const session = new ServerSession(oauth2TokenSource, async (login) => {
+    if (confirm('This operation requires authentication. You will be redirected to the login page.')) {
+      return await login()
+    }
+    return false
+  })
 
   async function login() {
     await session.login()
+    // await session.login(async (login) => await login())
   }
 
   async function logout() {

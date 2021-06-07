@@ -24,8 +24,11 @@ export type {
   DebtorConfigUpdateRequest,
 }
 
+export type LoginAttemptHandler = (login: () => Promise<boolean>) => Promise<boolean>
+
 export type GetTokenOptions = {
   attemptLogin?: boolean,
+  onLoginAttempt?: LoginAttemptHandler,
 }
 
 export type RequestConfig =
@@ -115,20 +118,22 @@ export class ServerSession {
   readonly debtorUrlPromise: Promise<string | undefined>
 
   private tokenSource: AuthTokenSource
+  private loginAttemptHandler?: LoginAttemptHandler
   private authData?: {
     client: AxiosInstance,
     token: string,
   }
 
-  constructor(s: AuthTokenSource) {
+  constructor(s: AuthTokenSource, h?: LoginAttemptHandler) {
     this.tokenSource = s
+    this.loginAttemptHandler = h
     this.debtorUrlPromise = this.obtainDebtorUrl()
   }
 
-  async login(): Promise<void> {
+  async login(onLoginAttempt = this.loginAttemptHandler): Promise<void> {
     const debtorUrl = await this.debtorUrlPromise
     if (!debtorUrl) {
-      await this.authenticate({ attemptLogin: true })
+      await this.authenticate({ attemptLogin: true, onLoginAttempt })
       await ServerSession.redirectHome()
     }
   }
@@ -181,7 +186,7 @@ export class ServerSession {
   }
 
   private async authenticate(options?: GetTokenOptions) {
-    const token = await this.tokenSource.getToken(options)
+    const token = await this.tokenSource.getToken({ onLoginAttempt: this.loginAttemptHandler, ...options })
     const tokenHash = buffer2hex(await calcSha256(token))
     const client = axios.create({
       baseURL: appConfig.serverApiBaseUrl,
