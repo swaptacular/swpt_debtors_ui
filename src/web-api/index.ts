@@ -14,6 +14,9 @@ export type {
   LoginAttemptHandler,
   AuthTokenSource,
   GetTokenOptions,
+}
+
+export {
   CanNotObtainToken,
 }
 
