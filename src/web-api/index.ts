@@ -60,12 +60,14 @@ export class HttpResponse {
   status: number
   headers: any
   data: unknown
+  time: Date
 
   constructor(r: AxiosResponse) {
     this.url = getRequestUrl(r)
     this.status = r.status
     this.headers = r.headers
     this.data = r.data
+    this.time = new Date()
   }
 }
 
@@ -76,6 +78,7 @@ export class HttpError extends Error implements HttpResponse {
   status: number
   headers: any
   data: unknown
+  time: Date
 
   constructor(r: AxiosResponse) {
     super(`Request failed with status code ${r.status}`)
@@ -83,6 +86,7 @@ export class HttpError extends Error implements HttpResponse {
     this.status = r.status
     this.headers = r.headers
     this.data = r.data
+    this.time = new Date()
   }
 }
 
@@ -141,8 +145,11 @@ export class ServerSession {
     if (entrypoint === undefined) {
       throw new ServerSessionError('undefined entrypoint')
     }
+
+    // Do not make a request at all, if the response saved during the
+    // authentication is recent enough.
     let response = this.authData?.entrypointResponse
-    if (response?.url !== entrypoint) {
+    if (response?.url !== entrypoint || Number(response.time) < Date.now() - 15000) {
       response = await this.get(entrypoint, { attemptLogin: false })
     }
     return response
