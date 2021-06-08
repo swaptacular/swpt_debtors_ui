@@ -6,11 +6,11 @@ import {
   GetTokenOptions,
   AuthTokenSource,
   CanNotObtainToken,
-  oauth2TokenSource,
+  Oauth2TokenSource,
 } from './oauth2/index.js'
 
 
-export type { LoginAttemptHandler }
+export type { LoginAttemptHandler, AuthTokenSource }
 
 export type RequestConfig =
   & AxiosRequestConfig
@@ -100,7 +100,7 @@ export class ServerSession {
   }
 
   constructor(options: { tokenSource?: AuthTokenSource, onLoginAttempt?: LoginAttemptHandler } = {}) {
-    const { tokenSource = oauth2TokenSource, onLoginAttempt } = options
+    const { tokenSource = new Oauth2TokenSource(), onLoginAttempt } = options
     this.tokenSource = tokenSource
     this.loginAttemptHandler = onLoginAttempt
     this.entrypointPromise = this.getEntrypoint()

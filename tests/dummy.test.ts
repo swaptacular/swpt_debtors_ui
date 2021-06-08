@@ -1,14 +1,14 @@
 import App from '../src/App.svelte'
-import { stringify, parse } from '../src/server-api/json-bigint/index.js'
-import type { AuthTokenSource } from '../src/server-api/oauth2/index.js'
-import { ServerSession, HttpError } from '../src/server-api/index.js'
+import { stringify, parse } from '../src/web-api/json-bigint/index.js'
+import type { AuthTokenSource } from '../src/web-api/oauth2/index.js'
+import { ServerSession, HttpError } from '../src/web-api/index.js'
 import {
   LocalDb,
   DebtorRecord,
   UserDoesNotExist,
   UserAlreadyInstalled,
   AlreadyResolvedAction,
-} from '../src/local-db/index.js'
+} from '../src/db/index.js'
 
 const authToken = '3x-KAxNWrYPJUWNKTbpnTWxoR0Arr0gG_uEqeWUNDkk.B-Iqy02FM7rK1rKSb4I7D9gaqGFXc2vdyJQ6Uuv3EF4'
 

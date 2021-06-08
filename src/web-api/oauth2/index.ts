@@ -14,7 +14,7 @@ export type AuthTokenSource = {
 }
 
 
-class Oauth2TokenSource implements AuthTokenSource {
+export class Oauth2TokenSource implements AuthTokenSource {
   private helper = new OAuth2AuthCodePKCE({
     fetchTimeout: 2 * appConfig.serverApiTimeout,
     authorizationUrl: appConfig.oauth2.authorizationUrl,
@@ -104,6 +104,3 @@ class Oauth2TokenSource implements AuthTokenSource {
 export class CanNotObtainToken extends Error {
   name = 'CanNotObtainToken'
 }
-
-
-export const oauth2TokenSource = new Oauth2TokenSource()
