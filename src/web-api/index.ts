@@ -7,7 +7,7 @@ import {
   GetTokenOptions,
   CanNotObtainToken,
   Oauth2TokenSource,
-} from './oauth2/index.js'
+} from './oauth2-token-source/index.js'
 
 
 export type {

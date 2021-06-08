@@ -1,6 +1,6 @@
 import App from '../src/App.svelte'
 import { stringify, parse } from '../src/web-api/json-bigint/index.js'
-import type { AuthTokenSource } from '../src/web-api/oauth2/index.js'
+import type { AuthTokenSource } from '../src/web-api/oauth2-token-source/index.js'
 import { ServerSession, HttpError } from '../src/web-api/index.js'
 import {
   LocalDb,
