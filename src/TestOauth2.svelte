@@ -21,12 +21,12 @@
 
 {#await session.entrypointPromise}
   <h1>...</h1>
-{:then debtorUrl}
-  {#if debtorUrl === undefined }
+{:then entrypoint}
+  {#if entrypoint === undefined }
     <button on:click={login}>Login</button>
   {:else}
-    <h3>{debtorUrl}</h3>
-    {#await session.get(debtorUrl)}
+    <h3>{entrypoint}</h3>
+    {#await session.getEntrypointResponse()}
       ...
     {:then response}
       <pre>{response.data.account.uri}</pre>

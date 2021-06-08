@@ -105,6 +105,7 @@ export class ServerSession {
   private authData?: {
     client: AxiosInstance,
     token: string,
+    entrypointResponse?: HttpResponse,
   }
 
   constructor(options: { tokenSource?: AuthTokenSource, onLoginAttempt?: LoginAttemptHandler } = {}) {
@@ -133,6 +134,18 @@ export class ServerSession {
       async client => new HttpResponse(await client.get(url, config)),
       config,
     )
+  }
+
+  async getEntrypointResponse(): Promise<HttpResponse> {
+    const entrypoint = await this.entrypointPromise
+    if (entrypoint === undefined) {
+      throw new ServerSessionError('undefined entrypoint')
+    }
+    let response = this.authData?.entrypointResponse
+    if (response?.url !== entrypoint) {
+      response = await this.get(entrypoint, { attemptLogin: false })
+    }
+    return response
   }
 
   async post(url: string, data?: any, config?: RequestConfig): Promise<HttpResponse> {
@@ -201,16 +214,18 @@ export class ServerSession {
     // corresponds to the new token. We try to obtain it from the
     // saved user data first. If this fails, we make a "redirect to
     // entrypoint" HTTP request.
+    let entrypointResponse
     let entrypoint
     const userData = ServerSession.loadUserData()
     if (tokenHash === userData?.tokenHash) {
       entrypoint = userData.entrypoint
     } else {
-      entrypoint = await ServerSession.makeRedirectToEntrypointRequest(client)
+      entrypointResponse = await ServerSession.makeEntrypointRequest(client)
+      entrypoint = entrypointResponse.url
       ServerSession.saveUserData({ entrypoint, tokenHash })
     }
 
-    const authData = { client, token }
+    const authData = { client, token, entrypointResponse }
     this.authData = authData
     return { authData, entrypoint }
   }
@@ -268,9 +283,9 @@ export class ServerSession {
     if (typeof e === 'object' && e !== null) {
       const error = e as AxiosError
       if (error.isAxiosError) {
-        const response = error.response
-        if (response) {
-          return new HttpError(response)
+        const r = error.response
+        if (r) {
+          return new HttpError(r)
         }
         return new ServerSessionError(error.message)
       }
@@ -279,10 +294,10 @@ export class ServerSession {
     return e
   }
 
-  private static async makeRedirectToEntrypointRequest(client: AxiosInstance): Promise<string> {
-    let response
+  private static async makeEntrypointRequest(client: AxiosInstance): Promise<HttpResponse> {
+    let r
     try {
-      response = await client.get(appConfig.serverApiEntrypoint)
+      r = await client.get(appConfig.serverApiEntrypoint)
     } catch (e: unknown) {
       const error = ServerSession.convertError(e)
       if (error instanceof HttpError) {
@@ -294,10 +309,10 @@ export class ServerSession {
       throw error
     }
 
-    if (response.status !== 200) {
+    if (r.status !== 200) {
       throw new AuthenticationError('entrypoint not found')
     }
-    return getRequestUrl(response)
+    return new HttpResponse(r)
   }
 
   private static redirectHome(): Promise<never> {
