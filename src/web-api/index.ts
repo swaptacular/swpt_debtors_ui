@@ -55,11 +55,11 @@ function getRequestUrl(r: AxiosResponse): string {
 }
 
 
-export class HttpResponse {
+export class HttpResponse<T = unknown> {
   url: string
   status: number
   headers: any
-  data: unknown
+  data: T
   time: Date
 
   constructor(r: AxiosResponse) {
