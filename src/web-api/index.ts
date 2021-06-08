@@ -3,14 +3,19 @@ import type { AxiosInstance, AxiosRequestConfig, AxiosError, AxiosResponse } fro
 import { parse, stringify } from './json-bigint/index.js'
 import {
   LoginAttemptHandler,
-  GetTokenOptions,
   AuthTokenSource,
+  GetTokenOptions,
   CanNotObtainToken,
   Oauth2TokenSource,
 } from './oauth2/index.js'
 
 
-export type { LoginAttemptHandler, AuthTokenSource }
+export type {
+  LoginAttemptHandler,
+  AuthTokenSource,
+  GetTokenOptions,
+  CanNotObtainToken,
+}
 
 export type RequestConfig =
   & AxiosRequestConfig
