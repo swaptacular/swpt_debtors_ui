@@ -10,6 +10,8 @@ import {
 } from './oauth2/index.js'
 
 
+export type { LoginAttemptHandler }
+
 export type RequestConfig =
   & AxiosRequestConfig
   & GetTokenOptions
@@ -19,7 +21,7 @@ type UserData = {
   tokenHash: string,
 }
 
-const LOCALSTORAGE_KEY = 'server-api-user'
+const LOCALSTORAGE_KEY = 'web-api-user'
 
 
 function buffer2hex(buffer: ArrayBuffer, options = { toUpperCase: true }) {

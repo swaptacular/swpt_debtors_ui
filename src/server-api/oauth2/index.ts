@@ -1,5 +1,17 @@
-import { OAuth2AuthCodePKCE, OAuth2Error } from './oauth2-auth-code-pkce.js'
-import { AuthTokenSource, GetTokenOptions, AuthenticationError } from '../server-api/index.js'
+import { OAuth2AuthCodePKCE, OAuth2Error } from './auth-code-pkce.js'
+
+export type LoginAttemptHandler = (login: () => Promise<boolean>) => Promise<boolean>
+
+export type GetTokenOptions = {
+  attemptLogin?: boolean,
+  onLoginAttempt?: LoginAttemptHandler,
+}
+
+export type AuthTokenSource = {
+  getToken: (options?: GetTokenOptions) => string | Promise<string>,
+  invalidateToken: (token: string) => void | Promise<void>,
+  logout: () => void | Promise<void>
+}
 
 
 class Oauth2TokenSource implements AuthTokenSource {
@@ -57,7 +69,7 @@ class Oauth2TokenSource implements AuthTokenSource {
       if (attemptLogin) {
         await onLoginAttempt(() => this.redirectToLoginPage())
       }
-      throw new AuthenticationError('can not obtain token')
+      throw new CanNotObtainToken()
     }
 
     return token
@@ -86,6 +98,11 @@ class Oauth2TokenSource implements AuthTokenSource {
     return await this.helper.fetchAuthorizationCode()
   }
 
+}
+
+
+export class CanNotObtainToken extends Error {
+  name = 'CanNotObtainToken'
 }
 
 

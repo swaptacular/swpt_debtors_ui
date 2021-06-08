@@ -6,7 +6,7 @@ import type {
   DebtorConfigUpdateRequest,
   Transfer,
   TransferCreationRequest,
-} from '../server-api/index.js'
+} from '../web-api-schemas.js'
 
 
 type UserReference = {
@@ -112,7 +112,7 @@ export class LocalDb extends Dexie {
   actions: Dexie.Table<ActionRecord, number>
 
   constructor() {
-    super('local-db')
+    super('debtors-db')
 
     this.version(1).stores({
       debtors: '++userId,&uri',

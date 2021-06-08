@@ -1,6 +1,7 @@
 import App from '../src/App.svelte'
-import { stringify, parse } from '../src/json-bigint/index.js'
-import { ServerSession, HttpError, AuthTokenSource } from '../src/server-api/index.js'
+import { stringify, parse } from '../src/server-api/json-bigint/index.js'
+import type { AuthTokenSource } from '../src/server-api/oauth2/index.js'
+import { ServerSession, HttpError } from '../src/server-api/index.js'
 import {
   LocalDb,
   DebtorRecord,
@@ -61,27 +62,27 @@ test("Parse bigint", () => {
 })
 
 test.skip("Create ServerSession", async () => {
-  const session = new ServerSession(new SingleToken(authToken))
+  const session = new ServerSession({ tokenSource: new SingleToken(authToken) })
   expect(session).toBeInstanceOf(ServerSession)
 })
 
 test.skip("Get debtor URL", async () => {
-  const session = new ServerSession(new SingleToken(authToken))
-  const debtorUrl = await session.debtorUrlPromise
+  const session = new ServerSession({ tokenSource: new SingleToken(authToken) })
+  const debtorUrl = await session.entrypointPromise
   expect(debtorUrl).toContain('/debtors/')
 })
 
 test.skip("Request debtor info", async () => {
-  const session = new ServerSession(new SingleToken(authToken))
-  const debtorUrl = await session.debtorUrlPromise
+  const session = new ServerSession({ tokenSource: new SingleToken(authToken) })
+  const debtorUrl = await session.entrypointPromise
   const response = await session.get(debtorUrl as string)
   expect(response.status).toBe(200)
   expect(response.data).toHaveProperty('identity')
 })
 
 test.skip("Try to cancel non-existing transfer", async () => {
-  const session = new ServerSession(new SingleToken(authToken))
-  const debtorUrl = await session.debtorUrlPromise
+  const session = new ServerSession({ tokenSource: new SingleToken(authToken) })
+  const debtorUrl = await session.entrypointPromise
   try {
     await session.post(`${debtorUrl}transfers/123e4567-e89b-12d3-a456-426655440000`)
   } catch (e) {
@@ -92,8 +93,8 @@ test.skip("Try to cancel non-existing transfer", async () => {
 })
 
 test.skip("Try to save document", async () => {
-  const session = new ServerSession(new SingleToken(authToken))
-  const debtorUrl = await session.debtorUrlPromise
+  const session = new ServerSession({ tokenSource: new SingleToken(authToken) })
+  const debtorUrl = await session.entrypointPromise
   const buffer = new ArrayBuffer(4)
   const view = new Int32Array(buffer);
   view[0] = 0
