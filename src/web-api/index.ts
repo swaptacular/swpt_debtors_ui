@@ -140,6 +140,12 @@ export class ServerSession {
     )
   }
 
+  async getDocument(url: string, config?: RequestConfig): Promise<HttpResponse<ArrayBuffer>> {
+    const headers = { ...(config?.headers ?? {}), accept: '*/*' }
+    const responseType = 'arraybuffer'
+    return await this.get(url, { ...config, headers, responseType }) as HttpResponse<ArrayBuffer>
+  }
+
   async getEntrypointResponse(): Promise<HttpResponse> {
     const entrypoint = await this.entrypointPromise
     if (entrypoint === undefined) {
