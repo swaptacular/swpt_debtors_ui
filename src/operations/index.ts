@@ -1,7 +1,8 @@
 import type { Debtor, Transfer, TransfersList } from '../web-api-schemas.js'
-import { ServerSession, HttpResponse } from '../web-api/index.js'
+import { LocalDb, UserInstallationData, DebtorRecord } from '../db/index.js'
+import { ServerSession, HttpResponse, ServerSessionError } from '../web-api/index.js'
 
-const session = new ServerSession({
+const server = new ServerSession({
   onLoginAttempt: async (login) => {
     if (confirm('This operation requires authentication. You will be redirected to the login page.')) {
       return await login()
@@ -9,7 +10,7 @@ const session = new ServerSession({
     return false
   }
 })
-
+const db = new LocalDb()
 
 type ConfigData = {
   type?: 'RootConfigData',
@@ -23,59 +24,92 @@ type ConfigData = {
 }
 
 
-function extractInfoIri(configData: string): string | undefined {
-  const data = JSON.parse(configData) as ConfigData
+function extractDocumentInfoUri(configData: string): string | undefined {
+  let data
+  try {
+    data = JSON.parse(configData) as ConfigData
+  } catch { }
   return data?.info?.iri
 }
 
 
-type CompleteUserData = {
-  debtorUri: string,
-  debtor: Debtor,
-  transfers: {
-    uri: string,
-    transfer: Transfer,
-  }[],
-  document?: {
-    uri: string,
-    contentType: string,
-    content: ArrayBuffer,
-  }
-}
-
-
-async function pullData(): Promise<CompleteUserData> {
-  const {
-    url: debtorUri,
-    data: debtor,
-  } = await session.getEntrypointResponse() as HttpResponse<Debtor>
+async function getUserInstallationData(): Promise<UserInstallationData> {
+  const entrypointResponse = await server.getEntrypointResponse() as HttpResponse<Debtor>
+  const debtor = { ...entrypointResponse.data, uri: entrypointResponse.url }
 
   const {
-    url: transfersListUrl,
+    url: transfersListUri,
     data: transfersList,
-  } = await session.get(debtor.transfersList.uri, { baseURL: debtorUri }) as HttpResponse<TransfersList>
+  } = await server.get(new URL(debtor.transfersList.uri, debtor.uri).href) as HttpResponse<TransfersList>
 
   const transfers = (
     await Promise.all(transfersList
       .items
-      .map(item => item.uri)
-      .map(uri => session.get(uri, { baseURL: transfersListUrl }))
+      .map(item => new URL(item.uri, transfersListUri).href)
+      .filter(uri => !db.isFinalizedTransfer(uri))
+      .map(uri => server.get(uri))
     ) as HttpResponse<Transfer>[]
-  ).map(response => ({ uri: response.url, transfer: response.data }))
+  ).map(response => ({ ...response.data, uri: response.url } as Transfer))
 
-  const pullInfoDocument = async () => {
-    const uri = extractInfoIri(debtor.config.configData)
+  async function getInfoDocument() {
+    const uri = extractDocumentInfoUri(debtor.config.configData)
     if (uri !== undefined) {
-      const { headers, data } = await session.getDocument(uri)
-      return { uri, contentType: String(headers['content-type']), content: data }
+      const document = await db.getDocument(uri)
+      if (document) {
+        const { uri, contentType, content } = document
+        return { uri, contentType, content }
+      } else {
+        const { headers, data } = await server.getDocument(uri)
+        return { uri, contentType: String(headers['content-type']), content: data }
+      }
     }
     return undefined
   }
 
   return {
-    debtorUri,
     debtor,
     transfers,
-    document: await pullInfoDocument(),
+    document: await getInfoDocument(),
   }
+}
+
+
+export async function determineIfLoggedIn(): Promise<boolean> {
+  return await server.entrypointPromise !== undefined
+}
+
+
+export async function update(): Promise<void> {
+  let data
+  try {
+    data = await getUserInstallationData()
+  } catch (e: unknown) {
+    if (e instanceof ServerSessionError) return
+    throw e
+  }
+
+  await db.storeUserData(data)
+}
+
+
+export async function login() {
+  await server.login(async (login) => await login())
+}
+
+
+export async function logout() {
+  await server.logout()
+}
+
+
+export async function getDebtorRecord(): Promise<DebtorRecord | undefined> {
+  let debtorRecord
+  const entrypoint = await server.entrypointPromise
+  if (entrypoint !== undefined) {
+    const userId = await db.getUserId(entrypoint)
+    if (userId !== undefined) {
+      debtorRecord = db.getDebtorRecord(userId)
+    }
+  }
+  return debtorRecord
 }

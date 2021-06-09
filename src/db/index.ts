@@ -91,6 +91,12 @@ export type DeleteTransferAction =
 
 export class UserAlreadyInstalled extends Error {
   name = 'UserAlreadyInstalled'
+  userId: number
+
+  constructor(userId: number) {
+    super(`userId=${userId}`)
+    this.userId = userId
+  }
 }
 
 
@@ -140,14 +146,14 @@ export class LocalDb extends Dexie {
   async installUser({ debtor, transfers, document }: UserInstallationData): Promise<number> {
     return await this.transaction('rw', this.allTables, async () => {
       const existingUserId = await this.getUserId(debtor.uri)
-      if (existingUserId) {
-        throw new UserAlreadyInstalled(`userId=${existingUserId}`)
+      if (existingUserId !== undefined) {
+        throw new UserAlreadyInstalled(existingUserId)
       }
       const userId = await this.debtors.add({ ...debtor, userId: undefined, config: { uri: debtor.config.uri } })
-      await this.configs.add({ userId, ...debtor.config, uri: new URL(debtor.config.uri, debtor.uri).href })
-      await this.transfers.bulkAdd(transfers.map(transfer => ({ userId, ...transfer })))
+      await this.configs.add({ ...debtor.config, userId, uri: new URL(debtor.config.uri, debtor.uri).href })
+      await this.transfers.bulkAdd(transfers.map(transfer => ({ ...transfer, userId })))
       if (document) {
-        await this.documents.add({ userId, ...document })
+        await this.documents.add({ ...document, userId })
       }
       return userId
     })
@@ -163,6 +169,20 @@ export class LocalDb extends Dexie {
 
   async isUserInstalled(userId: number): Promise<boolean> {
     return await this.debtors.where({ userId }).count() === 1
+  }
+
+  async storeUserData(data: UserInstallationData, userExists = true): Promise<void> {
+    try {
+      if (userExists) {
+        await this.updateUserData(data)
+      } else {
+        await this.installUser(data)
+      }
+    } catch (e: unknown) {
+      if (e instanceof UserAlreadyInstalled) return await this.storeUserData(data, true)
+      if (e instanceof UserDoesNotExist) return await this.storeUserData(data, false)
+      throw e
+    }
   }
 
   async getDebtorRecord(userId: number): Promise<DebtorRecord> {
@@ -187,6 +207,11 @@ export class LocalDb extends Dexie {
       throw new UserDoesNotExist(`userId=${userId}`)
     }
     return transferRecords
+  }
+
+  async isFinalizedTransfer(uri: string): Promise<boolean> {
+    const transferRecord = await this.transfers.get(uri)
+    return transferRecord?.result !== undefined
   }
 
   async getActionRecords(userId: number): Promise<ActionRecord[]> {
@@ -232,6 +257,27 @@ export class LocalDb extends Dexie {
 
   async getDocument(uri: string): Promise<DocumentRecord | undefined> {
     return await this.documents.get(uri)
+  }
+
+  private async updateUserData({ debtor, transfers, document }: UserInstallationData): Promise<void> {
+    return await this.transaction('rw', this.allTables, async () => {
+      const userId = await this.getUserId(debtor.uri)
+      if (userId === undefined) {
+        throw new UserDoesNotExist(`uri=${debtor.uri}`)
+      }
+      const config = debtor.config
+      await this.debtors.put({ ...debtor, userId, config: { uri: config.uri } })
+
+      const configRecord = await this.configs.where({ userId }).first()
+      if (!(configRecord && configRecord.latestUpdateId >= config.latestUpdateId)) {
+        await this.configs.put({ ...config, userId, uri: new URL(config.uri, debtor.uri).href })
+        await this.documents.where({ userId }).delete()
+        if (document) {
+          await this.documents.put({ ...document, userId })
+        }
+      }
+      await this.transfers.bulkPut(transfers.map(transfer => ({ ...transfer, userId })))
+    })
   }
 
   private get allTables() {
