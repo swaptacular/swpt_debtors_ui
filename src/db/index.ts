@@ -225,6 +225,18 @@ export class LocalDb extends Dexie {
     return actionId
   }
 
+  async deleteAction(actionId: number): Promise<void> {
+    await this.actions.delete(actionId)
+  }
+
+  async replaceAction(action: ActionRecord): Promise<void> {
+    if (action.actionId === undefined) {
+      throw new Error('undefined actionId')
+    }
+    await this.deleteAction(action.actionId)
+    await this.createAction(action)
+  }
+
   // When the action has been successful, its action record gets
   // removed. Otherwise, the reason for the failure is written to
   // the `error` property of the action record.
@@ -242,15 +254,11 @@ export class LocalDb extends Dexie {
     })
   }
 
-  async replaceAction(action: ActionRecord): Promise<void> {
-    // TODO:
-  }
-
   async getDocument(uri: string): Promise<DocumentRecord | undefined> {
     return await this.documents.get(uri)
   }
 
-  async storeUserData({ debtor, document, transfers }: UserInstallationData): Promise<void> {
+  async storeUserData({ debtor, document, transfers }: UserInstallationData): Promise<number> {
     // Note that the `uri` property in `debtor` and `transfers` objects
     // must contain absolute URIs. The server may return relative URIs
     // in the responses, which must be transformed to absolute ones,
@@ -297,6 +305,7 @@ export class LocalDb extends Dexie {
           }
         }
       }
+      return userId
     })
   }
 

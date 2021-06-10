@@ -124,6 +124,7 @@ test("Install and uninstall user", async () => {
       debtor: { uri: 'https://example.com/1/' }
     },
   }
+  const isoNow = new Date().toISOString()
   const transfers = [{
     type: 'Transfer',
     uri: 'https://example.com/1/transfers/xxxxxxxxx',
@@ -133,7 +134,12 @@ test("Install and uninstall user", async () => {
     transfersList: { uri: 'https://example.com/1/transfers/' },
     note: '',
     noteFormat: '',
-    initiatedAt: '2020-01-01T00:00:00Z',
+    initiatedAt: isoNow,
+    result: {
+      type: 'TransferResult',
+      finalizedAt: isoNow,
+      committedAmount: 1000n,
+    }
   }]
   const document = {
     uri: 'https://example.com/1/documents/123',
@@ -141,7 +147,7 @@ test("Install and uninstall user", async () => {
     content: new ArrayBuffer(4),
   }
   const db = new LocalDb();
-  const userId = await db.installUser({ debtor, transfers, document })
+  const userId = await db.storeUserData({ debtor, transfers, document })
   const debtorRecord = await db.getDebtorRecord(userId) as DebtorRecord
   expect(debtorRecord.userId).toEqual(userId)
   expect(debtorRecord.config.uri).toBe('config')
@@ -153,20 +159,19 @@ test("Install and uninstall user", async () => {
     uri: 'https://example.com/1/config',
     userId,
   })
-  await expect(db.getTransferRecords(userId)).resolves.toEqual(transfers.map(t => ({ ...t, userId })))
+  await expect(db.getTransferRecords(userId)).resolves.toEqual([])
   await expect(db.getDocument('https://example.com/1/documents/123')).resolves.toEqual({ ...document, userId })
   await expect(db.getActionRecords(userId)).resolves.toEqual([])
-  await expect(db.installUser({ debtor, transfers: [] })).rejects.toBeInstanceOf(UserAlreadyInstalled)
 
   const actionRecord = {
     actionId: undefined,
     userId,
-    actionType: 'DeleteTransfer',
+    actionType: 'AbortTransfer',
     initiatedAt: new Date(),
     uri: 'https://example.com/1/transfers/xxxxxxxx',
   } as const
   await expect(db.getActionRecord(456)).resolves.toBeUndefined()
-  let actionId = await db.initiateAction(actionRecord)
+  let actionId = await db.createAction(actionRecord)
   expect(actionId).toBeDefined()
   expect(actionRecord.actionId).toEqual(actionId)
   await expect(db.getActionRecord(actionId)).resolves.toBeDefined()
@@ -174,7 +179,7 @@ test("Install and uninstall user", async () => {
   await expect(db.getActionRecord(actionId)).resolves.toBeUndefined()
   await expect(db.resolveAction(actionId)).rejects.toBeInstanceOf(AlreadyResolvedAction)
 
-  actionId = await db.initiateAction({ ...actionRecord, actionId: undefined })
+  actionId = await db.createAction({ ...actionRecord, actionId: undefined })
   await db.resolveAction(actionId, { errorCode: 666 })
   await expect(db.getActionRecord(actionId)).resolves.toEqual({ ...actionRecord, actionId, error: { errorCode: 666 } })
   await expect(db.resolveAction(actionId)).rejects.toBeInstanceOf(AlreadyResolvedAction)
