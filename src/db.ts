@@ -5,7 +5,7 @@ import type {
   DebtorConfig,
   Transfer,
   TransferCreationRequest,
-} from '../web-api-schemas'
+} from './web-api-schemas'
 
 
 type UserReference = {
