@@ -1,6 +1,6 @@
-import type { Debtor, Transfer, TransfersList } from '../web-api-schemas.js'
-import { LocalDb, UserInstallationData, DebtorRecord } from '../db/index.js'
-import { ServerSession, HttpResponse, ServerSessionError } from '../web-api/index.js'
+import type { Debtor, Transfer, TransfersList } from '../web-api-schemas'
+import { LocalDb, UserInstallationData, DebtorRecord } from '../db'
+import { ServerSession, HttpResponse, ServerSessionError } from '../web-api'
 
 const server = new ServerSession({
   onLoginAttempt: async (login) => {

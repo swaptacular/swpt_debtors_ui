@@ -1,6 +1,6 @@
 <script lang="ts">
-  import {stringify} from './web-api/json-bigint/index.js'
-  import {login, logout, update, determineIfLoggedIn, getDebtorRecord} from './operations/index.js'
+  import {stringify} from './web-api/json-bigint'
+  import {login, logout, update, determineIfLoggedIn, getDebtorRecord} from './operations'
   update()
 </script>
 

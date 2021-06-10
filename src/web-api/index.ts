@@ -1,13 +1,13 @@
 import axios from 'axios'
 import type { AxiosInstance, AxiosRequestConfig, AxiosError, AxiosResponse } from 'axios'
-import { parse, stringify } from './json-bigint/index.js'
+import { parse, stringify } from './json-bigint'
 import {
   LoginAttemptHandler,
   AuthTokenSource,
   GetTokenOptions,
   CanNotObtainToken,
   Oauth2TokenSource,
-} from './oauth2-token-source/index.js'
+} from './oauth2-token-source'
 
 
 export type {
