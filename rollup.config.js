@@ -64,9 +64,12 @@ export default {
       sourceMap: !production,
       inlineSources: !production,
 
+      // Manually added. Do not compile tests.
+      include: ["src/**/*"],
+
       // Manually added. Seems to be needed in some cases
       // (https://stackoverflow.com/questions/65417201/svelte-imported-typescript-files-not-recognized).
-      rootDir: './src'
+      rootDir: './src',
     }),
 
     // In dev mode, call `npm run start` once

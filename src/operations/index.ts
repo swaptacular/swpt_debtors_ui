@@ -46,7 +46,7 @@ async function getUserInstallationData(): Promise<UserInstallationData> {
     await Promise.all(transfersList
       .items
       .map(item => new URL(item.uri, transfersListUri).href)
-      .filter(uri => !db.isFinalizedTransfer(uri))
+      .filter(uri => !db.isConcludedTransfer(uri))
       .map(uri => server.get(uri))
     ) as HttpResponse<Transfer>[]
   ).map(response => ({ ...response.data, uri: response.url } as Transfer))
