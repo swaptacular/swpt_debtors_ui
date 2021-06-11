@@ -1,5 +1,5 @@
 import type { Debtor, Transfer, TransfersList } from '../web-api-schemas'
-import { LocalDb, UserInstallationData, DebtorRecord } from '../db'
+import { DebtorsDb, UserInstallationData, DebtorRecord } from './db'
 import { ServerSession, HttpResponse, ServerSessionError } from '../web-api'
 
 const server = new ServerSession({
@@ -10,7 +10,7 @@ const server = new ServerSession({
     return false
   }
 })
-const db = new LocalDb()
+const db = new DebtorsDb()
 
 
 type ConfigData = {

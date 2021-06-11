@@ -3,11 +3,11 @@ import { stringify, parse } from '../src/web-api/json-bigint'
 import type { AuthTokenSource } from '../src/web-api/oauth2-token-source'
 import { ServerSession, HttpError } from '../src/web-api'
 import {
-  LocalDb,
+  DebtorsDb,
   DebtorRecord,
   RecordDoesNotExist,
   AlreadyResolvedAction,
-} from '../src/db'
+} from '../src/operations/db'
 
 const authToken = '3x-KAxNWrYPJUWNKTbpnTWxoR0Arr0gG_uEqeWUNDkk.B-Iqy02FM7rK1rKSb4I7D9gaqGFXc2vdyJQ6Uuv3EF4'
 
@@ -145,7 +145,7 @@ test("Install and uninstall user", async () => {
     contentType: 'text/plain',
     content: new ArrayBuffer(4),
   }
-  const db = new LocalDb();
+  const db = new DebtorsDb();
   const userId = await db.storeUserData({ debtor, transfers, document })
   const debtorRecord = await db.getDebtorRecord(userId) as DebtorRecord
   expect(debtorRecord.userId).toEqual(userId)

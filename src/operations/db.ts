@@ -5,7 +5,7 @@ import type {
   DebtorConfig,
   Transfer,
   TransferCreationRequest,
-} from './web-api-schemas'
+} from '../web-api-schemas'
 
 
 type UserReference = {
@@ -128,7 +128,7 @@ export function getTransferState(transfer: Transfer): 'waiting' | 'delayed' | 's
 }
 
 
-export class LocalDb extends Dexie {
+export class DebtorsDb extends Dexie {
   debtors: Dexie.Table<DebtorRecord, number>
   configs: Dexie.Table<ConfigRecord, string>
   transfers: Dexie.Table<TransferRecord, string>
