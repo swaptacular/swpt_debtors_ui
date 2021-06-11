@@ -98,8 +98,8 @@ export class UserAlreadyInstalled extends Error {
 }
 
 
-export class UserDoesNotExist extends Error {
-  name = 'UserDoesNotExist'
+export class RecordDoesNotExist extends Error {
+  name = 'RecordDoesNotExist'
 }
 
 
@@ -175,7 +175,7 @@ export class LocalDb extends Dexie {
   async getDebtorRecord(userId: number): Promise<DebtorRecord> {
     const debtorRecord = await this.debtors.get(userId)
     if (!debtorRecord) {
-      throw new UserDoesNotExist(`userId=${userId}`)
+      throw new RecordDoesNotExist(`DebtorRecord(userId=${userId})`)
     }
     return debtorRecord
   }
@@ -183,7 +183,7 @@ export class LocalDb extends Dexie {
   async getConfigRecord(userId: number): Promise<ConfigRecord> {
     const configRecord = await this.configs.where({ userId }).first()
     if (!configRecord) {
-      throw new UserDoesNotExist(`userId=${userId}`)
+      throw new RecordDoesNotExist(`DebtorRecord(userId=${userId})`)
     }
     return configRecord
   }
@@ -191,7 +191,7 @@ export class LocalDb extends Dexie {
   async getTransferRecords(userId: number): Promise<TransferRecord[]> {
     const transferRecords = await this.transfers.where({ userId }).toArray()
     if (transferRecords.length === 0 && !await this.isUserInstalled(userId)) {
-      throw new UserDoesNotExist(`userId=${userId}`)
+      throw new RecordDoesNotExist(`DebtorRecord(userId=${userId})`)
     }
     return transferRecords
   }
@@ -208,7 +208,7 @@ export class LocalDb extends Dexie {
   async getActionRecords(userId: number): Promise<ActionRecord[]> {
     const actionRecords = await this.actions.where({ userId }).toArray()
     if (actionRecords.length === 0 && !await this.isUserInstalled(userId)) {
-      throw new UserDoesNotExist(`userId=${userId}`)
+      throw new RecordDoesNotExist(`DebtorRecord(userId=${userId})`)
     }
     return actionRecords
   }
@@ -217,15 +217,14 @@ export class LocalDb extends Dexie {
     return await this.actions.get(actionId)
   }
 
-  async createAction(action: ActionRecord): Promise<number> {
+  async createActionRecord(action: ActionRecord & { actionId: undefined }): Promise<number> {
     if (action.actionId !== undefined) {
-      throw new Error('wrong actionId value')
+      throw new TypeError('actionId must be undefined')
     }
-    const actionId = await this.actions.add(action)
-    return actionId
+    return await this.actions.add(action)  // Returns the generated actionId.
   }
 
-  async deleteAction(actionId: number): Promise<void> {
+  async deleteActionRecord(actionId: number): Promise<void> {
     await this.actions.delete(actionId)
   }
 
@@ -253,7 +252,7 @@ export class LocalDb extends Dexie {
     })
   }
 
-  async getDocument(uri: string): Promise<DocumentRecord | undefined> {
+  async getDocumentRecord(uri: string): Promise<DocumentRecord | undefined> {
     return await this.documents.get(uri)
   }
 
