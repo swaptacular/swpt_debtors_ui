@@ -59,7 +59,7 @@ export type ConfigRecord =
 export type TransferRecord =
   & UserReference
   & Transfer
-  & { orderingNumber: number, aborted?: true }
+  & { time: number, aborted?: true }
 
 export type DocumentRecord =
   & UserReference
@@ -144,7 +144,7 @@ export class DebtorsDb extends Dexie {
     this.version(1).stores({
       debtors: '++userId,&uri',
       configs: 'uri,&userId',
-      transfers: 'uri,&[userId+orderingNumber]',
+      transfers: 'uri,&[userId+time]',
       documents: 'uri,userId',
       actions: '++actionId,userId',
       scheduledDeletions: 'uri,userId',
@@ -196,7 +196,7 @@ export class DebtorsDb extends Dexie {
   ): Promise<TransferRecord[]> {
     const { before, after, limit, latestFirst } = options
     let collection = this.transfers
-      .where('[userId+orderingNumber]')
+      .where('[userId+time]')
       .between([userId, after], [userId, before], false, false)
       .limit(limit)
     if (latestFirst) {
@@ -334,27 +334,27 @@ export class DebtorsDb extends Dexie {
       const existingTransferRecord = await this.transfers.get(transfer.uri)
 
       // When the transfer record already exists, make sure `userId`
-      // and `orderingNumber` stay the same.
+      // and `time` stay the same.
       if (existingTransferRecord) {
         if (userId !== existingTransferRecord.userId) {
           throw new Error('Can not alter the userId of an existing transfer record.')
         }
-        const orderingNumber = existingTransferRecord.orderingNumber
-        await this.transfers.put({ ...transfer, userId, orderingNumber })
+        const time = existingTransferRecord.time
+        await this.transfers.put({ ...transfer, userId, time })
         return
       }
 
-      // When the transfer record does not exist, generate an
-      // `orderingNumber` from the transfer's `initiatedAt` field, and
-      // if it is not unique, increment it with epsilon.
-      let orderingNumber = new Date(transfer.initiatedAt).getTime() || Date.now()
+      // When the transfer record does not exist, obtain the `time`
+      // from the transfer's `initiatedAt` field, and if it is not
+      // unique, increment it with epsilon.
+      let time = new Date(transfer.initiatedAt).getTime() || Date.now()
       while (true) {
         try {
-          await this.transfers.put({ ...transfer, userId, orderingNumber })
+          await this.transfers.put({ ...transfer, userId, time })
           return
         } catch (e: unknown) {
           if (!(e instanceof Dexie.ConstraintError)) throw e
-          orderingNumber *= (1 + Number.EPSILON)
+          time *= (1 + Number.EPSILON)
         }
       }
     })
