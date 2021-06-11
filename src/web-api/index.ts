@@ -69,6 +69,10 @@ export class HttpResponse<T = unknown> {
     this.data = r.data
     this.time = new Date()
   }
+
+  buildUri(uriReference: string): string {
+    return new URL(uriReference, this.url).href
+  }
 }
 
 
@@ -87,6 +91,10 @@ export class HttpError extends Error implements HttpResponse {
     this.headers = r.headers
     this.data = r.data
     this.time = new Date()
+  }
+
+  buildUri(uriReference: string): string {
+    return new URL(uriReference, this.url).href
   }
 }
 

@@ -5,7 +5,7 @@ import { ServerSession, HttpError } from '../src/web-api'
 import {
   LocalDb,
   DebtorRecord,
-  UserDoesNotExist,
+  RecordDoesNotExist,
   AlreadyResolvedAction,
 } from '../src/db'
 
@@ -159,7 +159,7 @@ test("Install and uninstall user", async () => {
     userId,
   })
   await expect(db.getTransferRecords(userId)).resolves.toEqual([])
-  await expect(db.getDocument('https://example.com/1/documents/123')).resolves.toEqual({ ...document, userId })
+  await expect(db.getDocumentRecord('https://example.com/1/documents/123')).resolves.toEqual({ ...document, userId })
   await expect(db.getActionRecords(userId)).resolves.toEqual([])
 
   const actionRecord = {
@@ -170,7 +170,7 @@ test("Install and uninstall user", async () => {
     uri: 'https://example.com/1/transfers/xxxxxxxx',
   } as const
   await expect(db.getActionRecord(456)).resolves.toBeUndefined()
-  let actionId = await db.createAction(actionRecord)
+  let actionId = await db.createActionRecord(actionRecord)
   expect(actionId).toBeDefined()
   expect(actionRecord.actionId).toEqual(actionId)
   await expect(db.getActionRecord(actionId)).resolves.toBeDefined()
@@ -178,7 +178,7 @@ test("Install and uninstall user", async () => {
   await expect(db.getActionRecord(actionId)).resolves.toBeUndefined()
   await expect(db.resolveAction(actionId)).rejects.toBeInstanceOf(AlreadyResolvedAction)
 
-  actionId = await db.createAction({ ...actionRecord, actionId: undefined })
+  actionId = await db.createActionRecord({ ...actionRecord, actionId: undefined })
   await db.resolveAction(actionId, { errorCode: 666 })
   await expect(db.getActionRecord(actionId)).resolves.toEqual({ ...actionRecord, actionId, error: { errorCode: 666 } })
   await expect(db.resolveAction(actionId)).rejects.toBeInstanceOf(AlreadyResolvedAction)
@@ -188,9 +188,11 @@ test("Install and uninstall user", async () => {
   await db.uninstallUser(userId)
   await expect(db.getUserId(debtor.uri)).resolves.toBeUndefined()
   await expect(db.isUserInstalled(userId)).resolves.toBeFalsy()
-  await expect(db.getDebtorRecord(userId)).rejects.toBeInstanceOf(UserDoesNotExist)
-  await expect(db.getConfigRecord(userId)).rejects.toBeInstanceOf(UserDoesNotExist)
-  await expect(db.getTransferRecords(userId)).rejects.toBeInstanceOf(UserDoesNotExist)
-  await expect(db.getActionRecords(userId)).rejects.toBeInstanceOf(UserDoesNotExist)
-  await expect(db.getDocument('https://example.com/1/documents/123')).resolves.toEqual(undefined)
+  await expect(db.getDebtorRecord(userId)).rejects.toBeInstanceOf(RecordDoesNotExist)
+  await expect(db.getConfigRecord(userId)).rejects.toBeInstanceOf(RecordDoesNotExist)
+  await expect(db.getTransferRecords(userId)).rejects.toBeInstanceOf(RecordDoesNotExist)
+  await expect(db.getActionRecords(userId)).rejects.toBeInstanceOf(RecordDoesNotExist)
+  await expect(db.replaceActionRecord({ actionId: -666, actionType: 'AbortTransfer', initiatedAt: new Date(), userId, uri: '' }))
+    .rejects.toBeInstanceOf(RecordDoesNotExist)
+  await expect(db.getDocumentRecord('https://example.com/1/documents/123')).resolves.toEqual(undefined)
 })

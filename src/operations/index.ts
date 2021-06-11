@@ -12,6 +12,7 @@ const server = new ServerSession({
 })
 const db = new LocalDb()
 
+
 type ConfigData = {
   type?: 'RootConfigData',
   rate: number,
@@ -19,7 +20,7 @@ type ConfigData = {
     type?: 'DebtorInfo',
     iri: string,
     contentType?: string,
-    sha256?: string,
+    sha256?: string,  // Example: E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855
   }
 }
 
@@ -33,45 +34,50 @@ function extractDocumentInfoUri(configData: string): string | undefined {
 }
 
 
-async function getUserInstallationData(): Promise<UserInstallationData> {
-  const entrypointResponse = await server.getEntrypointResponse() as HttpResponse<Debtor>
-  const debtor = { ...entrypointResponse.data, uri: entrypointResponse.url }
-
-  const {
-    url: transfersListUri,
-    data: transfersList,
-  } = await server.get(new URL(debtor.transfersList.uri, debtor.uri).href) as HttpResponse<TransfersList>
-
+function calcParallelTimeout(numberOfParallelRequests: number): number {
   const n = 6  // a rough guess for the maximum number of parallel connections
-  const timeout = appConfig.serverApiTimeout * (transfersList.items.length + n - 1) / n
+  return appConfig.serverApiTimeout * (numberOfParallelRequests + n - 1) / n
+}
+
+
+async function getDebtorInfoDocument(debtor: Debtor): Promise<UserInstallationData['document']> {
+  const uri = extractDocumentInfoUri(debtor.config.configData)
+  if (uri !== undefined) {
+    const document = await db.getDocumentRecord(uri)
+    if (document) {
+      const { uri, contentType, content } = document
+      return { uri, contentType, content }
+    } else {
+      const { headers, data } = await server.getDocument(uri)
+      return { uri, contentType: String(headers['content-type']), content: data }
+    }
+  }
+  return undefined
+}
+
+
+async function getUserInstallationData(): Promise<UserInstallationData> {
+  const debtorResponse = await server.getEntrypointResponse() as HttpResponse<Debtor>
+  const debtor = { ...debtorResponse.data }
+  debtor.uri = debtorResponse.buildUri(debtor.uri)
+
+  const transfersListUri = debtorResponse.buildUri(debtor.transfersList.uri)
+  const transfersListResponse = await server.get(transfersListUri) as HttpResponse<TransfersList>
+  const transfersListItems = transfersListResponse.data.items
+
+  const timeout = calcParallelTimeout(transfersListItems.length)
   const transfers = (
-    await Promise.all(transfersList
-      .items
-      .map(item => new URL(item.uri, transfersListUri).href)
+    await Promise.all(transfersListItems
+      .map(item => transfersListResponse.buildUri(item.uri))
       .filter(uri => !db.isConcludedTransfer(uri))
       .map(uri => server.get(uri, { timeout }))
     ) as HttpResponse<Transfer>[]
   ).map(response => ({ ...response.data, uri: response.url } as Transfer))
 
-  async function getInfoDocument() {
-    const uri = extractDocumentInfoUri(debtor.config.configData)
-    if (uri !== undefined) {
-      const document = await db.getDocument(uri)
-      if (document) {
-        const { uri, contentType, content } = document
-        return { uri, contentType, content }
-      } else {
-        const { headers, data } = await server.getDocument(uri)
-        return { uri, contentType: String(headers['content-type']), content: data }
-      }
-    }
-    return undefined
-  }
-
   return {
     debtor,
     transfers,
-    document: await getInfoDocument(),
+    document: await getDebtorInfoDocument(debtor),
   }
 }
 

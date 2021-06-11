@@ -228,17 +228,22 @@ export class LocalDb extends Dexie {
     await this.actions.delete(actionId)
   }
 
-  async updateAction(action: ActionRecord): Promise<void> {
-    if (action.actionId === undefined) {
-      throw new Error('undefined actionId')
-    }
-    await this.actions.put(action)
+  async replaceActionRecord(action: ActionRecord & { actionId: number }): Promise<void> {
+    return await this.transaction('rw', this.actions, async () => {
+      const actionId = action.actionId
+      const found = (await this.actions.where({ actionId }).keys()).length == 1
+      if (!found) {
+        throw new RecordDoesNotExist(`ActionRecord(actionId=${actionId})`)
+      }
+      await this.actions.put(action)
+    })
   }
 
-  // When the action has been successful, its action record gets
-  // removed. Otherwise, the reason for the failure is written to
-  // the `error` property of the action record.
   async resolveAction(actionId: number, error?: object): Promise<void> {
+    // When the action has been successful, its action record gets
+    // removed. Otherwise, the reason for the failure is written to
+    // the `error` property of the action record.
+
     return await this.transaction('rw', this.actions, async () => {
       const actionRecord = await this.actions.get(actionId)
       if (!actionRecord || actionRecord.error) {
@@ -311,14 +316,3 @@ export class LocalDb extends Dexie {
     return [this.debtors, this.configs, this.transfers, this.documents, this.actions, this.scheduledDeletions]
   }
 }
-
-// The `ConfigData` will be serialized to something like this: '{
-//   "type": "RootConfigData",
-//   "rate": 10.0,
-//   "info": {
-//     "type": "DebtorInfo",
-//     "iri": "https://example.com/debtors/1/",
-//     "contentType": "text/html",
-//     "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
-//   }
-// }'
