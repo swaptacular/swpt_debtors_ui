@@ -65,7 +65,7 @@ export default {
       inlineSources: !production,
 
       // Manually added. Do not compile tests.
-      include: ["src/**/*"],
+      include: ["src/**/*.ts"],
 
       // Manually added. Seems to be needed in some cases
       // (https://stackoverflow.com/questions/65417201/svelte-imported-typescript-files-not-recognized).
