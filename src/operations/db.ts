@@ -194,9 +194,7 @@ export class DebtorsDb extends Dexie {
     userId: number,
     options = { before: Dexie.maxKey, after: Dexie.minKey, limit: 1e9 },
   ): Promise<TransferRecord[]> {
-    const { before, after, limit } = options
-    const transferRecords = await this.getTransferRecordsCollection(userId, before, after, limit).toArray()
-
+    const transferRecords = await this.getTransferRecordsCollection(userId, options).toArray()
     if (transferRecords.length === 0 && !await this.isUserInstalled(userId)) {
       throw new RecordDoesNotExist(`DebtorRecord(userId=${userId})`)
     }
@@ -207,8 +205,7 @@ export class DebtorsDb extends Dexie {
     userId: number,
     options = { before: Dexie.maxKey, after: Dexie.minKey, limit: 1e9 },
   ): Promise<void> {
-    const { before, after, limit } = options
-    await this.getTransferRecordsCollection(userId, before, after, limit).delete()
+    await this.getTransferRecordsCollection(userId, options).delete()
   }
 
   async getTransferRecord(uri: string): Promise<TransferRecord | undefined> {
@@ -357,7 +354,8 @@ export class DebtorsDb extends Dexie {
     })
   }
 
-  private getTransferRecordsCollection(userId: number, before: any, after: any, limit: number) {
+  private getTransferRecordsCollection(userId: number, options: any) {
+    const { before, after, limit } = options
     return this.transfers
       .where('[userId+orderingNumber]')
       .between([userId, after], [userId, before], false, false)
