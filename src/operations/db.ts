@@ -58,8 +58,8 @@ export type ConfigRecord =
 
 export type TransferRecord =
   & UserReference
-  & Omit<Transfer, 'initiatedAt'>
-  & { initiatedAt: Date, aborted?: true }
+  & Transfer
+  & { orderingNumber: number, aborted?: true }
 
 export type DocumentRecord =
   & UserReference
@@ -144,7 +144,7 @@ export class DebtorsDb extends Dexie {
     this.version(1).stores({
       debtors: '++userId,&uri',
       configs: 'uri,&userId',
-      transfers: 'uri,[userId+initiatedAt]',
+      transfers: 'uri,&[userId+orderingNumber]',
       documents: 'uri,userId',
       actions: '++actionId,userId',
       scheduledDeletions: 'uri,userId',
@@ -190,10 +190,12 @@ export class DebtorsDb extends Dexie {
     return configRecord
   }
 
-  async getTransferRecords(userId: number, notBefore?: Date): Promise<TransferRecord[]> {
+  async getTransferRecords(userId: number, options = { after: Dexie.minKey, limit: 1e9 }): Promise<TransferRecord[]> {
+    const { limit, after } = options
     const transferRecords = await this.transfers
-      .where('[userId+initiatedAt]')
-      .between([userId, notBefore ?? Dexie.minKey], [userId, Dexie.maxKey])
+      .where('[userId+orderingNumber]')
+      .between([userId, after], [userId, Dexie.maxKey], false, true)
+      .limit(limit)
       .toArray()
 
     if (transferRecords.length === 0 && !await this.isUserInstalled(userId)) {
@@ -289,12 +291,11 @@ export class DebtorsDb extends Dexie {
 
       for (const transfer of transfers) {
         const uri = transfer.uri
-        const initiatedAt = new Date(transfer.initiatedAt)
         if (!await this.isConcludedTransfer(uri)) {
           switch (getTransferState(transfer)) {
             case 'unsuccessful':
             case 'delayed':
-              await this.transfers.put({ ...transfer, userId, initiatedAt })
+              await this.putTransferRecord(transfer, userId)
               const existingAbortTransferAction = await this.actions
                 .where({ userId })
                 .filter(action => action.actionType === 'AbortTransfer' && action.uri === uri)
@@ -308,13 +309,44 @@ export class DebtorsDb extends Dexie {
                 })
               break
             case 'successful':
-              await this.transfers.update(uri, { ...transfer, userId, initiatedAt })
+              await this.transfers.update(uri, transfer)
               await this.scheduledDeletions.put({ uri, userId, resourceType: 'Transfer' })
               break
           }
         }
       }
       return userId
+    })
+  }
+
+  async putTransferRecord(transfer: Transfer, userId: number): Promise<void> {
+    return await this.transaction('rw', this.transfers, async () => {
+      const existingTransferRecord = await this.transfers.get(transfer.uri)
+
+      // When the transfer record already exists, make sure `userId`
+      // and `orderingNumber` stay the same.
+      if (existingTransferRecord) {
+        if (userId !== existingTransferRecord.userId) {
+          throw new Error('Can not alter the userId of an existing transfer record.')
+        }
+        const orderingNumber = existingTransferRecord.orderingNumber
+        await this.transfers.put({ ...transfer, userId, orderingNumber })
+        return
+      }
+
+      // When the transfer record does not exist, generate an
+      // `orderingNumber` from the transfer's `initiatedAt` field, and
+      // if it is not unique, increment it with epsilon.
+      let orderingNumber = new Date(transfer.initiatedAt).getTime() || Date.now()
+      while (true) {
+        try {
+          await this.transfers.put({ ...transfer, userId, orderingNumber })
+          return
+        } catch (e: unknown) {
+          if (!(e instanceof Dexie.ConstraintError)) throw e
+          orderingNumber *= (1 + Number.EPSILON)
+        }
+      }
     })
   }
 

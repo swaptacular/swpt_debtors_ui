@@ -195,4 +195,20 @@ test("Install and uninstall user", async () => {
   await expect(db.replaceActionRecord({ actionId: -666, actionType: 'AbortTransfer', initiatedAt: new Date(), userId, uri: '' }))
     .rejects.toBeInstanceOf(RecordDoesNotExist)
   await expect(db.getDocumentRecord('https://example.com/1/documents/123')).resolves.toEqual(undefined)
+
+  const t = transfers[0]
+  const orderingNumber = new Date(t.initiatedAt).getTime()
+  await expect(db.putTransferRecord(t, userId)).resolves.toEqual(undefined)
+  await expect(db.getTransferRecord(t.uri)).resolves.toEqual({ ...t, userId, orderingNumber })
+  await expect(db.putTransferRecord(t, userId)).resolves.toEqual(undefined)
+  await expect(db.getTransferRecord(t.uri)).resolves.toEqual({ ...t, userId, orderingNumber })
+  await expect(db.putTransferRecord(t, userId + 1)).rejects.toBeInstanceOf(Error)
+  const alteredUri = t.uri + '/something'
+  await expect(db.putTransferRecord({ ...t, uri: alteredUri }, userId)).resolves.toEqual(undefined)
+  await expect(db.getTransferRecord(t.uri + '/something')).resolves.toEqual({
+    ...t,
+    userId,
+    uri: alteredUri,
+    orderingNumber: orderingNumber * (1 + Number.EPSILON),
+  })
 })
