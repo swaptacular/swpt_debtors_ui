@@ -1,6 +1,5 @@
 window.appConfig = {
-  serverApiBaseUrl: 'https://demo.swaptacular.org/debtors/',
-  serverApiEntrypoint: '.debtor',
+  serverApiEntrypoint: 'https://demo.swaptacular.org/debtors/.debtor',
   serverApiTimeout: 5000,
   oauth2: {
     authorizationUrl: 'https://demo.swaptacular.org/debtors-hydra/oauth2/auth',

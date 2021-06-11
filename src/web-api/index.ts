@@ -207,7 +207,6 @@ export class ServerSession {
     }
     const tokenHash = buffer2hex(await calcSha256(token))
     const client = axios.create({
-      baseURL: appConfig.serverApiBaseUrl,
       timeout: appConfig.serverApiTimeout,
       headers: {
         'Accept': 'application/json',
