@@ -58,8 +58,8 @@ export type ConfigRecord =
 
 export type TransferRecord =
   & UserReference
-  & Transfer
-  & { aborted?: true }
+  & Omit<Transfer, 'initiatedAt'>
+  & { initiatedAt: Date, aborted?: true }
 
 export type DocumentRecord =
   & UserReference
@@ -144,7 +144,7 @@ export class DebtorsDb extends Dexie {
     this.version(1).stores({
       debtors: '++userId,&uri',
       configs: 'uri,&userId',
-      transfers: 'uri,userId,initiatedAt',
+      transfers: 'uri,[userId+initiatedAt]',
       documents: 'uri,userId',
       actions: '++actionId,userId',
       scheduledDeletions: 'uri,userId',
@@ -190,8 +190,12 @@ export class DebtorsDb extends Dexie {
     return configRecord
   }
 
-  async getTransferRecords(userId: number): Promise<TransferRecord[]> {
-    const transferRecords = await this.transfers.where({ userId }).toArray()
+  async getTransferRecords(userId: number, notBefore?: Date): Promise<TransferRecord[]> {
+    const transferRecords = await this.transfers
+      .where('[userId+initiatedAt]')
+      .between([userId, notBefore ?? Dexie.minKey], [userId, Dexie.maxKey])
+      .toArray()
+
     if (transferRecords.length === 0 && !await this.isUserInstalled(userId)) {
       throw new RecordDoesNotExist(`DebtorRecord(userId=${userId})`)
     }
@@ -285,11 +289,12 @@ export class DebtorsDb extends Dexie {
 
       for (const transfer of transfers) {
         const uri = transfer.uri
+        const initiatedAt = new Date(transfer.initiatedAt)
         if (!await this.isConcludedTransfer(uri)) {
           switch (getTransferState(transfer)) {
             case 'unsuccessful':
             case 'delayed':
-              await this.transfers.put({ ...transfer, userId })
+              await this.transfers.put({ ...transfer, userId, initiatedAt })
               const existingAbortTransferAction = await this.actions
                 .where({ userId })
                 .filter(action => action.actionType === 'AbortTransfer' && action.uri === uri)
@@ -303,7 +308,7 @@ export class DebtorsDb extends Dexie {
                 })
               break
             case 'successful':
-              await this.transfers.update(uri, { ...transfer, userId })
+              await this.transfers.update(uri, { ...transfer, userId, initiatedAt })
               await this.scheduledDeletions.put({ uri, userId, resourceType: 'Transfer' })
               break
           }
