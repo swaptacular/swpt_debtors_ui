@@ -142,7 +142,7 @@ export class LocalDb extends Dexie {
     this.version(1).stores({
       debtors: '++userId,&uri',
       configs: 'uri,&userId',
-      transfers: 'uri,userId',
+      transfers: 'uri,userId,initiatedAt',
       documents: 'uri,userId',
       actions: '++actionId,userId',
       scheduledDeletions: 'uri,userId',
