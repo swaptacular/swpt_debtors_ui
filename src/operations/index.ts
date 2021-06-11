@@ -42,12 +42,14 @@ async function getUserInstallationData(): Promise<UserInstallationData> {
     data: transfersList,
   } = await server.get(new URL(debtor.transfersList.uri, debtor.uri).href) as HttpResponse<TransfersList>
 
+  const n = 6  // a rough guess for the maximum number of parallel connections
+  const timeout = appConfig.serverApiTimeout * (transfersList.items.length + n - 1) / n
   const transfers = (
     await Promise.all(transfersList
       .items
       .map(item => new URL(item.uri, transfersListUri).href)
       .filter(uri => !db.isConcludedTransfer(uri))
-      .map(uri => server.get(uri))
+      .map(uri => server.get(uri, { timeout }))
     ) as HttpResponse<Transfer>[]
   ).map(response => ({ ...response.data, uri: response.url } as Transfer))
 
