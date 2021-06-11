@@ -8,6 +8,13 @@ import type {
 } from '../web-api-schemas'
 
 
+type GetTransferRecordsOptions = {
+  before?: number,
+  after?: number,
+  limit?: number,
+  latestFirst?: boolean,
+}
+
 type UserReference = {
   userId: number,
 }
@@ -190,11 +197,8 @@ export class DebtorsDb extends Dexie {
     return configRecord
   }
 
-  async getTransferRecords(
-    userId: number,
-    options = { before: Dexie.maxKey, after: Dexie.minKey, limit: 1e9, latestFirst: true },
-  ): Promise<TransferRecord[]> {
-    const { before, after, limit, latestFirst } = options
+  async getTransferRecords(userId: number, options: GetTransferRecordsOptions = {}): Promise<TransferRecord[]> {
+    const { before = Dexie.maxKey, after = Dexie.minKey, limit = 1e9, latestFirst = true } = options
     let collection = this.transfers
       .where('[userId+time]')
       .between([userId, after], [userId, before], false, false)
@@ -202,7 +206,6 @@ export class DebtorsDb extends Dexie {
     if (latestFirst) {
       collection = collection.reverse()
     }
-
     const transferRecords = await collection.toArray()
     if (transferRecords.length === 0 && !await this.isUserInstalled(userId)) {
       throw new RecordDoesNotExist(`DebtorRecord(userId=${userId})`)
@@ -235,7 +238,13 @@ export class DebtorsDb extends Dexie {
     if (action.actionId !== undefined) {
       throw new TypeError('actionId must be undefined')
     }
-    return await this.actions.add(action)  // Returns the generated actionId.
+    return await this.transaction('rw', [this.debtors, this.actions], async () => {
+      const userId = action.userId
+      if (!await this.isUserInstalled(userId)) {
+        throw new RecordDoesNotExist(`DebtorRecord(userId=${userId})`)
+      }
+      return await this.actions.add(action)  // Returns the generated actionId.
+    })
   }
 
   async getActionRecord(actionId: number): Promise<ActionRecordWithId | undefined> {
