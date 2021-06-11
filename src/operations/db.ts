@@ -235,9 +235,6 @@ export class DebtorsDb extends Dexie {
   }
 
   async createActionRecord(action: ActionRecord & { actionId: undefined }): Promise<number> {
-    if (action.actionId !== undefined) {
-      throw new TypeError('actionId must be undefined')
-    }
     return await this.transaction('rw', [this.debtors, this.actions], async () => {
       const userId = action.userId
       if (!await this.isUserInstalled(userId)) {
