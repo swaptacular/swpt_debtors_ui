@@ -48,6 +48,10 @@ export type DebtorRecord =
   & Omit<Debtor, 'config'>
   & { config: ResourceReference }
 
+export type DebtorRecordWithId =
+  & DebtorRecord
+  & { userId: number }
+
 export type ConfigRecord =
   & UserReference
   & DebtorConfig
@@ -65,6 +69,10 @@ export type ActionRecord =
   | UpdateConfigAction
   | CreateTransferAction
   | AbortTransferAction
+
+export type ActionRecordWithId =
+  & ActionRecord
+  & { actionId: number }
 
 export type UpdateConfigAction =
   & ActionData
@@ -86,7 +94,6 @@ export type ScheduledDeletionRecord =
   & { resourceType: 'Transfer' }
   & ResourceReference
 
-
 export class UserAlreadyInstalled extends Error {
   name = 'UserAlreadyInstalled'
   userId: number
@@ -97,19 +104,15 @@ export class UserAlreadyInstalled extends Error {
   }
 }
 
-
 export class RecordDoesNotExist extends Error {
   name = 'RecordDoesNotExist'
 }
-
 
 export class AlreadyResolvedAction extends Error {
   name = 'AlreadyResolvedAction'
 }
 
-
 export const TRANSFER_WAIT_SECONDS = 86400  // 24 hours
-
 
 export function getTransferState(transfer: Transfer): 'waiting' | 'delayed' | 'successful' | 'unsuccessful' {
   const result = transfer.result
@@ -126,7 +129,6 @@ export function getTransferState(transfer: Transfer): 'waiting' | 'delayed' | 's
     return 'successful'
   }
 }
-
 
 export class DebtorsDb extends Dexie {
   debtors: Dexie.Table<DebtorRecord, number>
@@ -172,18 +174,18 @@ export class DebtorsDb extends Dexie {
     return await this.debtors.where({ userId }).count() === 1
   }
 
-  async getDebtorRecord(userId: number): Promise<DebtorRecord> {
+  async getDebtorRecord(userId: number): Promise<DebtorRecordWithId> {
     const debtorRecord = await this.debtors.get(userId)
     if (!debtorRecord) {
       throw new RecordDoesNotExist(`DebtorRecord(userId=${userId})`)
     }
-    return debtorRecord
+    return debtorRecord as DebtorRecordWithId
   }
 
   async getConfigRecord(userId: number): Promise<ConfigRecord> {
     const configRecord = await this.configs.where({ userId }).first()
     if (!configRecord) {
-      throw new RecordDoesNotExist(`DebtorRecord(userId=${userId})`)
+      throw new RecordDoesNotExist(`ConfigRecord(userId=${userId})`)
     }
     return configRecord
   }
@@ -205,16 +207,12 @@ export class DebtorsDb extends Dexie {
     return transferRecord?.result !== undefined || transferRecord?.aborted === true
   }
 
-  async getActionRecords(userId: number): Promise<ActionRecord[]> {
+  async getActionRecords(userId: number): Promise<ActionRecordWithId[]> {
     const actionRecords = await this.actions.where({ userId }).toArray()
     if (actionRecords.length === 0 && !await this.isUserInstalled(userId)) {
       throw new RecordDoesNotExist(`DebtorRecord(userId=${userId})`)
     }
-    return actionRecords
-  }
-
-  async getActionRecord(actionId: number): Promise<ActionRecord | undefined> {
-    return await this.actions.get(actionId)
+    return actionRecords as ActionRecordWithId[]
   }
 
   async createActionRecord(action: ActionRecord & { actionId: undefined }): Promise<number> {
@@ -224,14 +222,18 @@ export class DebtorsDb extends Dexie {
     return await this.actions.add(action)  // Returns the generated actionId.
   }
 
+  async getActionRecord(actionId: number): Promise<ActionRecordWithId | undefined> {
+    return await this.actions.get(actionId) as ActionRecordWithId | undefined
+  }
+
   async deleteActionRecord(actionId: number): Promise<void> {
     await this.actions.delete(actionId)
   }
 
-  async replaceActionRecord(action: ActionRecord & { actionId: number }): Promise<void> {
+  async replaceActionRecord(action: ActionRecordWithId): Promise<void> {
     return await this.transaction('rw', this.actions, async () => {
       const actionId = action.actionId
-      const found = (await this.actions.where({ actionId }).keys()).length == 1
+      const found = await this.actions.where({ actionId }).count() == 1
       if (!found) {
         throw new RecordDoesNotExist(`ActionRecord(actionId=${actionId})`)
       }
@@ -276,7 +278,6 @@ export class DebtorsDb extends Dexie {
       if (!(configRecord && configRecord.latestUpdateId >= config.latestUpdateId)) {
         const uri = new URL(config.uri, debtor.uri).href
         await this.configs.put({ ...config, userId, uri })
-        await this.documents.where({ userId }).delete()
         if (document) {
           await this.documents.put({ ...document, userId })
         }
