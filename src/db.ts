@@ -229,12 +229,11 @@ export class LocalDb extends Dexie {
     await this.actions.delete(actionId)
   }
 
-  async replaceAction(action: ActionRecord): Promise<void> {
+  async updateAction(action: ActionRecord): Promise<void> {
     if (action.actionId === undefined) {
       throw new Error('undefined actionId')
     }
-    await this.deleteAction(action.actionId)
-    await this.createAction(action)
+    await this.actions.put(action)
   }
 
   // When the action has been successful, its action record gets
