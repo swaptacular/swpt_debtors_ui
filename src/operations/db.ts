@@ -192,20 +192,26 @@ export class DebtorsDb extends Dexie {
 
   async getTransferRecords(
     userId: number,
-    options = { before: Dexie.maxKey, after: Dexie.minKey, limit: 1e9 },
+    options = { before: Dexie.maxKey, after: Dexie.minKey, limit: 1e9, latestFirst: true },
   ): Promise<TransferRecord[]> {
-    const transferRecords = await this.getTransferRecordsCollection(userId, options).toArray()
+    const { before, after, limit, latestFirst } = options
+    let collection = this.transfers
+      .where('[userId+orderingNumber]')
+      .between([userId, after], [userId, before], false, false)
+      .limit(limit)
+    if (latestFirst) {
+      collection = collection.reverse()
+    }
+
+    const transferRecords = await collection.toArray()
     if (transferRecords.length === 0 && !await this.isUserInstalled(userId)) {
       throw new RecordDoesNotExist(`DebtorRecord(userId=${userId})`)
     }
     return transferRecords
   }
 
-  async deleteTransferRecords(
-    userId: number,
-    options = { before: Dexie.maxKey, after: Dexie.minKey, limit: 1e9 },
-  ): Promise<void> {
-    await this.getTransferRecordsCollection(userId, options).delete()
+  async deleteTransferRecord(uri: string): Promise<void> {
+    return await this.transfers.delete(uri)
   }
 
   async getTransferRecord(uri: string): Promise<TransferRecord | undefined> {
@@ -352,14 +358,6 @@ export class DebtorsDb extends Dexie {
         }
       }
     })
-  }
-
-  private getTransferRecordsCollection(userId: number, options: any) {
-    const { before, after, limit } = options
-    return this.transfers
-      .where('[userId+orderingNumber]')
-      .between([userId, after], [userId, before], false, false)
-      .limit(limit)
   }
 
   private get allTables() {
