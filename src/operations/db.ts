@@ -177,7 +177,7 @@ export class DebtorsDb extends Dexie {
     })
   }
 
-  async isUserInstalled(userId: number): Promise<boolean> {
+  async isInstalledUser(userId: number): Promise<boolean> {
     return await this.debtors.where({ userId }).count() === 1
   }
 
@@ -206,11 +206,7 @@ export class DebtorsDb extends Dexie {
     if (latestFirst) {
       collection = collection.reverse()
     }
-    const transferRecords = await collection.toArray()
-    if (transferRecords.length === 0 && !await this.isUserInstalled(userId)) {
-      throw new RecordDoesNotExist(`DebtorRecord(userId=${userId})`)
-    }
-    return transferRecords
+    return await collection.toArray()
   }
 
   async deleteTransferRecord(uri: string): Promise<void> {
@@ -227,17 +223,13 @@ export class DebtorsDb extends Dexie {
   }
 
   async getActionRecords(userId: number): Promise<ActionRecordWithId[]> {
-    const actionRecords = await this.actions.where({ userId }).toArray()
-    if (actionRecords.length === 0 && !await this.isUserInstalled(userId)) {
-      throw new RecordDoesNotExist(`DebtorRecord(userId=${userId})`)
-    }
-    return actionRecords as ActionRecordWithId[]
+    return await this.actions.where({ userId }).toArray() as ActionRecordWithId[]
   }
 
   async createActionRecord(action: ActionRecord & { actionId: undefined }): Promise<number> {
     return await this.transaction('rw', [this.debtors, this.actions], async () => {
       const userId = action.userId
-      if (!await this.isUserInstalled(userId)) {
+      if (!await this.isInstalledUser(userId)) {
         throw new RecordDoesNotExist(`DebtorRecord(userId=${userId})`)
       }
       return await this.actions.add(action)  // Returns the generated actionId.

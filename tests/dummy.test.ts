@@ -152,7 +152,7 @@ test("Install and uninstall user", async () => {
   expect(debtorRecord.config.uri).toBe('config')
   expect(debtorRecord.config).toEqual({ uri: 'config' })
   await expect(db.getUserId(debtor.uri)).resolves.toBeDefined()
-  await expect(db.isUserInstalled(userId)).resolves.toBeTruthy()
+  await expect(db.isInstalledUser(userId)).resolves.toBeTruthy()
   await expect(db.getConfigRecord(userId)).resolves.toEqual({
     ...debtor.config,
     uri: 'https://example.com/1/config',
@@ -187,11 +187,11 @@ test("Install and uninstall user", async () => {
 
   await db.uninstallUser(userId)
   await expect(db.getUserId(debtor.uri)).resolves.toBeUndefined()
-  await expect(db.isUserInstalled(userId)).resolves.toBeFalsy()
+  await expect(db.isInstalledUser(userId)).resolves.toBeFalsy()
   await expect(db.getDebtorRecord(userId)).rejects.toBeInstanceOf(RecordDoesNotExist)
   await expect(db.getConfigRecord(userId)).rejects.toBeInstanceOf(RecordDoesNotExist)
-  await expect(db.getTransferRecords(userId)).rejects.toBeInstanceOf(RecordDoesNotExist)
-  await expect(db.getActionRecords(userId)).rejects.toBeInstanceOf(RecordDoesNotExist)
+  await expect(db.getTransferRecords(userId)).resolves.toEqual([])
+  await expect(db.getActionRecords(userId)).resolves.toEqual([])
   await expect(db.replaceActionRecord({ actionId: -666, actionType: 'AbortTransfer', initiatedAt: new Date(), userId, uri: '' }))
     .rejects.toBeInstanceOf(RecordDoesNotExist)
   await expect(db.getDocumentRecord('https://example.com/1/documents/123')).resolves.toEqual(undefined)
