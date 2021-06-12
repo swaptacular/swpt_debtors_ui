@@ -8,7 +8,7 @@ import type {
 } from '../web-api-schemas'
 
 
-type GetTransferRecordsOptions = {
+type ListQueryOptions = {
   before?: number,
   after?: number,
   limit?: number,
@@ -101,22 +101,8 @@ export type ScheduledDeletionRecord =
   & { resourceType: 'Transfer' }
   & ResourceReference
 
-export class UserAlreadyInstalled extends Error {
-  name = 'UserAlreadyInstalled'
-  userId: number
-
-  constructor(userId: number) {
-    super(`userId=${userId}`)
-    this.userId = userId
-  }
-}
-
 export class RecordDoesNotExist extends Error {
   name = 'RecordDoesNotExist'
-}
-
-export class AlreadyResolvedAction extends Error {
-  name = 'AlreadyResolvedAction'
 }
 
 export const TRANSFER_WAIT_SECONDS = 86400  // 24 hours
@@ -153,7 +139,7 @@ export class DebtorsDb extends Dexie {
       configs: 'uri,&userId',
       transfers: 'uri,&[userId+time]',
       documents: 'uri,userId',
-      actions: '++actionId,userId',
+      actions: '++actionId,&[userId+actionId]',
       scheduledDeletions: 'uri,userId',
     })
 
@@ -177,10 +163,6 @@ export class DebtorsDb extends Dexie {
     })
   }
 
-  async isInstalledUser(userId: number): Promise<boolean> {
-    return await this.debtors.where({ userId }).count() === 1
-  }
-
   async getDebtorRecord(userId: number): Promise<DebtorRecordWithId> {
     const debtorRecord = await this.debtors.get(userId)
     if (!debtorRecord) {
@@ -197,7 +179,7 @@ export class DebtorsDb extends Dexie {
     return configRecord
   }
 
-  async getTransferRecords(userId: number, options: GetTransferRecordsOptions = {}): Promise<TransferRecord[]> {
+  async getTransferRecords(userId: number, options: ListQueryOptions = {}): Promise<TransferRecord[]> {
     const { before = Dexie.maxKey, after = Dexie.minKey, limit = 1e9, latestFirst = true } = options
     let collection = this.transfers
       .where('[userId+time]')
@@ -209,10 +191,6 @@ export class DebtorsDb extends Dexie {
     return await collection.toArray()
   }
 
-  async deleteTransferRecord(uri: string): Promise<void> {
-    return await this.transfers.delete(uri)
-  }
-
   async getTransferRecord(uri: string): Promise<TransferRecord | undefined> {
     return await this.transfers.get(uri)
   }
@@ -222,8 +200,20 @@ export class DebtorsDb extends Dexie {
     return transferRecord?.result !== undefined || transferRecord?.aborted === true
   }
 
-  async getActionRecords(userId: number): Promise<ActionRecordWithId[]> {
-    return await this.actions.where({ userId }).toArray() as ActionRecordWithId[]
+  async getActionRecords(userId: number, options: ListQueryOptions = {}): Promise<ActionRecordWithId[]> {
+    const { before = Dexie.maxKey, after = Dexie.minKey, limit = 1e9, latestFirst = true } = options
+    let collection = this.actions
+      .where('[userId+actionId]')
+      .between([userId, after], [userId, before], false, false)
+      .limit(limit)
+    if (latestFirst) {
+      collection = collection.reverse()
+    }
+    return await collection.toArray() as ActionRecordWithId[]
+  }
+
+  async getActionRecord(actionId: number): Promise<ActionRecordWithId | undefined> {
+    return await this.actions.get(actionId) as ActionRecordWithId | undefined
   }
 
   async createActionRecord(action: ActionRecord & { actionId: undefined }): Promise<number> {
@@ -232,45 +222,22 @@ export class DebtorsDb extends Dexie {
       if (!await this.isInstalledUser(userId)) {
         throw new RecordDoesNotExist(`DebtorRecord(userId=${userId})`)
       }
-      return await this.actions.add(action)  // Returns the generated actionId.
+      return await this.actions.add(action)  // Returns the new actionId.
     })
   }
 
-  async getActionRecord(actionId: number): Promise<ActionRecordWithId | undefined> {
-    return await this.actions.get(actionId) as ActionRecordWithId | undefined
+  async replaceActionRecord(actionId: number, action: ActionRecord & { actionId: undefined }): Promise<number> {
+    return await this.transaction('rw', this.actions, async () => {
+      const found = await this.actions.where({ actionId }).delete() == 1
+      if (!found) {
+        throw new RecordDoesNotExist(`ActionRecord(actionId=${actionId})`)
+      }
+      return await this.actions.add(action)  // Returns the new actionId.
+    })
   }
 
   async deleteActionRecord(actionId: number): Promise<void> {
     await this.actions.delete(actionId)
-  }
-
-  async replaceActionRecord(action: ActionRecordWithId): Promise<void> {
-    return await this.transaction('rw', this.actions, async () => {
-      const actionId = action.actionId
-      const found = await this.actions.where({ actionId }).count() == 1
-      if (!found) {
-        throw new RecordDoesNotExist(`ActionRecord(actionId=${actionId})`)
-      }
-      await this.actions.put(action)
-    })
-  }
-
-  async resolveAction(actionId: number, error?: object): Promise<void> {
-    // When the action has been successful, its action record gets
-    // removed. Otherwise, the reason for the failure is written to
-    // the `error` property of the action record.
-
-    return await this.transaction('rw', this.actions, async () => {
-      const actionRecord = await this.actions.get(actionId)
-      if (!actionRecord || actionRecord.error) {
-        throw new AlreadyResolvedAction(`actionId=${actionId}`)
-      }
-      if (!error) {
-        await this.actions.delete(actionId)
-      } else {
-        await this.actions.update(actionId, { ...actionRecord, error })
-      }
-    })
   }
 
   async getDocumentRecord(uri: string): Promise<DocumentRecord | undefined> {
@@ -327,7 +294,7 @@ export class DebtorsDb extends Dexie {
     })
   }
 
-  async putTransferRecord(transfer: Transfer, userId: number): Promise<void> {
+  private async putTransferRecord(transfer: Transfer, userId: number): Promise<void> {
     return await this.transaction('rw', this.transfers, async () => {
       const existingTransferRecord = await this.transfers.get(transfer.uri)
 
@@ -356,6 +323,10 @@ export class DebtorsDb extends Dexie {
         }
       }
     })
+  }
+
+  private async isInstalledUser(userId: number): Promise<boolean> {
+    return await this.debtors.where({ userId }).count() === 1
   }
 
   private get allTables() {
