@@ -220,7 +220,7 @@ test("Install and uninstall user", async () => {
     noteFormat: '',
     initiatedAt: isoNow,
   }
-  await expect(db.createTransferRecord(-1, theCreatedTransfer)).rejects.toBeInstanceOf(RecordDoesNotExist)
+  await expect(db.createTransfer(-1, theCreatedTransfer)).rejects.toBeInstanceOf(RecordDoesNotExist)
   const createTransferActionId = await db.createActionRecord({
     userId,
     actionType: 'CreateTransfer',
@@ -230,7 +230,7 @@ test("Install and uninstall user", async () => {
     transferUuid: '123e4567-e89b-12d3-a456-426655440000',
   })
   expect(createTransferActionId).toBeDefined()
-  const transferRecord = await db.createTransferRecord(createTransferActionId, theCreatedTransfer)
+  const transferRecord = await db.createTransfer(createTransferActionId, theCreatedTransfer)
   expect(transferRecord.time).toBeDefined()
   await expect(db.getActionRecord(createTransferActionId)).resolves.toBe(undefined)
 
@@ -242,7 +242,7 @@ test("Install and uninstall user", async () => {
     debtor: { uri: '/debtors/1/' },
     configData: '',
   }
-  await expect(db.updateConfigRecord(-1, theDebtorConfig)).rejects.toBeInstanceOf(RecordDoesNotExist)
+  await expect(db.updateConfig(-1, theDebtorConfig)).rejects.toBeInstanceOf(RecordDoesNotExist)
   const updateConifgActionId = await db.createActionRecord({
     userId,
     actionType: 'UpdateConfig',
@@ -251,7 +251,7 @@ test("Install and uninstall user", async () => {
     info: 'http://example.com/document',
   })
   expect(createTransferActionId).toBeDefined()
-  const configRecord = await db.updateConfigRecord(updateConifgActionId, theDebtorConfig)
+  const configRecord = await db.updateConfig(updateConifgActionId, theDebtorConfig)
   expect(configRecord.configData).toBeDefined()
   await expect(db.getActionRecord(updateConifgActionId)).resolves.toBe(undefined)
 

@@ -202,7 +202,7 @@ export class DebtorsDb extends Dexie {
     return await this.transfers.get(uri)
   }
 
-  async createTransferRecord(actionId: number, transfer: Transfer): Promise<TransferRecord> {
+  async createTransfer(actionId: number, transfer: Transfer): Promise<TransferRecord> {
     return await this.transaction('rw', [this.transfers, this.actions], async () => {
       const actionRecord = await this.actions.get(actionId)
       if (!(actionRecord && actionRecord.actionType === 'CreateTransfer')) {
@@ -226,7 +226,7 @@ export class DebtorsDb extends Dexie {
     return transferRecord?.result !== undefined || transferRecord?.aborted === true
   }
 
-  async updateConfigRecord(actionId: number, debtorConfig: DebtorConfig): Promise<ConfigRecord> {
+  async updateConfig(actionId: number, debtorConfig: DebtorConfig): Promise<ConfigRecord> {
     return await this.transaction('rw', [this.configs, this.actions], async () => {
       const actionRecord = await this.actions.get(actionId)
       if (!(actionRecord && actionRecord.actionType === 'UpdateConfig')) {
