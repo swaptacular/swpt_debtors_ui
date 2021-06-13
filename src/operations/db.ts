@@ -208,6 +208,7 @@ export class DebtorsDb extends Dexie {
       if (!(actionRecord && actionRecord.actionType === 'CreateTransfer')) {
         throw new RecordDoesNotExist(`ActionRecord(actionId=${actionId}, actionType="CreateTransfer")`)
       }
+      this.actions.delete(actionId)
       const userId = actionRecord.userId
       const alreadyExists = await this.putTransferRecord(transfer, userId)
       if (alreadyExists) {
@@ -231,6 +232,7 @@ export class DebtorsDb extends Dexie {
       if (!(actionRecord && actionRecord.actionType === 'UpdateConfig')) {
         throw new RecordDoesNotExist(`ActionRecord(actionId=${actionId}, actionType="UpdateConfig")`)
       }
+      this.actions.delete(actionId)
       const userId = actionRecord.userId
       const configRecord = { ...debtorConfig, userId }
       await this.configs.put(configRecord)

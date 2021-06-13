@@ -232,6 +232,7 @@ test("Install and uninstall user", async () => {
   expect(createTransferActionId).toBeDefined()
   const transferRecord = await db.createTransferRecord(createTransferActionId, theCreatedTransfer)
   expect(transferRecord.time).toBeDefined()
+  await expect(db.getActionRecord(createTransferActionId)).resolves.toBe(undefined)
 
   const theDebtorConfig = {
     type: 'DebtorConfig',
@@ -251,7 +252,8 @@ test("Install and uninstall user", async () => {
   })
   expect(createTransferActionId).toBeDefined()
   const configRecord = await db.updateConfigRecord(updateConifgActionId, theDebtorConfig)
-  // expect(configRecord.configData).toBeDefined()
+  expect(configRecord.configData).toBeDefined()
+  await expect(db.getActionRecord(updateConifgActionId)).resolves.toBe(undefined)
 
   await db.uninstallUser(userId)
   await expect(db.getUserId(debtor.uri)).resolves.toBeUndefined()
