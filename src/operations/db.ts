@@ -233,15 +233,18 @@ export class DebtorsDb extends Dexie {
         throw new RecordDoesNotExist(`ActionRecord(actionId=${actionId}, actionType="UpdateConfig")`)
       }
       this.actions.delete(actionId)
-
-      const existingConfigRecord = await this.configs.get(debtorConfig.uri)
-      if (existingConfigRecord && existingConfigRecord.latestUpdateId >= debtorConfig.latestUpdateId) {
-        return existingConfigRecord
-      }
       const userId = actionRecord.userId
-      const newConfigRecord = { ...debtorConfig, userId }
-      await this.configs.put(newConfigRecord)
-      return newConfigRecord
+
+      let configRecord = await this.configs.get(debtorConfig.uri)
+      if (!(
+        configRecord &&
+        configRecord.userId === userId &&
+        configRecord.latestUpdateId >= debtorConfig.latestUpdateId
+      )) {
+        configRecord = { ...debtorConfig, userId }
+        await this.configs.put(configRecord)
+      }
+      return configRecord
     })
   }
 
