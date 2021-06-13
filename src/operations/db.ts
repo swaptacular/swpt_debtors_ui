@@ -137,7 +137,14 @@ export class DebtorsDb extends Dexie {
     this.version(1).stores({
       debtors: '++userId,&uri',
       configs: 'uri,&userId',
+
+      // Here '[userId+time],&uri' would probably be a bit more
+      // efficient, because the records would be ordered physically in
+      // the same way as they are normally queried. The problem is
+      // that it seems "fake-indexeddb", which we use for testing,
+      // does not support compound primary keys.
       transfers: 'uri,&[userId+time]',
+
       documents: 'uri,userId',
       actions: '++actionId,&[userId+actionId]',
       scheduledDeletions: 'uri,userId',
