@@ -198,9 +198,9 @@ export class DebtorsDb extends Dexie {
       }
       this.actions.delete(actionId)
       const userId = actionRecord.userId
-      let configRecord = await this.configs.get(debtorConfig.uri)
-      if (!(configRecord && configRecord.userId === userId)) {
-        throw new Error("Can not find the user's config record.")
+      let configRecord = await this.getConfigRecord(userId)
+      if (configRecord.uri !== debtorConfig.uri) {
+        throw new Error('Can not alter the URI of an existing config record.')
       }
       if (configRecord.latestUpdateId < debtorConfig.latestUpdateId) {
         configRecord = { ...debtorConfig, userId }
