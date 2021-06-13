@@ -101,7 +101,7 @@ test.skip("Try to save document", async () => {
 test("Install and uninstall user", async () => {
   const debtor = {
     type: 'Debtor',
-    uri: 'https://example.com/1/',
+    uri: 'https://example.com/debtors/1/',
     createTransfer: { uri: 'https://example.com/1/transfers/' },
     saveDocument: { uri: 'https://example.com/1/documents/' },
     publicInfoDocument: { uri: 'https:/example.com/1/public' },
@@ -169,7 +169,7 @@ test("Install and uninstall user", async () => {
   await expect(db.getUserId(debtor.uri)).resolves.toBeDefined()
   await expect(db.getConfigRecord(userId)).resolves.toEqual({
     ...debtor.config,
-    uri: 'https://example.com/1/config',
+    uri: 'https://example.com/debtors/1/config',
     userId,
   })
   await expect(db.getTransferRecords(userId)).resolves.toEqual(
@@ -221,7 +221,6 @@ test("Install and uninstall user", async () => {
     initiatedAt: isoNow,
   }
   await expect(db.createTransferRecord(-1, theCreatedTransfer)).rejects.toBeInstanceOf(RecordDoesNotExist)
-
   const createTransferActionId = await db.createActionRecord({
     userId,
     actionType: 'CreateTransfer',
@@ -233,6 +232,26 @@ test("Install and uninstall user", async () => {
   expect(createTransferActionId).toBeDefined()
   const transferRecord = await db.createTransferRecord(createTransferActionId, theCreatedTransfer)
   expect(transferRecord.time).toBeDefined()
+
+  const theDebtorConfig = {
+    type: 'DebtorConfig',
+    uri: 'https://example.com/debtors/1/config',
+    latestUpdateId: 1n,
+    latestUpdateAt: isoNow,
+    debtor: { uri: '/debtors/1/' },
+    configData: '',
+  }
+  await expect(db.updateConfigRecord(-1, theDebtorConfig)).rejects.toBeInstanceOf(RecordDoesNotExist)
+  const updateConifgActionId = await db.createActionRecord({
+    userId,
+    actionType: 'UpdateConfig',
+    createdAt: new Date(),
+    rate: 5.0,
+    info: 'http://example.com/document',
+  })
+  expect(createTransferActionId).toBeDefined()
+  const configRecord = await db.updateConfigRecord(updateConifgActionId, theDebtorConfig)
+  // expect(configRecord.configData).toBeDefined()
 
   await db.uninstallUser(userId)
   await expect(db.getUserId(debtor.uri)).resolves.toBeUndefined()
