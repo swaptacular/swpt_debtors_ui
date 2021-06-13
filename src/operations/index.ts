@@ -1,5 +1,5 @@
 import type { Debtor, Transfer, TransfersList } from '../web-api-schemas'
-import { DebtorsDb, UserInstallationData, DebtorRecord } from './db'
+import { DebtorsDb, UserInstallationData, DebtorRecord, isConcludedTransfer } from './db'
 import { ServerSession, HttpResponse, ServerSessionError } from '../web-api'
 
 const server = new ServerSession({
@@ -65,13 +65,18 @@ async function getUserInstallationData(): Promise<UserInstallationData> {
   const transfersListResponse = await server.get(transfersListUri) as HttpResponse<TransfersList>
   const transfersListItems = transfersListResponse.data.items
 
-  const timeout = calcParallelTimeout(transfersListItems.length)
-  const transfers = (
+  const transferUris = (
     await Promise.all(transfersListItems
       .map(item => transfersListResponse.buildUri(item.uri))
-      .filter(uri => !db.isConcludedTransfer(uri))
-      .map(uri => server.get(uri, { timeout }))
-    ) as HttpResponse<Transfer>[]
+      .map(async uri => {
+        const t = await db.getTransferRecord(uri)
+        return t && isConcludedTransfer(t) ? undefined : uri
+      })
+    )
+  ).filter(uri => uri !== undefined) as string[]
+  const timeout = calcParallelTimeout(transferUris.length)
+  const transfers = (
+    await Promise.all(transferUris.map(uri => server.get(uri, { timeout }))) as HttpResponse<Transfer>[]
   ).map(response => ({ ...response.data, uri: response.url } as Transfer))
 
   return {

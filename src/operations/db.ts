@@ -123,6 +123,10 @@ export function getTransferState(transfer: Transfer): 'waiting' | 'delayed' | 's
   }
 }
 
+export function isConcludedTransfer(transferRecord: TransferRecord): boolean {
+  return transferRecord.result !== undefined || transferRecord.aborted === true
+}
+
 export class DebtorsDb extends Dexie {
   debtors: Dexie.Table<DebtorRecord, number>
   configs: Dexie.Table<ConfigRecord, string>
@@ -194,7 +198,6 @@ export class DebtorsDb extends Dexie {
       }
       this.actions.delete(actionId)
       const userId = actionRecord.userId
-
       let configRecord = await this.configs.get(debtorConfig.uri)
       if (!(configRecord && configRecord.userId === userId)) {
         throw new Error("Can not find the user's config record.")
@@ -249,18 +252,12 @@ export class DebtorsDb extends Dexie {
         throw new RecordDoesNotExist(`ActionRecord(actionId=${actionId}, actionType="AbortTransfer")`)
       }
       this.actions.delete(actionId)
-
       const { uri, userId } = actionRecord
       this.transfers
         .where({ uri })
         .filter(record => record.userId === userId)
         .modify({ aborted: true })
     })
-  }
-
-  async isConcludedTransfer(uri: string): Promise<boolean> {
-    const transferRecord = await this.transfers.get(uri)
-    return transferRecord?.result !== undefined || transferRecord?.aborted === true
   }
 
   async getActionRecords(userId: number, options: ListQueryOptions = {}): Promise<ActionRecordWithId[]> {
@@ -390,6 +387,11 @@ export class DebtorsDb extends Dexie {
 
   private async isInstalledUser(userId: number): Promise<boolean> {
     return await this.debtors.where({ userId }).count() === 1
+  }
+
+  private async isConcludedTransfer(uri: string): Promise<boolean> {
+    const transferRecord = await this.transfers.get(uri)
+    return Boolean(transferRecord && isConcludedTransfer(transferRecord))
   }
 
   private get allTables() {
