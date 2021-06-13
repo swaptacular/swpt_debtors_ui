@@ -221,6 +221,22 @@ export class DebtorsDb extends Dexie {
     })
   }
 
+  async abortTransfer(actionId: number): Promise<void> {
+    return await this.transaction('rw', [this.transfers, this.actions], async () => {
+      const actionRecord = await this.actions.get(actionId)
+      if (!(actionRecord && actionRecord.actionType === 'AbortTransfer')) {
+        throw new RecordDoesNotExist(`ActionRecord(actionId=${actionId}, actionType="AbortTransfer")`)
+      }
+      this.actions.delete(actionId)
+
+      const { uri, userId } = actionRecord
+      this.transfers
+        .where({ uri })
+        .filter(record => record.userId === userId)
+        .modify({ aborted: true })
+    })
+  }
+
   async isConcludedTransfer(uri: string): Promise<boolean> {
     const transferRecord = await this.transfers.get(uri)
     return transferRecord?.result !== undefined || transferRecord?.aborted === true
