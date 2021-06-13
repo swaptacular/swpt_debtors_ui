@@ -40,7 +40,7 @@ type ActionData =
   & {
     actionId?: number,
     actionType: string,
-    initiatedAt: Date,
+    createdAt: Date,
     error?: object,
   }
 
@@ -305,7 +305,7 @@ export class DebtorsDb extends Dexie {
                   userId,
                   actionType: 'AbortTransfer',
                   uri,
-                  initiatedAt: new Date(),
+                  createdAt: new Date(),
                 })
               break
             case 'successful':
