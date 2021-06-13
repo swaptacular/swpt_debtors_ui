@@ -202,6 +202,24 @@ export class DebtorsDb extends Dexie {
     return await this.transfers.get(uri)
   }
 
+  async createTransferRecord(actionId: number, transfer: Transfer): Promise<TransferRecord> {
+    return await this.transaction('rw', [this.transfers, this.actions], async () => {
+      const actionRecord = await this.actions.get(actionId)
+      if (!(actionRecord && actionRecord.actionType === 'CreateTransfer')) {
+        throw new RecordDoesNotExist(`ActionRecord(actionId=${actionId}, actionType="CreateTransfer")`)
+      }
+      const userId = actionRecord.userId
+      const alreadyExists = await this.putTransferRecord(transfer, userId)
+      if (alreadyExists) {
+        console.warn(
+          `Instead of creating a new transfer record, an existing record has ` +
+          `been overwritten (uri=${transfer.uri}). Possible UUID duplication.`
+        )
+      }
+      return await this.transfers.get(transfer.uri) as TransferRecord
+    })
+  }
+
   async isConcludedTransfer(uri: string): Promise<boolean> {
     const transferRecord = await this.transfers.get(uri)
     return transferRecord?.result !== undefined || transferRecord?.aborted === true
@@ -223,7 +241,7 @@ export class DebtorsDb extends Dexie {
     return await this.actions.get(actionId) as ActionRecordWithId | undefined
   }
 
-  async createActionRecord(action: ActionRecord & { actionId: undefined }): Promise<number> {
+  async createActionRecord(action: ActionRecord & { actionId?: undefined }): Promise<number> {
     return await this.transaction('rw', [this.debtors, this.actions], async () => {
       const userId = action.userId
       if (!await this.isInstalledUser(userId)) {
@@ -233,7 +251,7 @@ export class DebtorsDb extends Dexie {
     })
   }
 
-  async replaceActionRecord(actionId: number, action: ActionRecord & { actionId: undefined }): Promise<number> {
+  async replaceActionRecord(actionId: number, action: ActionRecord & { actionId?: undefined }): Promise<number> {
     return await this.transaction('rw', this.actions, async () => {
       const found = await this.actions.where({ actionId }).delete() == 1
       if (!found) {
@@ -301,7 +319,7 @@ export class DebtorsDb extends Dexie {
     })
   }
 
-  private async putTransferRecord(transfer: Transfer, userId: number): Promise<void> {
+  private async putTransferRecord(transfer: Transfer, userId: number): Promise<boolean> {
     return await this.transaction('rw', this.transfers, async () => {
       const existingTransferRecord = await this.transfers.get(transfer.uri)
 
@@ -313,7 +331,7 @@ export class DebtorsDb extends Dexie {
         }
         const time = existingTransferRecord.time
         await this.transfers.put({ ...transfer, userId, time })
-        return
+        return true
       }
 
       // When the transfer record does not exist, obtain the `time`
@@ -323,7 +341,7 @@ export class DebtorsDb extends Dexie {
       while (true) {
         try {
           await this.transfers.put({ ...transfer, userId, time })
-          return
+          return false
         } catch (e: unknown) {
           if (!(e instanceof Dexie.ConstraintError)) throw e
           time *= (1 + Number.EPSILON)

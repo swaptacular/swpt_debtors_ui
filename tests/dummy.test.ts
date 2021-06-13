@@ -209,6 +209,31 @@ test("Install and uninstall user", async () => {
   const x = await db.createActionRecord({ ...actionRecord, actionId: undefined })
   await expect(db.getActionRecords(userId)).resolves.toEqual([{ ...actionRecord, actionId: x }])
 
+  const theCreatedTransfer = {
+    type: 'Transfer',
+    uri: 'https://example.com/1/transfers/123e4567-e89b-12d3-a456-426655440000',
+    recipient: { uri: 'swpt:1/2' },
+    amount: 777n,
+    transferUuid: '123e4567-e89b-12d3-a456-426655440000',
+    transfersList: { uri: 'https://example.com/1/transfers/' },
+    note: '',
+    noteFormat: '',
+    initiatedAt: isoNow,
+  }
+  await expect(db.createTransferRecord(-1, theCreatedTransfer)).rejects.toBeInstanceOf(RecordDoesNotExist)
+
+  const createTransferActionId = await db.createActionRecord({
+    userId,
+    actionType: 'CreateTransfer',
+    initiatedAt: new Date(),
+    recipient: { uri: 'swpt:1/2' },
+    amount: 777n,
+    transferUuid: '123e4567-e89b-12d3-a456-426655440000',
+  })
+  expect(createTransferActionId).toBeDefined()
+  const transferRecord = await db.createTransferRecord(createTransferActionId, theCreatedTransfer)
+  expect(transferRecord.time).toBeDefined()
+
   await db.uninstallUser(userId)
   await expect(db.getUserId(debtor.uri)).resolves.toBeUndefined()
   await expect(db.getDebtorRecord(userId)).rejects.toBeInstanceOf(RecordDoesNotExist)
@@ -219,13 +244,13 @@ test("Install and uninstall user", async () => {
 
   const t = transfers[0]
   const time = new Date(t.initiatedAt).getTime()
-  await expect((db as any).putTransferRecord(t, userId)).resolves.toEqual(undefined)
+  await expect((db as any).putTransferRecord(t, userId)).resolves.toEqual(false)
   await expect(db.getTransferRecord(t.uri)).resolves.toEqual({ ...t, userId, time })
-  await expect((db as any).putTransferRecord(t, userId)).resolves.toEqual(undefined)
+  await expect((db as any).putTransferRecord(t, userId)).resolves.toEqual(true)
   await expect(db.getTransferRecord(t.uri)).resolves.toEqual({ ...t, userId, time })
   await expect((db as any).putTransferRecord(t, userId + 1)).rejects.toBeInstanceOf(Error)
   const alteredUri = t.uri + '/something'
-  await expect((db as any).putTransferRecord({ ...t, uri: alteredUri }, userId)).resolves.toEqual(undefined)
+  await expect((db as any).putTransferRecord({ ...t, uri: alteredUri }, userId)).resolves.toEqual(false)
   await expect(db.getTransferRecord(t.uri + '/something')).resolves.toEqual({
     ...t,
     userId,
