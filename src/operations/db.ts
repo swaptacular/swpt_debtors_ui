@@ -196,11 +196,10 @@ export class DebtorsDb extends Dexie {
       const userId = actionRecord.userId
 
       let configRecord = await this.configs.get(debtorConfig.uri)
-      if (!(
-        configRecord &&
-        configRecord.userId === userId &&
-        configRecord.latestUpdateId >= debtorConfig.latestUpdateId
-      )) {
+      if (!(configRecord && configRecord.userId === userId)) {
+        throw new Error("Can not find the user's config record.")
+      }
+      if (configRecord.latestUpdateId < debtorConfig.latestUpdateId) {
         configRecord = { ...debtorConfig, userId }
         await this.configs.put(configRecord)
       }
@@ -236,7 +235,7 @@ export class DebtorsDb extends Dexie {
       if (alreadyExists) {
         console.warn(
           `Instead of creating a new transfer record, an existing record has ` +
-          `been overwritten (uri=${transfer.uri}). Possible UUID duplication.`
+          `been overwritten (uri="${transfer.uri}"). Possible UUID duplication.`
         )
       }
       return await this.transfers.get(transfer.uri) as TransferRecord
