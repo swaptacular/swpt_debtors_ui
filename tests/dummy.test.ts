@@ -237,7 +237,7 @@ test("Install and uninstall user", async () => {
   const theDebtorConfig = {
     type: 'DebtorConfig',
     uri: 'https://example.com/debtors/1/config',
-    latestUpdateId: 1n,
+    latestUpdateId: 2n,
     latestUpdateAt: isoNow,
     debtor: { uri: '/debtors/1/' },
     configData: '',
