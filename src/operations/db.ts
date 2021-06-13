@@ -186,6 +186,28 @@ export class DebtorsDb extends Dexie {
     return configRecord
   }
 
+  async updateConfig(actionId: number, debtorConfig: DebtorConfig): Promise<ConfigRecord> {
+    return await this.transaction('rw', [this.configs, this.actions], async () => {
+      const actionRecord = await this.actions.get(actionId)
+      if (!(actionRecord && actionRecord.actionType === 'UpdateConfig')) {
+        throw new RecordDoesNotExist(`ActionRecord(actionId=${actionId}, actionType="UpdateConfig")`)
+      }
+      this.actions.delete(actionId)
+      const userId = actionRecord.userId
+
+      let configRecord = await this.configs.get(debtorConfig.uri)
+      if (!(
+        configRecord &&
+        configRecord.userId === userId &&
+        configRecord.latestUpdateId >= debtorConfig.latestUpdateId
+      )) {
+        configRecord = { ...debtorConfig, userId }
+        await this.configs.put(configRecord)
+      }
+      return configRecord
+    })
+  }
+
   async getTransferRecords(userId: number, options: ListQueryOptions = {}): Promise<TransferRecord[]> {
     const { before = Dexie.maxKey, after = Dexie.minKey, limit = 1e9, latestFirst = true } = options
     let collection = this.transfers
@@ -240,28 +262,6 @@ export class DebtorsDb extends Dexie {
   async isConcludedTransfer(uri: string): Promise<boolean> {
     const transferRecord = await this.transfers.get(uri)
     return transferRecord?.result !== undefined || transferRecord?.aborted === true
-  }
-
-  async updateConfig(actionId: number, debtorConfig: DebtorConfig): Promise<ConfigRecord> {
-    return await this.transaction('rw', [this.configs, this.actions], async () => {
-      const actionRecord = await this.actions.get(actionId)
-      if (!(actionRecord && actionRecord.actionType === 'UpdateConfig')) {
-        throw new RecordDoesNotExist(`ActionRecord(actionId=${actionId}, actionType="UpdateConfig")`)
-      }
-      this.actions.delete(actionId)
-      const userId = actionRecord.userId
-
-      let configRecord = await this.configs.get(debtorConfig.uri)
-      if (!(
-        configRecord &&
-        configRecord.userId === userId &&
-        configRecord.latestUpdateId >= debtorConfig.latestUpdateId
-      )) {
-        configRecord = { ...debtorConfig, userId }
-        await this.configs.put(configRecord)
-      }
-      return configRecord
-    })
   }
 
   async getActionRecords(userId: number, options: ListQueryOptions = {}): Promise<ActionRecordWithId[]> {
