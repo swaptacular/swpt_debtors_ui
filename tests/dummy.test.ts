@@ -208,6 +208,9 @@ test("Install and uninstall user", async () => {
   await expect(db.getActionRecords(userId)).resolves.toEqual([])
   const x = await db.createActionRecord({ ...actionRecord, actionId: undefined })
   await expect(db.getActionRecords(userId)).resolves.toEqual([{ ...actionRecord, actionId: x }])
+  await expect(db.updateActionRecord({ ...actionRecord, actionId: x, uri: 'https://example.com/1/transfers/updated' })).resolves.toBeUndefined()
+  await expect(db.getActionRecords(userId)).resolves.toEqual([{ ...actionRecord, actionId: x, uri: 'https://example.com/1/transfers/updated' }])
+  await expect(db.updateActionRecord({ ...actionRecord, actionId: -1 })).rejects.toBeInstanceOf(RecordDoesNotExist)
 
   const theCreatedTransfer = {
     type: 'Transfer',

@@ -286,11 +286,23 @@ export class DebtorsDb extends Dexie {
     })
   }
 
+  async updateActionRecord(action: ActionRecord & { actionId: number }): Promise<void> {
+    return await this.transaction('rw', this.actions, async () => {
+      const { actionId, userId } = action
+      const existingActionRecord = await this.actions.get(actionId)
+      if (!(existingActionRecord && existingActionRecord.userId === action.userId)) {
+        throw new RecordDoesNotExist(`ActionRecord(actionId=${actionId}, userId=${userId})`)
+      }
+      await this.actions.put(action)
+    })
+  }
+
   async replaceActionRecord(actionId: number, action: ActionRecord & { actionId?: undefined }): Promise<number> {
     return await this.transaction('rw', this.actions, async () => {
-      const found = await this.actions.where({ actionId }).delete() == 1
+      const userId = action.userId
+      const found = await this.actions.where({ actionId }).filter(a => a.userId === userId).delete() == 1
       if (!found) {
-        throw new RecordDoesNotExist(`ActionRecord(actionId=${actionId})`)
+        throw new RecordDoesNotExist(`ActionRecord(actionId=${actionId}, userId=${userId})`)
       }
       return await this.actions.add(action)  // Returns the new actionId.
     })
