@@ -66,7 +66,7 @@ export type ConfigRecord =
 export type TransferRecord =
   & UserReference
   & Transfer
-  & { time: number, aborted?: true }
+  & { time: number, aborted?: true, recipientName?: string }
 
 export type DocumentRecord =
   & UserReference
@@ -83,23 +83,23 @@ export type ActionRecordWithId =
 
 export type UpdateConfigAction =
   & ActionData
-  & { actionType: 'UpdateConfig' }
   & ConfigData
+  & { actionType: 'UpdateConfig' }
 
 export type CreateTransferAction =
   & ActionData
-  & { actionType: 'CreateTransfer' }
   & TransferCreationRequest
+  & { actionType: 'CreateTransfer', recipientName?: string }
 
 export type AbortTransferAction =
   & ActionData
-  & { actionType: 'AbortTransfer' }
   & ResourceReference
+  & { actionType: 'AbortTransfer' }
 
 export type ScheduledDeletionRecord =
   & UserReference
-  & { resourceType: 'Transfer' }
   & ResourceReference
+  & { resourceType: 'Transfer' }
 
 export class RecordDoesNotExist extends Error {
   name = 'RecordDoesNotExist'
@@ -233,12 +233,13 @@ export class DebtorsDb extends Dexie {
         throw new RecordDoesNotExist(`ActionRecord(actionId=${actionId}, actionType="CreateTransfer")`)
       }
       this.actions.delete(actionId)
-      const userId = actionRecord.userId
-      const alreadyExists = await this.putTransferRecord(transfer, userId)
+      const { userId, recipientName } = actionRecord
+      const alreadyExists = await this.putTransferRecord(transfer, userId, recipientName)
       if (alreadyExists) {
-        console.warn(
+        console.error(
           `Instead of creating a new transfer record, an existing record has ` +
-          `been overwritten (uri="${transfer.uri}"). Possible UUID duplication.`
+          `been overwritten (uri="${transfer.uri}"). This can happen when a ` +
+          `non-unique UUID has been used.`
         )
       }
       return await this.transfers.get(transfer.uri) as TransferRecord
@@ -286,7 +287,7 @@ export class DebtorsDb extends Dexie {
     })
   }
 
-  async updateActionRecord(action: ActionRecord & { actionId: number }): Promise<void> {
+  async updateActionRecord(action: ActionRecordWithId): Promise<void> {
     return await this.transaction('rw', this.actions, async () => {
       const { actionId, userId } = action
       const existingActionRecord = await this.actions.get(actionId)
@@ -366,18 +367,19 @@ export class DebtorsDb extends Dexie {
     })
   }
 
-  private async putTransferRecord(transfer: Transfer, userId: number): Promise<boolean> {
+  private async putTransferRecord(transfer: Transfer, userId: number, recipientName?: string): Promise<boolean> {
     return await this.transaction('rw', this.transfers, async () => {
       const existingTransferRecord = await this.transfers.get(transfer.uri)
 
-      // When the transfer record already exists, make sure `userId`
-      // and `time` stay the same.
+      // When the transfer record already exists, make sure that
+      // `userId` and `time` stay the same.
       if (existingTransferRecord) {
         if (userId !== existingTransferRecord.userId) {
           throw new Error('Can not alter the userId of an existing transfer record.')
         }
+        recipientName ??= existingTransferRecord.recipientName
         const time = existingTransferRecord.time
-        await this.transfers.put({ ...transfer, userId, time })
+        await this.transfers.put({ ...transfer, userId, time, recipientName })
         return true
       }
 
@@ -387,7 +389,7 @@ export class DebtorsDb extends Dexie {
       let time = new Date(transfer.initiatedAt).getTime() || Date.now()
       while (true) {
         try {
-          await this.transfers.put({ ...transfer, userId, time })
+          await this.transfers.put({ ...transfer, userId, time, recipientName })
           return false
         } catch (e: unknown) {
           if (!(e instanceof Dexie.ConstraintError)) throw e
