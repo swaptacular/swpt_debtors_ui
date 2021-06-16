@@ -59,7 +59,7 @@ export type DebtorRecord =
 
 export type DebtorRecordWithId =
   & DebtorRecord
-  & { userId: number }
+  & UserReference
 
 export type ConfigRecord =
   & UserReference
