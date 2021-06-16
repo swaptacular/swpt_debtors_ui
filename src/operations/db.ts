@@ -68,7 +68,11 @@ export type ConfigRecord =
 export type TransferRecord =
   & UserReference
   & Transfer
-  & { time: number, aborted?: true, paymentInfo?: PaymentInfo }
+  & {
+    time: number,
+    aborted?: true,
+    paymentInfo?: PaymentInfo,
+  }
 
 export type DocumentRecord =
   & UserReference
