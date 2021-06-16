@@ -19,20 +19,16 @@ type UserReference = {
   userId: number,
 }
 
-type DocumentData = {
+type Document = {
   content: ArrayBuffer,
   contentType: string,
 }
-
-type Document =
-  & ResourceReference
-  & DocumentData
 
 type DocumentUri = string
 
 type ConfigData = {
   rate: number,
-  info: DocumentUri | DocumentData,
+  info: DocumentUri | Document,
 }
 
 type ActionData =
@@ -47,15 +43,13 @@ type ActionData =
 export type UserInstallationData = {
   debtor: Debtor,
   transfers: Transfer[],
-  document?: ResourceReference & DocumentData,
+  document?: ResourceReference & Document,
 }
 
-export type PayeeInfo = {
-  name: string,
-  paymentRequest?: {
-    contentType: string,
-    content: ArrayBuffer,
-  }
+export type PaymentInfo = {
+  payeeName: string,
+  paymentRequest?: Document | DocumentUri,
+  documents?: Map<DocumentUri, Document>,
 }
 
 export type DebtorRecord =
@@ -74,10 +68,11 @@ export type ConfigRecord =
 export type TransferRecord =
   & UserReference
   & Transfer
-  & { time: number, aborted?: true, payeeInfo?: PayeeInfo }
+  & { time: number, aborted?: true, paymentInfo?: PaymentInfo }
 
 export type DocumentRecord =
   & UserReference
+  & ResourceReference
   & Document
 
 export type ActionRecord =
@@ -97,7 +92,7 @@ export type UpdateConfigAction =
 export type CreateTransferAction =
   & ActionData
   & TransferCreationRequest
-  & { actionType: 'CreateTransfer', payeeInfo: PayeeInfo }
+  & { actionType: 'CreateTransfer', paymentInfo: PaymentInfo }
 
 export type AbortTransferAction =
   & ActionData
@@ -241,8 +236,8 @@ export class DebtorsDb extends Dexie {
         throw new RecordDoesNotExist(`ActionRecord(actionId=${actionId}, actionType="CreateTransfer")`)
       }
       this.actions.delete(actionId)
-      const { userId, payeeInfo } = actionRecord
-      const alreadyExists = await this.putTransferRecord(userId, transfer, payeeInfo)
+      const { userId, paymentInfo } = actionRecord
+      const alreadyExists = await this.putTransferRecord(userId, transfer, paymentInfo)
       if (alreadyExists) {
         console.error(
           `Instead of creating a new transfer record, an existing record has ` +
@@ -375,7 +370,7 @@ export class DebtorsDb extends Dexie {
     })
   }
 
-  private async putTransferRecord(userId: number, transfer: Transfer, payeeInfo?: PayeeInfo): Promise<boolean> {
+  private async putTransferRecord(userId: number, transfer: Transfer, paymentInfo?: PaymentInfo): Promise<boolean> {
     return await this.transaction('rw', this.transfers, async () => {
       const existingTransferRecord = await this.transfers.get(transfer.uri)
 
@@ -385,9 +380,9 @@ export class DebtorsDb extends Dexie {
         if (userId !== existingTransferRecord.userId) {
           throw new Error('Can not alter the userId of an existing transfer record.')
         }
-        payeeInfo ??= existingTransferRecord.payeeInfo
+        paymentInfo ??= existingTransferRecord.paymentInfo
         const time = existingTransferRecord.time
-        await this.transfers.put({ ...transfer, userId, time, payeeInfo })
+        await this.transfers.put({ ...transfer, userId, time, paymentInfo })
         return true
       }
 
@@ -397,7 +392,7 @@ export class DebtorsDb extends Dexie {
       let time = new Date(transfer.initiatedAt).getTime() || Date.now()
       while (true) {
         try {
-          await this.transfers.put({ ...transfer, userId, time, payeeInfo })
+          await this.transfers.put({ ...transfer, userId, time, paymentInfo })
           return false
         } catch (e: unknown) {
           if (!(e instanceof Dexie.ConstraintError)) throw e

@@ -231,6 +231,7 @@ test("Install and uninstall user", async () => {
     recipient: { uri: 'swpt:1/2' },
     amount: 777n,
     transferUuid: '123e4567-e89b-12d3-a456-426655440000',
+    paymentInfo: { payeeName: 'XYZ' }
   })
   expect(createTransferActionId).toBeDefined()
   const transferRecord = await db.createTransfer(createTransferActionId, theCreatedTransfer)
