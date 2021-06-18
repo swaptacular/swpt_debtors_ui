@@ -6,3 +6,5 @@ const axios = require('axios')
 axios.defaults.adapter = require('axios/lib/adapters/http')
 
 require("fake-indexeddb/auto")
+
+globalThis.Blob = require("cross-blob")

@@ -95,9 +95,9 @@ export type UpdateConfigAction =
 
 export type CreateTransferAction =
   & ActionData
-  & TransferCreationRequest
   & {
     actionType: 'CreateTransfer',
+    creationRequest: TransferCreationRequest,
     paymentInfo: PaymentInfo,
   }
 

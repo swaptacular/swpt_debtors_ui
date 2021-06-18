@@ -3,6 +3,7 @@ import { stringify, parse } from '../src/web-api/json-bigint'
 import type { AuthTokenSource } from '../src/web-api/oauth2-token-source'
 import { ServerSession, HttpError } from '../src/web-api'
 import { DebtorsDb, DebtorRecord, RecordDoesNotExist } from '../src/operations/db'
+import { readPaymentRequest, IvalidPaymentRequest } from '../src/operations/payment-requests'
 
 const authToken = '3x-KAxNWrYPJUWNKTbpnTWxoR0Arr0gG_uEqeWUNDkk.B-Iqy02FM7rK1rKSb4I7D9gaqGFXc2vdyJQ6Uuv3EF4'
 
@@ -294,4 +295,21 @@ test("Install and uninstall user", async () => {
     uri: alteredUri,
     time: time * (1 + Number.EPSILON),
   })
+})
+
+test("Read payment request", async () => {
+  await expect(readPaymentRequest(1, new Blob(['']))).rejects.toBeInstanceOf(IvalidPaymentRequest)
+
+  const b = new Blob([
+    'SPR0\n' +
+    '\n' +
+    'swpt:123/456\n' +
+    'Payee name\n' +
+    '1000\n' +
+    '2021-07-30T16:00:00Z\n' +
+    'payeeReference\n' +
+    '\n' +
+    'Hello'
+  ])
+  await expect(readPaymentRequest(1, b)).resolves.toHaveProperty('creationRequest')
 })
