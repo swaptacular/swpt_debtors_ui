@@ -1,7 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { CreateTransferAction } from './db'
 
-const PAYMENT_REQUEST_REGEX = /^SPR0\r?\n(?<crc>.*)\r?\n(?<accountUri>.*)\r?\n(?<payeeName>.*)\r?\n(?<amount>\d+)\r?\n(?<deadline>.*)\r?\n(?<payeeReference>.*)\r?\n(?<descriptionFormat>.*)\r?\n(?<description>[\s\S]*)$/u
+const PAYMENT_REQUEST_REGEXP = /^SPR0\r?\n(?<crc>.*)\r?\n(?<accountUri>.*)\r?\n(?<payeeName>.*)\r?\n(?<amount>\d+)\r?\n(?<deadline>.*)\r?\n(?<payeeReference>.*)\r?\n(?<descriptionFormat>.*)\r?\n(?<description>[\s\S]*)$/u
+
 const MAX_UINT64 = 2n ** 64n - 1n
 const CONTENT_TYPE_SPR0 = 'application/vnd.swaptacular.spr0'
 
@@ -14,11 +15,11 @@ export async function readPaymentRequest(userId: number, request: Blob): Promise
     throw new IvalidPaymentRequest('wrong content type')
   }
 
-  const regexMatch: any = (await request.text()).match(PAYMENT_REQUEST_REGEX)
-  if (!regexMatch) {
+  const regexpMatch: any = (await request.text()).match(PAYMENT_REQUEST_REGEXP)
+  if (!regexpMatch) {
     throw new IvalidPaymentRequest('parse error')
   }
-  const groups = regexMatch.groups
+  const groups = regexpMatch.groups
 
   const amount = BigInt(groups.amount)
   if (amount > MAX_UINT64) {
