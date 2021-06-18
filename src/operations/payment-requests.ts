@@ -3,7 +3,7 @@ import type { CreateTransferAction } from './db'
 
 const PAYMENT_REQUEST_REGEXP = /^SPR0\r?\n(?<crc>.*)\r?\n(?<accountUri>.*)\r?\n(?<payeeName>.*)\r?\n(?<amount>\d+)\r?\n(?<deadline>.*)\r?\n(?<payeeReference>.*)\r?\n(?<descriptionFormat>.*)\r?\n(?<description>[\s\S]*)$/u
 
-const MAX_UINT64 = 2n ** 64n - 1n
+const MAX_INT64 = 2n ** 63n - 1n
 const CONTENT_TYPE_SPR0 = 'application/vnd.swaptacular.spr0'
 
 export class IvalidPaymentRequest extends Error {
@@ -22,7 +22,7 @@ export async function readPaymentRequest(userId: number, request: Blob): Promise
   const groups = regexpMatch.groups
 
   const amount = BigInt(groups.amount)
-  if (amount > MAX_UINT64) {
+  if (amount > MAX_INT64) {
     throw new IvalidPaymentRequest('invalid amount')
   }
 
