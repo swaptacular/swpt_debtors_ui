@@ -20,17 +20,15 @@ export class IvalidPaymentRequest extends Error {
 
 /*
  Reads files with content type "application/vnd.swaptacular.spr0"
- (Simple Payment Request version 0).
-
- This is a minimalist text format, whose goal is to be human readable,
- and yet be as concise as possible, so that it can be transfered via
- QR codes.
+ (Simple Payment Request version 0). This is a minimalist text format,
+ whose goal is to be human readable, and yet be as concise as
+ possible, so that it can be transfered via QR codes.
 
  An example payment request:
  ```````````````````````````````````````````````
  SPR0
 
- swpt:123/456
+ swpt:112233445566778899/998877665544332211
  This is the name of the payee
  1000
  2021-07-30T16:00:00Z
@@ -42,11 +40,12 @@ export class IvalidPaymentRequest extends Error {
  is considered as part of the description.
  ```````````````````````````````````````````````
 
- In this example, "swpt:123/456" refers to the payee's account, "1000"
- is the requested amount, "2021-07-30T16:00:00Z" indicates the
- deadline for the payment, "12d3a45642665544" is the payee reference
- which need to be included in the payment note. An optional CRC32
- value can be included in the request (the empty second row).
+ In the example above, "swpt:112233445566778899/998877665544332211"
+ refers to the payee's account, "1000" is the requested amount,
+ "2021-07-30T16:00:00Z" indicates the deadline for the payment,
+ "12d3a45642665544" is the payee reference which need to be included
+ in the payment note. An optional CRC32 value can be included in the
+ request (the empty second row).
 */
 export async function readPaymentRequest(userId: number, request: Blob): Promise<CreateTransferAction> {
   if (request.type && request.type !== CONTENT_TYPE_SPR0) {
