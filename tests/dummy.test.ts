@@ -302,7 +302,7 @@ test("Read payment request", async () => {
 
   const b = new Blob([
     'SPR0\n' +
-    '\n' +
+    'bf02cb3a\n' +
     'swpt:123/456\n' +
     'Payee name\n' +
     '1000\n' +
