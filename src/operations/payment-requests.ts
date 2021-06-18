@@ -2,33 +2,34 @@ import CRC32 from 'crc-32'
 import { v4 as uuidv4 } from 'uuid';
 import type { CreateTransferAction } from './db'
 
-const PAYMENT_REQUEST_REGEXP = /^SPR0\r?\n(?<crc32>(?:[0-9a-f]{8})?)\r?\n(?<accountUri>.{0,200})\r?\n(?<payeeName>.{0,200})\r?\n(?<amount>\d{0,20})\r?\n(?<deadline>(?:\d{4}-\d{2}-\d{2}.{0,200})?)\r?\n(?<payeeReference>.{0,200})\r?\n(?<descriptionFormat>.{0,200})\r?\n(?<description>[\s\S]*)$/u
+const PAYMENT_REQUEST_REGEXP = /^PR0\r?\n(?<crc32>(?:[0-9a-f]{8})?)\r?\n(?<accountUri>.{0,200})\r?\n(?<payeeName>.{0,200})\r?\n(?<amount>\d{0,20})\r?\n(?<deadline>(?:\d{4}-\d{2}-\d{2}.{0,200})?)\r?\n(?<payeeReference>.{0,200})\r?\n(?<descriptionFormat>.{0,200})\r?\n(?<description>[\s\S]*)$/u
 
 const MAX_INT64 = 2n ** 63n - 1n
-const CONTENT_TYPE_SPR0 = 'application/vnd.swaptacular.spr0'
 
-function removeSpr0Header(bytes: Uint8Array): Uint8Array {
+function removePr0Header(bytes: Uint8Array): Uint8Array {
   const endOfFirstLine = bytes.indexOf(10)
   const endOfSecondLine = bytes.indexOf(10, endOfFirstLine + 1)
   return bytes.slice(endOfSecondLine + 1)
 }
+
+export const MIME_TYPE_PR0 = 'application/vnd.swaptacular.pr0'
 
 export class IvalidPaymentRequest extends Error {
   name = 'IvalidPaymentRequest'
 }
 
 /*
- Reads files with content type "application/vnd.swaptacular.spr0"
- (Simple Payment Request version 0). This is a minimalist text format,
- whose goal is to be human readable, and yet be as concise as
- possible, so that it can be transfered via QR codes.
+ Reads files with content type "application/vnd.swaptacular.pr0"
+ (Payment Request version 0). This is a minimalist text format, whose
+ goal is to be human readable, and yet be as concise as possible, so
+ that it can be transfered via QR codes.
 
  An example payment request:
  ```````````````````````````````````````````````
- SPR0
+ PR0
 
  swpt:112233445566778899/998877665544332211
- This is the name of the payee
+ The name of the payee
  1000
  2021-07-30T16:00:00Z
  12d3a45642665544
@@ -47,7 +48,7 @@ export class IvalidPaymentRequest extends Error {
  request (the empty second row).
 */
 export async function readPaymentRequest(userId: number, request: Blob): Promise<CreateTransferAction> {
-  if (request.type && request.type !== CONTENT_TYPE_SPR0) {
+  if (request.type && request.type !== MIME_TYPE_PR0) {
     throw new IvalidPaymentRequest('wrong content type')
   }
 
@@ -59,7 +60,7 @@ export async function readPaymentRequest(userId: number, request: Blob): Promise
   const buffer = await request.arrayBuffer()
 
   if (groups.crc32 !== '') {
-    const uint32 = CRC32.buf(removeSpr0Header(new Uint8Array(buffer))) >>> 0
+    const uint32 = CRC32.buf(removePr0Header(new Uint8Array(buffer))) >>> 0
     const crc32 = uint32.toString(16).padStart(8, '0')
     if (crc32 !== groups.crc32) {
       throw new IvalidPaymentRequest('CRC error')
@@ -101,7 +102,7 @@ export async function readPaymentRequest(userId: number, request: Blob): Promise
       payeeName: groups.payeeName,
       paymentRequest: {
         content: buffer,
-        contentType: CONTENT_TYPE_SPR0,
+        contentType: MIME_TYPE_PR0,
       }
     }
   }

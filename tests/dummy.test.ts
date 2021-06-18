@@ -301,7 +301,7 @@ test("Read payment request", async () => {
   await expect(readPaymentRequest(1, new Blob(['']))).rejects.toBeInstanceOf(IvalidPaymentRequest)
 
   const b = new Blob([
-    'SPR0\n' +
+    'PR0\n' +
     'bf02cb3a\n' +
     'swpt:123/456\n' +
     'Payee name\n' +
