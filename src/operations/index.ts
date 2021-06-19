@@ -159,7 +159,7 @@ export async function getDebtorRecord(): Promise<DebtorRecord | undefined> {
 }
 
 export async function processPaymentRequest(blob: Blob): Promise<ActionRecordWithId & CreateTransferAction> {
-  const request = await parsePaymentRequest(blob)
+  const request = await parsePaymentRequest(blob)  // may throw `IvalidPaymentRequest`
   const actionRecord = {
     userId: await getUserId(),
     actionType: 'CreateTransfer' as const,
