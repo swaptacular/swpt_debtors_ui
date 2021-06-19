@@ -7,10 +7,6 @@ import type { CreateTransferAction, ActionRecordWithId } from './db'
 
 export { IvalidPaymentRequest }
 
-export class UserDoesNotExist extends Error {
-  name = 'UserDoesNotExist'
-}
-
 const server = new ServerSession({
   onLoginAttempt: async (login) => {
     if (confirm('This operation requires authentication. You will be redirected to the login page.')) {
@@ -110,6 +106,9 @@ async function getUserId(): Promise<number> {
   return userIdPromise
 }
 
+/* This must be awaited before calling any other function exported by
+ * this module. If it returns `false` the caller must not call any
+ * functions other than `login`. */
 export async function seeIfLoggedIn(): Promise<boolean> {
   const entrypoint = await server.entrypointPromise
   if (entrypoint === undefined) {
@@ -126,38 +125,35 @@ export async function seeIfLoggedIn(): Promise<boolean> {
   return true
 }
 
+/* Tries to update the local database, reading the latest data from
+ * the server. Any network failures will be swallowed. This function
+ * should be called at the beginning of the session, and may be called
+ * periodically afterwards. */
 export async function update(): Promise<void> {
   let data
   try {
     data = await getUserInstallationData()
   } catch (e: unknown) {
-    if (e instanceof ServerSessionError) return
-    throw e
+    if (e instanceof ServerSessionError) {
+      return
+    } else throw e
   }
-
   await db.storeUserData(data)
 }
 
-export async function login() {
+/* If the user is logged in -- does nothing. Otherwise, redirects to
+ * the login page, and never resolves. */
+export async function login(): Promise<void> {
   await server.login(async (login) => await login())
 }
 
-/* This promise will never resolve. Instead, it logs out the user and
- * redirects to home. */
+/* Logs out the user and redirects to home, never resolves. */
 export async function logout(): Promise<never> {
   return await server.logout()
 }
 
-export async function getDebtorRecord(): Promise<DebtorRecord | undefined> {
-  let debtorRecord
-  const entrypoint = await server.entrypointPromise
-  if (entrypoint !== undefined) {
-    const userId = await db.getUserId(entrypoint)
-    if (userId !== undefined) {
-      debtorRecord = db.getDebtorRecord(userId)
-    }
-  }
-  return debtorRecord
+export async function getDebtorRecord(): Promise<DebtorRecord> {
+  return await db.getDebtorRecord(await getUserId())
 }
 
 export async function processPaymentRequest(blob: Blob): Promise<ActionRecordWithId & CreateTransferAction> {
