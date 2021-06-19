@@ -108,7 +108,7 @@ async function getUserId(): Promise<number> {
 
 /* This must be awaited before calling any other function exported by
  * this module. If it returns `false` the caller must not call any
- * functions other than `login`. */
+ * other functions in this module, except `login`. */
 export async function seeIfLoggedIn(): Promise<boolean> {
   const entrypoint = await server.entrypointPromise
   if (entrypoint === undefined) {
@@ -127,8 +127,8 @@ export async function seeIfLoggedIn(): Promise<boolean> {
 
 /* Tries to update the local database, reading the latest data from
  * the server. Any network failures will be swallowed. This function
- * should be called at the beginning of the session, and may be called
- * periodically afterwards. */
+ * should be called at the beginning of the session, right after
+ * `seeIfLoggedIn`, and may be called periodically afterwards. */
 export async function update(): Promise<void> {
   let data
   try {
