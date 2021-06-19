@@ -13,7 +13,6 @@ function removePr0Header(bytes: Uint8Array): Uint8Array {
 export const MIME_TYPE_PR0 = 'text/vnd.swaptacular.pr0'
 
 export type PaymentRequest = {
-  contentType: string,
   accountUri: string,
   payeeName: string,
   amount: bigint,
@@ -51,15 +50,16 @@ export class IvalidPaymentRequest extends Error {
 
  In the example above, "swpt:112233445566778899/998877665544332211"
  refers to the payee's account, "1000" is the requested amount,
- "2021-07-30T16:00:00Z" indicates the deadline for the payment,
- "12d3a45642665544" is the payee reference which need to be included
- in the payment note. An optional CRC32 value can be included in the
- request (the empty second row). Also, an optional description format
- can be passed (the empty row before the description). When not passed
- (an empty string), this means that the description is in plain text.
+ "2021-07-30T16:00:00Z" indicates the deadline for the payment (can be
+ an empty string), "12d3a45642665544" is the payee reference which
+ need to be included in the payment note. An optional CRC32 value can
+ be included in the request (the empty second row). Also, an optional
+ description format can be passed (the empty row before the
+ description). When not passed (an empty string), this means that the
+ description is in plain text.
 
 */
-export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest> {
+export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest & { contentType: string }> {
   if (blob.type && blob.type !== MIME_TYPE_PR0) {
     throw new IvalidPaymentRequest('wrong content type')
   }
@@ -102,4 +102,21 @@ export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest> {
     descriptionFormat: groups.descriptionFormat,
     description: groups.description,
   }
+}
+
+export function generatePr0Blob(request: PaymentRequest, includeCrc: boolean = true): Blob {
+  const uft8encoder = new TextEncoder()
+  const deadline = request.deadline ? request.deadline.toISOString() : ''
+  const body = uft8encoder.encode(
+    `${request.accountUri}\n` +
+    `${request.payeeName}\n` +
+    `${request.amount}\n` +
+    `${deadline}\n` +
+    `${request.payeeReference}\n` +
+    `${request.descriptionFormat}\n` +
+    `${request.description}`
+  )
+  const crc32 = includeCrc ? (CRC32.buf(body) >>> 0).toString(16).padStart(8, '0') : ''
+  const header = uft8encoder.encode(`PR0\n${crc32}\n`)
+  return new Blob([header, body], { type: MIME_TYPE_PR0 })
 }

@@ -4,6 +4,7 @@ import type { AuthTokenSource } from '../src/web-api/oauth2-token-source'
 import { ServerSession, HttpError } from '../src/web-api'
 import { DebtorsDb, DebtorRecord, RecordDoesNotExist } from '../src/operations/db'
 import { readPaymentRequest, IvalidPaymentRequest } from '../src/operations'
+import { parsePaymentRequest, generatePr0Blob, MIME_TYPE_PR0 } from '../src/operations/payment-requests'
 
 const authToken = '3x-KAxNWrYPJUWNKTbpnTWxoR0Arr0gG_uEqeWUNDkk.B-Iqy02FM7rK1rKSb4I7D9gaqGFXc2vdyJQ6Uuv3EF4'
 
@@ -229,10 +230,14 @@ test("Install and uninstall user", async () => {
     userId,
     actionType: 'CreateTransfer',
     createdAt: new Date(),
-    recipient: { uri: 'swpt:1/2' },
-    amount: 777n,
-    transferUuid: '123e4567-e89b-12d3-a456-426655440000',
-    paymentInfo: { payeeName: 'XYZ' }
+    creationRequest: {
+      recipient: { uri: 'swpt:1/2' },
+      amount: 777n,
+      transferUuid: '123e4567-e89b-12d3-a456-426655440000',
+    },
+    paymentInfo: {
+      payeeName: 'XYZ',
+    }
   })
   expect(createTransferActionId).toBeDefined()
   const transferRecord = await db.createTransfer(createTransferActionId, theCreatedTransfer)
@@ -312,4 +317,25 @@ test("Read payment request", async () => {
     'Hello'
   ])
   await expect(readPaymentRequest(1, b)).resolves.toHaveProperty('creationRequest')
+})
+
+test("Generate payment request", async () => {
+  const request = {
+    accountUri: 'swpt:124/456',
+    payeeName: 'Payee name',
+    amount: 1000n,
+    deadline: new Date(),
+    payeeReference: 'payeeReference',
+    descriptionFormat: '',
+    description: 'This is a multi-line\ndescription.',
+  }
+  for (const includeCrc of [true, false]) {
+    const blob = generatePr0Blob(request, includeCrc)
+    expect(blob.type).toEqual(MIME_TYPE_PR0)
+    const { contentType, amount: a1, ...r1 } = await parsePaymentRequest(blob)
+    const { amount: a2, ...r2 } = request
+    expect(r1).toEqual(r2)
+    expect(a1).toEqual(a2)
+    expect(contentType).toEqual(MIME_TYPE_PR0)
+  }
 })

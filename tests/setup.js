@@ -8,3 +8,4 @@ axios.defaults.adapter = require('axios/lib/adapters/http')
 require("fake-indexeddb/auto")
 
 globalThis.Blob = require("cross-blob")
+globalThis.TextEncoder = require("util").TextEncoder
