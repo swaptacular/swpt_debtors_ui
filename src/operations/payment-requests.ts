@@ -27,17 +27,18 @@ export class IvalidPaymentRequest extends Error {
 }
 
 /*
- Reads files with content type "application/vnd.swaptacular.pr0"
- (Payment Request version 0). This is a minimalist text format, whose
- goal is to be human readable, and yet be as concise as possible, so
- that it can be transfered via QR codes.
+ Currently this function can parse only files with content type
+ "text/vnd.swaptacular.pr0" (Swaptacular Payment Request v0). This is
+ a minimalist text format, whose goal is to be human readable, and yet
+ be as concise as possible, so that it can be transferred via QR
+ codes.
 
  An example payment request:
  ```````````````````````````````````````````````
  PR0
 
  swpt:112233445566778899/998877665544332211
- The name of the payee
+ Payee Name
  1000
  2021-07-30T16:00:00Z
  12d3a45642665544
@@ -48,15 +49,33 @@ export class IvalidPaymentRequest extends Error {
  is considered as part of the description.
  ```````````````````````````````````````````````
 
- In the example above, "swpt:112233445566778899/998877665544332211"
- refers to the payee's account, "1000" is the requested amount,
- "2021-07-30T16:00:00Z" indicates the deadline for the payment (can be
- an empty string), "12d3a45642665544" is the payee reference which
- need to be included in the payment note. An optional CRC32 value can
- be included in the request (the empty second row). Also, an optional
- description format can be passed (the empty row before the
- description). When not passed (an empty string), this means that the
- description is in plain text.
+ In the example above:
+
+ * "PR0" identifies the type of the file.
+
+ * An optional CRC32 value can be included with the request (the empty
+   second row). If included, it should contain exactly 8 hexadecimal
+   lowercase symbols.
+
+ * "swpt:112233445566778899/998877665544332211" refers to the payee's
+   account.
+
+ * "Payee Name" indicates the name of the payee.
+
+ * "1000" is the requested amount.
+
+ * "2021-07-30T16:00:00Z" indicates the deadline for the payment. This
+   field is optional and can be an empty string.
+
+ * "12d3a45642665544" is the payee reference (a unique string), which
+   should to be included by the payer in the payment note, so that the
+   payee can match the incoming payment with the payment request.
+
+ * Also, an optional description format can be passed (the empty row
+   right before the description). When an empty string is passed, this
+   means that the description is in plain text. The symbol "@"
+   indicates that the description contains the URI of the document
+   that describes the payment request.
 
 */
 export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest & { contentType: string }> {
