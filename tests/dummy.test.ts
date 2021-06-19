@@ -3,7 +3,7 @@ import { stringify, parse } from '../src/web-api/json-bigint'
 import type { AuthTokenSource } from '../src/web-api/oauth2-token-source'
 import { ServerSession, HttpError } from '../src/web-api'
 import { DebtorsDb, DebtorRecord, RecordDoesNotExist } from '../src/operations/db'
-import { readPaymentRequest, IvalidPaymentRequest } from '../src/operations/payment-requests'
+import { readPaymentRequest, IvalidPaymentRequest } from '../src/operations'
 
 const authToken = '3x-KAxNWrYPJUWNKTbpnTWxoR0Arr0gG_uEqeWUNDkk.B-Iqy02FM7rK1rKSb4I7D9gaqGFXc2vdyJQ6Uuv3EF4'
 

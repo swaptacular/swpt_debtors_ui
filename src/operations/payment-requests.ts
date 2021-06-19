@@ -1,6 +1,4 @@
 import CRC32 from 'crc-32'
-import { v4 as uuidv4 } from 'uuid';
-import type { CreateTransferAction } from './db'
 
 const PAYMENT_REQUEST_REGEXP = /^PR0\r?\n(?<crc32>(?:[0-9a-f]{8})?)\r?\n(?<accountUri>.{0,200})\r?\n(?<payeeName>.{0,200})\r?\n(?<amount>\d{0,20})\r?\n(?<deadline>(?:\d{4}-\d{2}-\d{2}.{0,200})?)\r?\n(?<payeeReference>.{0,200})\r?\n(?<descriptionFormat>.{0,200})\r?\n(?<description>[\s\S]{0,20000})$/u
 
@@ -12,7 +10,18 @@ function removePr0Header(bytes: Uint8Array): Uint8Array {
   return bytes.slice(endOfSecondLine + 1)
 }
 
-export const MIME_TYPE_PR0 = 'application/vnd.swaptacular.pr0'
+export const MIME_TYPE_PR0 = 'text/vnd.swaptacular.pr0'
+
+export type PaymentRequest = {
+  contentType: string,
+  accountUri: string,
+  payeeName: string,
+  amount: bigint,
+  deadline?: Date,
+  payeeReference: string,
+  descriptionFormat: string,
+  description: string,
+}
 
 export class IvalidPaymentRequest extends Error {
   name = 'IvalidPaymentRequest'
@@ -45,21 +54,24 @@ export class IvalidPaymentRequest extends Error {
  "2021-07-30T16:00:00Z" indicates the deadline for the payment,
  "12d3a45642665544" is the payee reference which need to be included
  in the payment note. An optional CRC32 value can be included in the
- request (the empty second row).
+ request (the empty second row). Also, an optional description format
+ can be passed (the empty row before the description). When not passed
+ (an empty string), this means that the description is in plain text.
+
 */
-export async function readPaymentRequest(userId: number, request: Blob): Promise<CreateTransferAction> {
-  if (request.type && request.type !== MIME_TYPE_PR0) {
+export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest> {
+  if (blob.type && blob.type !== MIME_TYPE_PR0) {
     throw new IvalidPaymentRequest('wrong content type')
   }
 
-  const regexpMatch: any = (await request.text()).match(PAYMENT_REQUEST_REGEXP)
+  const regexpMatch = (await blob.text()).match(PAYMENT_REQUEST_REGEXP)
   if (!regexpMatch) {
     throw new IvalidPaymentRequest('parse error')
   }
-  const groups = regexpMatch.groups
-  const buffer = await request.arrayBuffer()
+  const groups: any = regexpMatch.groups
 
   if (groups.crc32 !== '') {
+    const buffer = await blob.arrayBuffer()
     const uint32 = CRC32.buf(removePr0Header(new Uint8Array(buffer))) >>> 0
     const crc32 = uint32.toString(16).padStart(8, '0')
     if (crc32 !== groups.crc32) {
@@ -80,30 +92,14 @@ export async function readPaymentRequest(userId: number, request: Blob): Promise
     }
   }
 
-  // Currently, the description can only be plain text. This is
-  // indicated by an empty string in the `descriptionFormat` filed.
-  if (groups.descriptionFormat !== '') {
-    throw new IvalidPaymentRequest('invalid description format')
-  }
-
   return {
-    userId,
-    actionType: 'CreateTransfer',
-    createdAt: new Date(),
-    creationRequest: {
-      type: 'TransferCreationRequest',
-      recipient: { uri: groups.accountUri },
-      amount,
-      transferUuid: uuidv4(),
-      noteFormat: 'payeeref',
-      note: groups.payeeReference,
-    },
-    paymentInfo: {
-      payeeName: groups.payeeName,
-      paymentRequest: {
-        content: buffer,
-        contentType: MIME_TYPE_PR0,
-      }
-    }
+    contentType: MIME_TYPE_PR0,
+    accountUri: groups.accountUri,
+    payeeName: groups.payeeName,
+    amount,
+    deadline,
+    payeeReference: groups.payeeReference,
+    descriptionFormat: groups.descriptionFormat,
+    description: groups.description,
   }
 }

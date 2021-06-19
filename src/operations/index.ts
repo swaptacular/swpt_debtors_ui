@@ -1,6 +1,11 @@
 import type { Debtor, Transfer, TransfersList } from '../web-api-schemas'
 import { DebtorsDb, UserInstallationData, DebtorRecord, isConcludedTransfer } from './db'
 import { ServerSession, HttpResponse, ServerSessionError } from '../web-api'
+import { v4 as uuidv4 } from 'uuid';
+import { parsePaymentRequest, IvalidPaymentRequest } from './payment-requests'
+import type { CreateTransferAction } from './db'
+
+export { IvalidPaymentRequest }
 
 const server = new ServerSession({
   onLoginAttempt: async (login) => {
@@ -11,7 +16,6 @@ const server = new ServerSession({
   }
 })
 const db = new DebtorsDb()
-
 
 type ConfigData = {
   type?: 'RootConfigData',
@@ -24,7 +28,6 @@ type ConfigData = {
   }
 }
 
-
 function extractDocumentInfoUri(configData: string): string | undefined {
   let data
   try {
@@ -33,12 +36,10 @@ function extractDocumentInfoUri(configData: string): string | undefined {
   return data?.info?.iri
 }
 
-
 function calcParallelTimeout(numberOfParallelRequests: number): number {
   const n = 6  // a rough guess for the maximum number of parallel connections
   return appConfig.serverApiTimeout * (numberOfParallelRequests + n - 1) / n
 }
-
 
 async function getDebtorInfoDocument(debtor: Debtor): Promise<UserInstallationData['document']> {
   const uri = extractDocumentInfoUri(debtor.config.configData)
@@ -54,7 +55,6 @@ async function getDebtorInfoDocument(debtor: Debtor): Promise<UserInstallationDa
   }
   return undefined
 }
-
 
 async function getUserInstallationData(): Promise<UserInstallationData> {
   const debtorResponse = await server.getEntrypointResponse() as HttpResponse<Debtor>
@@ -86,11 +86,9 @@ async function getUserInstallationData(): Promise<UserInstallationData> {
   }
 }
 
-
 export async function determineIfLoggedIn(): Promise<boolean> {
   return await server.entrypointPromise !== undefined
 }
-
 
 export async function update(): Promise<void> {
   let data
@@ -104,16 +102,13 @@ export async function update(): Promise<void> {
   await db.storeUserData(data)
 }
 
-
 export async function login() {
   await server.login(async (login) => await login())
 }
 
-
 export async function logout() {
   await server.logout()
 }
-
 
 export async function getDebtorRecord(): Promise<DebtorRecord | undefined> {
   let debtorRecord
@@ -125,4 +120,28 @@ export async function getDebtorRecord(): Promise<DebtorRecord | undefined> {
     }
   }
   return debtorRecord
+}
+
+export async function readPaymentRequest(userId: number, blob: Blob): Promise<CreateTransferAction> {
+  const request = await parsePaymentRequest(blob)
+  return {
+    userId,
+    actionType: 'CreateTransfer',
+    createdAt: new Date(),
+    creationRequest: {
+      type: 'TransferCreationRequest',
+      recipient: { uri: request.accountUri },
+      amount: request.amount,
+      transferUuid: uuidv4(),
+      noteFormat: 'payeeref',
+      note: request.payeeReference,
+    },
+    paymentInfo: {
+      payeeName: request.payeeName,
+      paymentRequest: {
+        content: await blob.arrayBuffer(),
+        contentType: request.contentType,
+      }
+    }
+  }
 }
