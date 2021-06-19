@@ -158,8 +158,7 @@ test("Install and uninstall user", async () => {
   }]
   const document = {
     uri: 'https://example.com/1/documents/123',
-    contentType: 'text/plain',
-    content: new ArrayBuffer(4),
+    content: '' as any as Blob,  // It seems that "fake-indexeddb" has a problem with Blobs.
   }
   const db = new DebtorsDb();
   await db.storeUserData({ debtor, transfers, document })

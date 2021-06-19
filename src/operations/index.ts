@@ -44,14 +44,15 @@ function calcParallelTimeout(numberOfParallelRequests: number): number {
 async function getDebtorInfoDocument(debtor: Debtor): Promise<UserInstallationData['document']> {
   const uri = extractDocumentInfoUri(debtor.config.configData)
   if (uri !== undefined) {
+    let content
     const document = await db.getDocumentRecord(uri)
     if (document) {
-      const { uri, contentType, content } = document
-      return { uri, contentType, content }
+      content = document.content
     } else {
       const { headers, data } = await server.getDocument(uri)
-      return { uri, contentType: String(headers['content-type']), content: data }
+      content = new Blob([data], { type: String(headers['content-type']) })
     }
+    return { uri, content }
   }
   return undefined
 }
@@ -138,10 +139,7 @@ export async function readPaymentRequest(userId: number, blob: Blob): Promise<Cr
     },
     paymentInfo: {
       payeeName: request.payeeName,
-      paymentRequest: {
-        content: await blob.arrayBuffer(),
-        contentType: request.contentType,
-      }
+      paymentRequest: new Blob([blob], { type: request.contentType }),
     }
   }
 }

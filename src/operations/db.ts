@@ -19,16 +19,11 @@ type UserReference = {
   userId: number,
 }
 
-type Document = {
-  content: ArrayBuffer,
-  contentType: string,
-}
-
 type DocumentUri = string
 
 type ConfigData = {
   rate: number,
-  info: DocumentUri | Document,
+  info: DocumentUri | Blob,
 }
 
 type ActionData =
@@ -43,13 +38,13 @@ type ActionData =
 export type UserInstallationData = {
   debtor: Debtor,
   transfers: Transfer[],
-  document?: ResourceReference & Document,
+  document?: ResourceReference & { content: Blob },
 }
 
 export type PaymentInfo = {
   payeeName: string,
-  paymentRequest?: Document | DocumentUri,
-  documents?: Map<DocumentUri, Document>,
+  paymentRequest?: DocumentUri | Blob,
+  documents?: Map<DocumentUri, Blob>,
 }
 
 export type DebtorRecord =
@@ -77,7 +72,7 @@ export type TransferRecord =
 export type DocumentRecord =
   & UserReference
   & ResourceReference
-  & Document
+  & { content: Blob }
 
 export type ActionRecord =
   | UpdateConfigAction
