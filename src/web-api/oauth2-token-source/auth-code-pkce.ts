@@ -214,7 +214,7 @@ export class OAuth2AuthCodePKCE {
    * function. This is because sometimes not using the refresh token facilities
    * is easier.
    */
-  public getAccessContext(): Promise<AccessContext> {
+  public getAccessContext(attemptTokenRefresh = true): Promise<AccessContext> {
     const { onAccessTokenExpiry } = this.config;
 
     // This reads the current state from the local storage, which
@@ -248,6 +248,7 @@ export class OAuth2AuthCodePKCE {
 
     // Depending on the server (and config), refreshToken may not be available.
     if (
+      attemptTokenRefresh &&
       OAuth2AuthCodePKCE.isUsableRefreshToken(refreshToken) &&
       OAuth2AuthCodePKCE.isAccessTokenExpired(accessToken)
     ) {

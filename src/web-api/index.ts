@@ -281,13 +281,11 @@ export class ServerSession {
   private async getEntrypoint(): Promise<string | undefined> {
     let entrypoint
     try {
-      entrypoint = (await this.authenticate({ attemptLogin: false })).entrypoint
+      entrypoint = (await this.authenticate({ attemptLogin: false, attemptTokenRefresh: false })).entrypoint
     } catch (e: unknown) {
       if (e instanceof AuthenticationError) {
         entrypoint = ServerSession.loadUserData()?.entrypoint
-      } else {
-        throw e
-      }
+      } else throw e
     }
 
     // Note that before we tell the user that he/she is not logged in

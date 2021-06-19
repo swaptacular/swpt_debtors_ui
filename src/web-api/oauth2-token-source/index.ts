@@ -4,6 +4,7 @@ export type LoginAttemptHandler = (login: () => Promise<boolean>) => Promise<boo
 
 export type GetTokenOptions = {
   attemptLogin?: boolean,
+  attemptTokenRefresh?: boolean,
   onLoginAttempt?: LoginAttemptHandler,
 }
 
@@ -59,18 +60,19 @@ export class Oauth2TokenSource implements AuthTokenSource {
     if (isReturningFromAuthServer) {
       // Try to exchange the authentication code for access token as
       // soon as possible, not awaiting the result.
-      this.getCurrentToken()
+      this.getCurrentToken(false)
     }
   }
 
   async getToken(options: GetTokenOptions = {}): Promise<string> {
-    const token = await this.getCurrentToken()
-    if (!token) {
-      const {
-        attemptLogin = false,
-        onLoginAttempt = (async (login) => await login()),
-      } = options
+    const {
+      attemptLogin = false,
+      attemptTokenRefresh = true,
+      onLoginAttempt = (async (login) => await login()),
+    } = options
 
+    const token = await this.getCurrentToken(attemptTokenRefresh)
+    if (!token) {
       if (attemptLogin) {
         await onLoginAttempt(() => this.redirectToLoginPage())
       }
@@ -88,10 +90,10 @@ export class Oauth2TokenSource implements AuthTokenSource {
     this.helper.resetState()
   }
 
-  private async getCurrentToken(): Promise<string | undefined> {
+  private async getCurrentToken(attemptTokenRefresh: boolean): Promise<string | undefined> {
     let accessContext
     try {
-      accessContext = await this.helper.getAccessContext()
+      accessContext = await this.helper.getAccessContext(attemptTokenRefresh)
     } catch (e: unknown) {
       console.log(e)
       return
