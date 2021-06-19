@@ -301,23 +301,6 @@ test("Install and uninstall user", async () => {
   })
 })
 
-test("Read payment request", async () => {
-  await expect(readPaymentRequest(1, new Blob(['']))).rejects.toBeInstanceOf(IvalidPaymentRequest)
-
-  const b = new Blob([
-    'PR0\n' +
-    'bf02cb3a\n' +
-    'swpt:123/456\n' +
-    'Payee name\n' +
-    '1000\n' +
-    '2021-07-30T16:00:00Z\n' +
-    'payeeReference\n' +
-    '\n' +
-    'Hello'
-  ])
-  await expect(readPaymentRequest(1, b)).resolves.toHaveProperty('creationRequest')
-})
-
 test("Generate payment request", async () => {
   const request = {
     accountUri: 'swpt:124/456',

@@ -1,11 +1,11 @@
 <script lang="ts">
   import {stringify} from './web-api/json-bigint'
-  import {login, logout, update, determineIfLoggedIn, getDebtorRecord} from './operations'
+  import {login, logout, update, seeIfLoggedIn, getDebtorRecord} from './operations'
   update()
 </script>
 
 
-{#await determineIfLoggedIn()}
+{#await seeIfLoggedIn()}
   <h1>...</h1>
 {:then isLoggedIn}
   {#if !isLoggedIn }

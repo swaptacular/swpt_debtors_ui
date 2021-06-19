@@ -3,9 +3,13 @@ import { DebtorsDb, UserInstallationData, DebtorRecord, isConcludedTransfer } fr
 import { ServerSession, HttpResponse, ServerSessionError } from '../web-api'
 import { v4 as uuidv4 } from 'uuid';
 import { parsePaymentRequest, IvalidPaymentRequest } from './payment-requests'
-import type { CreateTransferAction } from './db'
+import type { CreateTransferAction, ActionRecordWithId } from './db'
 
 export { IvalidPaymentRequest }
+
+export class UserDoesNotExist extends Error {
+  name = 'UserDoesNotExist'
+}
 
 const server = new ServerSession({
   onLoginAttempt: async (login) => {
@@ -87,8 +91,39 @@ async function getUserInstallationData(): Promise<UserInstallationData> {
   }
 }
 
-export async function determineIfLoggedIn(): Promise<boolean> {
-  return await server.entrypointPromise !== undefined
+let userIdPromise: Promise<number> | undefined
+
+async function getUserId(): Promise<number> {
+  if (!userIdPromise) {
+    userIdPromise = (async () => {
+      const entrypoint = await server.entrypointPromise
+      if (entrypoint === undefined) {
+        throw new Error('user not logged in')
+      }
+      const userId = await db.getUserId(entrypoint)
+      if (userId === undefined) {
+        throw new Error('user not installed')
+      }
+      return userId
+    })()
+  }
+  return userIdPromise
+}
+
+export async function seeIfLoggedIn(): Promise<boolean> {
+  const entrypoint = await server.entrypointPromise
+  if (entrypoint === undefined) {
+    return false
+  }
+  let alreadyTriedToUpdate = false
+  while (await db.getUserId(entrypoint) === undefined) {
+    if (alreadyTriedToUpdate) {
+      throw new UserDoesNotExist()
+    }
+    await update()
+    alreadyTriedToUpdate = true
+  }
+  return true
 }
 
 export async function update(): Promise<void> {
@@ -123,11 +158,11 @@ export async function getDebtorRecord(): Promise<DebtorRecord | undefined> {
   return debtorRecord
 }
 
-export async function readPaymentRequest(userId: number, blob: Blob): Promise<CreateTransferAction> {
+export async function processPaymentRequest(blob: Blob): Promise<ActionRecordWithId & CreateTransferAction> {
   const request = await parsePaymentRequest(blob)
-  return {
-    userId,
-    actionType: 'CreateTransfer',
+  const actionRecord = {
+    userId: await getUserId(),
+    actionType: 'CreateTransfer' as const,
     createdAt: new Date(),
     creationRequest: {
       type: 'TransferCreationRequest',
@@ -142,4 +177,6 @@ export async function readPaymentRequest(userId: number, blob: Blob): Promise<Cr
       paymentRequest: new Blob([blob], { type: request.contentType }),
     }
   }
+  await db.createActionRecord(actionRecord)  // This adds actionId to `actionRecord`.
+  return actionRecord as ActionRecordWithId & CreateTransferAction
 }
