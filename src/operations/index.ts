@@ -118,7 +118,7 @@ export async function seeIfLoggedIn(): Promise<boolean> {
   let alreadyTriedToUpdate = false
   while (await db.getUserId(entrypoint) === undefined) {
     if (alreadyTriedToUpdate) {
-      throw new UserDoesNotExist()
+      await logout()
     }
     await update()
     alreadyTriedToUpdate = true
@@ -142,8 +142,10 @@ export async function login() {
   await server.login(async (login) => await login())
 }
 
-export async function logout() {
-  await server.logout()
+/* This promise will never resolve. Instead, it logs out the user and
+ * redirects to home. */
+export async function logout(): Promise<never> {
+  return await server.logout()
 }
 
 export async function getDebtorRecord(): Promise<DebtorRecord | undefined> {

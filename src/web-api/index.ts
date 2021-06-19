@@ -135,10 +135,10 @@ export class ServerSession {
     }
   }
 
-  async logout(): Promise<void> {
+  async logout(): Promise<never> {
     await this.tokenSource.logout()
     ServerSession.saveUserData(undefined)
-    await ServerSession.redirectHome()
+    return await ServerSession.redirectHome()
   }
 
   async get(url: string, config?: RequestConfig): Promise<HttpResponse> {
