@@ -8,3 +8,7 @@ window.appConfig = {
     redirectUrl: 'http://localhost:5000/',
   }
 }
+
+// if('serviceWorker' in navigator) {
+//   navigator.serviceWorker.register('./sw.js')
+// }
