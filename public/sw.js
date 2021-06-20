@@ -3,7 +3,7 @@ const appFiles = [
   './',
   'index.html',
   'manifest.json',
-  'favicon.png',
+  'favicon.svg',
   'global.css',
   'config.js',
   'build/bundle.css',
