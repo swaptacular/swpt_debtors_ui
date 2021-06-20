@@ -2,6 +2,7 @@ const cacheName = 'swpt-debtors-ui-v1';
 const appFiles = [
   './',
   'index.html',
+  'manifest.json',
   'favicon.png',
   'global.css',
   'config.js',
