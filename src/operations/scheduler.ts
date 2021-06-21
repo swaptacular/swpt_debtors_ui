@@ -1,6 +1,11 @@
 import TinyQueue from 'tinyqueue'
 
 const SCHEDULER_LEEWAY = 0.5
+// For example, when `SCHEDULER_LEEWAY` is 0.5, and an update is
+// scheduled one hour from now, the update will actually happen
+// between one and one and a half hours from now.
+
+const SCHEDULER_CHECK_INTERVAL_SECONDS = 5
 
 type Task = {
   notBefore: Date,
@@ -8,12 +13,13 @@ type Task = {
 }
 
 export class UpdateScheduler {
-  private lastCheckAt: number = Date.now()
   private tasks = new TinyQueue<Task>([], (a, b) => a.notBefore.getTime() - b.notBefore.getTime())
-  private readyTasks = new TinyQueue<Task>([], (a, b) => a.notAfter.getTime() - b.notAfter.getTime())
+  private readyTasks!: TinyQueue<Task>
+  private intervalId?: number
 
   constructor() {
-    // TODO: Periodically call `checkTasks()`.
+    this.clearReadyTasks()
+    this.intervalId = setInterval(this.checkTasks.bind(this), 1000 * SCHEDULER_CHECK_INTERVAL_SECONDS)
   }
 
   add(): void
@@ -25,43 +31,47 @@ export class UpdateScheduler {
     const notBefore = new Date(t)
     const notAfter = new Date(t + (t - now) * SCHEDULER_LEEWAY)
     this.tasks.push({ notBefore, notAfter })
+    this.checkTasks()
+  }
+
+  close(): void {
+    if (this.intervalId !== undefined) {
+      clearInterval(this.intervalId)
+      this.tasks = undefined as any as TinyQueue<Task>
+      this.intervalId = undefined
+    }
   }
 
   private checkTasks(): void {
-    this.lastCheckAt = Date.now()
     this.collectReadyTasks()
-    if (this.findLateTasks()) {
+    if (this.findLateTask()) {
+      this.clearReadyTasks()
+
       // TODO: perform update
     }
   }
 
+  private clearReadyTasks(): void {
+    this.readyTasks = new TinyQueue<Task>([], (a, b) => a.notAfter.getTime() - b.notAfter.getTime())
+  }
+
   private collectReadyTasks(): void {
-    const now = this.lastCheckAt
+    const now = Date.now()
     let task
-    while ((task = this.tasks.pop()) !== undefined) {
+    while ((task = this.tasks.peek()) !== undefined) {
       if (now < task.notBefore.getTime()) {
         // This task is not ready, and therefore all subsequent tasks
         // in the queue will not be ready too.
-        this.tasks.push(task)
         break
       }
+      this.tasks.pop()
       this.readyTasks.push(task)
     }
   }
 
-  private findLateTasks(): boolean {
-    const now = this.lastCheckAt
-    let found = false
-    let task
-    while ((task = this.readyTasks.pop()) !== undefined) {
-      if (now < task.notAfter.getTime()) {
-        // This task can be postponed, and therefore all subsequent tasks
-        // in the queue can be postponed too.
-        this.readyTasks.push(task)
-        break
-      }
-      found = true
-    }
-    return found
+  private findLateTask(): boolean {
+    const now = Date.now()
+    const task = this.readyTasks.peek()
+    return Boolean(task && task.notAfter.getTime() <= now)
   }
 }
