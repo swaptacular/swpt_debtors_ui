@@ -16,8 +16,11 @@ export class UpdateScheduler {
   private tasks = new TinyQueue<Task>([], (a, b) => a.notBefore.getTime() - b.notBefore.getTime())
   private readyTasks!: TinyQueue<Task>
   private intervalId?: number
+  private updatePromise?: Promise<unknown>
+  latestUpdateAt: Date
 
-  constructor() {
+  constructor(private performUpdate: () => Promise<unknown>) {
+    this.latestUpdateAt = new Date(0)
     this.clearReadyTasks()
     this.intervalId = setInterval(this.checkTasks.bind(this), 1000 * SCHEDULER_CHECK_INTERVAL_SECONDS)
   }
@@ -28,9 +31,10 @@ export class UpdateScheduler {
   add(when: Date | number = 0): void {
     const now = Date.now()
     const t = Math.max(now, typeof when === 'number' ? now + 1000 * when : when.getTime())
-    const notBefore = new Date(t)
-    const notAfter = new Date(t + (t - now) * SCHEDULER_LEEWAY)
-    this.tasks.push({ notBefore, notAfter })
+    this.tasks.push({
+      notBefore: new Date(t),
+      notAfter: new Date(t + SCHEDULER_LEEWAY * (t - now)),
+    })
     this.checkTasks()
   }
 
@@ -43,11 +47,18 @@ export class UpdateScheduler {
   }
 
   private checkTasks(): void {
-    this.collectReadyTasks()
+    this.gatherReadyTasks()
     if (this.findLateTask()) {
       this.clearReadyTasks()
+      this.triggerUpdate()
+    }
+  }
 
-      // TODO: perform update
+  private triggerUpdate(): void {
+    if (!this.updatePromise) {
+      this.latestUpdateAt = new Date()
+      this.updatePromise = this.performUpdate()
+      this.updatePromise.finally(() => this.updatePromise = undefined)
     }
   }
 
@@ -55,7 +66,7 @@ export class UpdateScheduler {
     this.readyTasks = new TinyQueue<Task>([], (a, b) => a.notAfter.getTime() - b.notAfter.getTime())
   }
 
-  private collectReadyTasks(): void {
+  private gatherReadyTasks(): void {
     const now = Date.now()
     let task
     while ((task = this.tasks.peek()) !== undefined) {
