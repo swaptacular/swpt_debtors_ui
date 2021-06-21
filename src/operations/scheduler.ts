@@ -7,7 +7,9 @@ const SCHEDULER_LEEWAY = 0.5
 
 const SCHEDULER_CHECK_INTERVAL_SECONDS = 5
 
+type TaskCallback = () => void
 type Task = {
+  callback?: TaskCallback,
   notBefore: Date,
   notAfter: Date,
 }
@@ -21,17 +23,25 @@ export class UpdateScheduler {
 
   constructor(private performUpdate: () => Promise<unknown>) {
     this.latestUpdateAt = new Date(0)
-    this.clearReadyTasks()
+    this.flushReadyTasks()
     this.intervalId = setInterval(this.checkTasks.bind(this), 1000 * SCHEDULER_CHECK_INTERVAL_SECONDS)
   }
 
-  add(): void
-  add(date: Date): void
-  add(seconds: number): void
-  add(when: Date | number = 0): void {
+  add(callback?: TaskCallback): void
+  add(date: Date, callback?: TaskCallback): void
+  add(seconds: number, callback?: TaskCallback): void
+  add(param1: TaskCallback | Date | number = 0, param2?: TaskCallback): void {
     const now = Date.now()
-    const t = Math.max(now, typeof when === 'number' ? now + 1000 * when : when.getTime())
+    let callback, t
+    if (typeof param1 === 'function') {
+      callback = param1
+      t = now
+    } else {
+      callback = param2
+      t = Math.max(now, typeof param1 === 'number' ? now + 1000 * param1 : param1.getTime())
+    }
     this.tasks.push({
+      callback,
       notBefore: new Date(t),
       notAfter: new Date(t + SCHEDULER_LEEWAY * (t - now)),
     })
@@ -49,21 +59,29 @@ export class UpdateScheduler {
   private checkTasks(): void {
     this.gatherReadyTasks()
     if (this.findLateTask()) {
-      this.clearReadyTasks()
-      this.triggerUpdate()
+      const tasks = this.flushReadyTasks()
+      this.triggerUpdate(tasks)
     }
   }
 
-  private triggerUpdate(): void {
+  private triggerUpdate(tasks: TinyQueue<Task>): void {
     if (!this.updatePromise) {
       this.latestUpdateAt = new Date()
       this.updatePromise = this.performUpdate()
       this.updatePromise.finally(() => this.updatePromise = undefined)
     }
+    this.updatePromise.finally(() => {
+      let task
+      while ((task = tasks.pop()) !== undefined) {
+        task.callback?.()
+      }
+    })
   }
 
-  private clearReadyTasks(): void {
+  private flushReadyTasks(): TinyQueue<Task> {
+    const readyTasks = this.readyTasks
     this.readyTasks = new TinyQueue<Task>([], (a, b) => a.notAfter.getTime() - b.notAfter.getTime())
+    return readyTasks
   }
 
   private gatherReadyTasks(): void {
