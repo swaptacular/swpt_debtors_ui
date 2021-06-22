@@ -332,7 +332,7 @@ test("Create update scheduler", async () => {
   expect(callbacks).toBe(0);
   sch.schedule(100, () => callbacks++)
   sch.schedule(101, () => callbacks++)
-  sch.schedule(99, () => callbacks++)
+  sch.schedule(99)
   await (sch as any).updatePromise
   expect((sch as any).updatePromise).toBeUndefined()
   expect(run).toBe(1);
@@ -341,12 +341,12 @@ test("Create update scheduler", async () => {
   await (sch as any).updatePromise
   expect((sch as any).updatePromise).toBeUndefined()
   expect(run).toBe(2)
-  expect(callbacks).toBe(3);
+  expect(callbacks).toBe(2);
   sch.schedule(() => callbacks++)
   await (sch as any).updatePromise
   expect((sch as any).updatePromise).toBeUndefined()
   expect(run).toBe(3)
-  expect(callbacks).toBe(4)
+  expect(callbacks).toBe(3)
   sch.close()
   sch.close()
 })
