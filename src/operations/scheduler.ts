@@ -14,23 +14,24 @@ type Task = {
   notAfter: Date,
 }
 
+const cmpTasks = (a: Task, b: Task): number => a.notBefore.getTime() - b.notBefore.getTime()
+const cmpReadyTasks = (a: Task, b: Task): number => a.notAfter.getTime() - b.notAfter.getTime()
+
 export class UpdateScheduler {
-  private tasks = new TinyQueue<Task>([], (a, b) => a.notBefore.getTime() - b.notBefore.getTime())
-  private readyTasks!: TinyQueue<Task>
-  private intervalId?: number
+  private tasks = new TinyQueue<Task>([], cmpTasks)
+  private readyTasks = new TinyQueue<Task>([], cmpReadyTasks)
+  private intervalId = setInterval(this.checkTasks.bind(this), 1000 * SCHEDULER_CHECK_INTERVAL_SECONDS)
   private updatePromise?: Promise<unknown>
-  latestUpdateAt: Date
+  latestUpdateAt = new Date(0)
 
   constructor(private performUpdate: () => Promise<unknown>) {
-    this.latestUpdateAt = new Date(0)
-    this.flushReadyTasks()
-    this.intervalId = setInterval(this.checkTasks.bind(this), 1000 * SCHEDULER_CHECK_INTERVAL_SECONDS)
+    this.schedule()
   }
 
-  add(callback?: TaskCallback): void
-  add(date: Date, callback?: TaskCallback): void
-  add(seconds: number, callback?: TaskCallback): void
-  add(param1: TaskCallback | Date | number = 0, param2?: TaskCallback): void {
+  schedule(callback?: TaskCallback): void
+  schedule(date: Date, callback?: TaskCallback): void
+  schedule(seconds: number, callback?: TaskCallback): void
+  schedule(param1: TaskCallback | Date | number = 0, param2?: TaskCallback): void {
     const now = Date.now()
     let callback, t
     if (typeof param1 === 'function') {
@@ -51,22 +52,21 @@ export class UpdateScheduler {
   close(): void {
     if (this.intervalId !== undefined) {
       clearInterval(this.intervalId)
-      this.tasks = undefined as any as TinyQueue<Task>
-      this.intervalId = undefined
+      this.intervalId = this.tasks = this.readyTasks = undefined as any
     }
   }
 
-  private checkTasks(): void {
-    this.gatherReadyTasks()
-    if (this.findLateTask()) {
+  private checkTasks(now = Date.now()): void {
+    this.gatherReadyTasks(now)
+    if (this.findLateTask(now)) {
       const tasks = this.flushReadyTasks()
-      this.triggerUpdate(tasks)
+      this.triggerUpdate(tasks, now)
     }
   }
 
-  private triggerUpdate(tasks: TinyQueue<Task>): void {
+  private triggerUpdate(tasks: TinyQueue<Task>, now: number): void {
     if (!this.updatePromise) {
-      this.latestUpdateAt = new Date()
+      this.latestUpdateAt = new Date(now)
       this.updatePromise = this.performUpdate()
       this.updatePromise.finally(() => this.updatePromise = undefined)
     }
@@ -80,12 +80,11 @@ export class UpdateScheduler {
 
   private flushReadyTasks(): TinyQueue<Task> {
     const readyTasks = this.readyTasks
-    this.readyTasks = new TinyQueue<Task>([], (a, b) => a.notAfter.getTime() - b.notAfter.getTime())
+    this.readyTasks = new TinyQueue<Task>([], cmpReadyTasks)
     return readyTasks
   }
 
-  private gatherReadyTasks(): void {
-    const now = Date.now()
+  private gatherReadyTasks(now: number): void {
     let task
     while ((task = this.tasks.peek()) !== undefined) {
       if (now < task.notBefore.getTime()) {
@@ -98,8 +97,7 @@ export class UpdateScheduler {
     }
   }
 
-  private findLateTask(): boolean {
-    const now = Date.now()
+  private findLateTask(now: number): boolean {
     const task = this.readyTasks.peek()
     return Boolean(task && task.notAfter.getTime() <= now)
   }

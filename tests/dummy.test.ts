@@ -3,8 +3,8 @@ import { stringify, parse } from '../src/web-api/json-bigint'
 import type { AuthTokenSource } from '../src/web-api/oauth2-token-source'
 import { ServerSession, HttpError } from '../src/web-api'
 import { DebtorsDb, DebtorRecord, RecordDoesNotExist } from '../src/operations/db'
-import { readPaymentRequest, IvalidPaymentRequest } from '../src/operations'
 import { parsePaymentRequest, generatePr0Blob, MIME_TYPE_PR0 } from '../src/operations/payment-requests'
+import { UpdateScheduler } from '../src/operations/scheduler'
 
 const authToken = '3x-KAxNWrYPJUWNKTbpnTWxoR0Arr0gG_uEqeWUNDkk.B-Iqy02FM7rK1rKSb4I7D9gaqGFXc2vdyJQ6Uuv3EF4'
 
@@ -320,4 +320,33 @@ test("Generate payment request", async () => {
     expect(a1).toEqual(a2)
     expect(contentType).toEqual(MIME_TYPE_PR0)
   }
+})
+
+test("Create update scheduler", async () => {
+  let run = 0
+  let callbacks = 0
+  const sch = new UpdateScheduler(async () => run++)
+  await (sch as any).updatePromise
+  expect((sch as any).updatePromise).toBeUndefined()
+  expect(run).toBe(1)
+  expect(callbacks).toBe(0);
+  sch.schedule(100, () => callbacks++)
+  sch.schedule(101, () => callbacks++)
+  sch.schedule(99, () => callbacks++)
+  await (sch as any).updatePromise
+  expect((sch as any).updatePromise).toBeUndefined()
+  expect(run).toBe(1);
+  expect(callbacks).toBe(0);
+  (sch as any).checkTasks(Date.now() + 200 * 1000)
+  await (sch as any).updatePromise
+  expect((sch as any).updatePromise).toBeUndefined()
+  expect(run).toBe(2)
+  expect(callbacks).toBe(3);
+  sch.schedule(() => callbacks++)
+  await (sch as any).updatePromise
+  expect((sch as any).updatePromise).toBeUndefined()
+  expect(run).toBe(3)
+  expect(callbacks).toBe(4)
+  sch.close()
+  sch.close()
 })
