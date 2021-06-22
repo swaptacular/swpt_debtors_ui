@@ -16,10 +16,6 @@ export type {
   GetTokenOptions,
 }
 
-export {
-  CanNotObtainToken,
-}
-
 export type RequestConfig =
   & AxiosRequestConfig
   & GetTokenOptions

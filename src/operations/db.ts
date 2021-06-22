@@ -7,7 +7,6 @@ import type {
   TransferCreationRequest,
 } from '../web-api-schemas'
 
-
 type ListQueryOptions = {
   before?: number,
   after?: number,
@@ -110,9 +109,9 @@ export class RecordDoesNotExist extends Error {
   name = 'RecordDoesNotExist'
 }
 
-export const TRANSFER_WAIT_SECONDS = 86400  // 24 hours
+const TRANSFER_WAIT_SECONDS = 86400  // 24 hours
 
-export function getTransferState(transfer: Transfer): 'waiting' | 'delayed' | 'successful' | 'unsuccessful' {
+function getTransferState(transfer: Transfer): 'waiting' | 'delayed' | 'successful' | 'unsuccessful' {
   const result = transfer.result
   if (result === undefined) {
     const initiatedAt = new Date(transfer.initiatedAt)
@@ -132,7 +131,7 @@ export function isConcludedTransfer(transferRecord: TransferRecord): boolean {
   return transferRecord.result !== undefined || transferRecord.aborted === true
 }
 
-export class DebtorsDb extends Dexie {
+class DebtorsDb extends Dexie {
   debtors: Dexie.Table<DebtorRecord, number>
   configs: Dexie.Table<ConfigRecord, string>
   transfers: Dexie.Table<TransferRecord, string>
@@ -417,3 +416,5 @@ export class DebtorsDb extends Dexie {
     return [this.debtors, this.configs, this.transfers, this.documents, this.actions, this.scheduledDeletions]
   }
 }
+
+export const db = new DebtorsDb()

@@ -2,7 +2,7 @@ import App from '../src/App.svelte'
 import { stringify, parse } from '../src/web-api/json-bigint'
 import type { AuthTokenSource } from '../src/web-api/oauth2-token-source'
 import { ServerSession, HttpError } from '../src/web-api'
-import { DebtorsDb, DebtorRecord, RecordDoesNotExist } from '../src/operations/db'
+import { db, DebtorRecord, RecordDoesNotExist } from '../src/operations/db'
 import { parsePaymentRequest, generatePr0Blob, MIME_TYPE_PR0 } from '../src/operations/payment-requests'
 import { UpdateScheduler } from '../src/operations/scheduler'
 
@@ -160,7 +160,6 @@ test("Install and uninstall user", async () => {
     uri: 'https://example.com/1/documents/123',
     content: '' as any as Blob,  // It seems that "fake-indexeddb" has a problem with Blobs.
   }
-  const db = new DebtorsDb();
   await db.storeUserData({ debtor, transfers, document })
   const userId = await db.storeUserData({ debtor, transfers, document })
   const debtorRecord = await db.getDebtorRecord(userId) as DebtorRecord
