@@ -347,6 +347,7 @@ test("Create update scheduler", async () => {
   expect((sch as any).updatePromise).toBeUndefined()
   expect(run).toBe(3)
   expect(callbacks).toBe(3)
+  expect((sch as any).tasks.peek()).toBeDefined()
   sch.close()
   sch.close()
 })

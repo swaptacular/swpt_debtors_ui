@@ -6,6 +6,7 @@ const SCHEDULER_LEEWAY = 0.5
 // between one and one and a half hours from now.
 
 const SCHEDULER_CHECK_INTERVAL_SECONDS = 5
+const ROUTINE_UPDATES_INTERVAL_SECONDS = 3600
 
 type TaskCallback = () => void
 type Task = {
@@ -25,7 +26,7 @@ export class UpdateScheduler {
   latestUpdateAt = new Date(0)
 
   constructor(private performUpdate: () => Promise<unknown>) {
-    this.schedule()
+    this.schedule(this.routineUpdateCallback.bind(this))
   }
 
   schedule(callback?: TaskCallback): void
@@ -100,5 +101,9 @@ export class UpdateScheduler {
   private findLateTask(now: number): boolean {
     const task = this.readyTasks.peek()
     return Boolean(task && task.notAfter.getTime() <= now)
+  }
+
+  private routineUpdateCallback(): void {
+    this.schedule(ROUTINE_UPDATES_INTERVAL_SECONDS, this.routineUpdateCallback.bind(this))
   }
 }
