@@ -8,7 +8,7 @@ const SCHEDULER_LEEWAY = 0.5
 const SCHEDULER_CHECK_INTERVAL_SECONDS = 5
 const ROUTINE_UPDATES_INTERVAL_SECONDS = 3600
 
-type TaskCallback = () => void
+export type TaskCallback = () => void
 type Task = {
   callback?: TaskCallback,
   notBefore: Date,
@@ -58,10 +58,12 @@ export class UpdateScheduler {
   }
 
   private checkTasks(now = Date.now()): void {
-    this.gatherReadyTasks(now)
-    if (this.findLateTask(now)) {
-      const tasks = this.flushReadyTasks()
-      this.triggerUpdate(tasks, now)
+    if (this.tasks) {
+      this.gatherReadyTasks(now)
+      if (this.findLateTask(now)) {
+        const tasks = this.flushReadyTasks()
+        this.triggerUpdate(tasks, now)
+      }
     }
   }
 
