@@ -376,10 +376,7 @@ class DebtorsDb extends Dexie {
         return userId
       })
     } catch (e: unknown) {
-      if (e instanceof Dexie.AbortError) {
-        if (e.inner) throw e
-        return userId as number
-      }
+      if (e instanceof Dexie.AbortError && !e.inner) return userId as number
       else throw e
     }
   }
