@@ -71,6 +71,7 @@ export class UpdateScheduler {
     if (!this.updatePromise) {
       this.latestUpdateAt = new Date(now)
       this.updatePromise = this.performUpdate()
+      this.updatePromise.catch((error) => console.error(error))
       this.updatePromise.finally(() => this.updatePromise = undefined)
     }
     this.updatePromise.finally(() => {

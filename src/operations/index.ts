@@ -1,10 +1,25 @@
 import { v4 as uuidv4 } from 'uuid';
 import { server, ServerSessionError } from './server'
-import { db, DebtorRecord, ActionRecordWithId, CreateTransferAction } from './db'
+import {
+  db,
+  DebtorRecordWithId,
+  ActionRecordWithId,
+  CreateTransferAction,
+} from './db'
 import { parsePaymentRequest, IvalidPaymentRequest } from './payment-requests'
+import { UpdateScheduler, TaskCallback } from './scheduler'
 import { getUserInstallationData } from './utils'
 
-export { IvalidPaymentRequest }
+export {
+  IvalidPaymentRequest,
+}
+
+export type {
+  TaskCallback,
+  DebtorRecordWithId,
+  ActionRecordWithId,
+  CreateTransferAction,
+}
 
 /* If the user is logged in -- does nothing. Otherwise, redirects to
  * the login page, and never resolves. */
@@ -17,9 +32,9 @@ export async function logout(): Promise<never> {
   return await server.logout()
 }
 
-/* If the user is logged in, returns an user context object. Otherise,
- * returns `undefined`. The obtained user context object can be used
- * to perform operations on user's behalf. */
+/* If the user is logged in, returns an user context
+ * instance. Otherise, returns `undefined`. The obtained user context
+ * instance can be used to perform operations on user's behalf. */
 export async function obtainUserContext(): Promise<UserContext | undefined> {
   const entrypoint = await server.entrypointPromise
   if (entrypoint === undefined) {
@@ -38,9 +53,7 @@ export async function obtainUserContext(): Promise<UserContext | undefined> {
 }
 
 /* Tries to update the local database, reading the latest data from
- * the server. Any network failures will be swallowed. This function
- * should be called at the beginning of the session, right after
- * `seeIfLoggedIn`, and may be called periodically afterwards. */
+ * the server. Any network failures will be swallowed. */
 async function update(): Promise<void> {
   let data
   try {
@@ -54,13 +67,16 @@ async function update(): Promise<void> {
 }
 
 class UserContext {
+  private updateScheduler = new UpdateScheduler(update)
+
   readonly userId: number
+  readonly scheduleUpdate = this.updateScheduler.schedule.bind(this.updateScheduler)
 
   constructor(userId: number) {
     this.userId = userId
   }
 
-  async getDebtorRecord(): Promise<DebtorRecord> {
+  async getDebtorRecord(): Promise<DebtorRecordWithId> {
     return await db.getDebtorRecord(this.userId)
   }
 
