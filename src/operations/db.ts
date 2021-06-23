@@ -21,6 +21,7 @@ type UserReference = {
 type DocumentUri = string
 
 type ConfigData = {
+  // TODO: this is probably wrong.
   rate: number,
   info: DocumentUri | Blob,
 }

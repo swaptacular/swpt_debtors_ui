@@ -1,21 +1,10 @@
 import { db, UserData, isConcludedTransfer } from './db'
-import { server, Debtor, Transfer, HttpResponse, TransfersList } from './server'
-
-type ConfigData = {
-  type?: 'RootConfigData',
-  rate: number,
-  info: {
-    type?: 'DebtorInfo',
-    iri: string,
-    contentType?: string,
-    sha256?: string,  // Example: E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855
-  }
-}
+import { server, Debtor, Transfer, HttpResponse, TransfersList, RootConfigData } from './server'
 
 function extractDocumentInfoUri(configData: string): string | undefined {
   let data
   try {
-    data = JSON.parse(configData) as ConfigData
+    data = JSON.parse(configData) as RootConfigData
   } catch { }
   return data?.info?.iri
 }
