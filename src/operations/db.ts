@@ -328,57 +328,53 @@ class DebtorsDb extends Dexie {
     // in the responses, which must be transformed to absolute ones,
     // before passed to this method.
 
-    let userId: number | undefined
-    try {
-      return await this.transaction('rw', this.allTables, async () => {
-        const config = debtor.config
-        userId = await this.getUserId(debtor.uri)
-        userId = await this.debtors.put({ ...debtor, userId, config: { uri: config.uri } })
+    return await this.transaction('rw', this.allTables, async () => {
+      const config = debtor.config
+      let userId = await this.getUserId(debtor.uri)
+      if (userId === undefined) {
+        userId = await this.debtors.add({ ...debtor, config: { uri: config.uri } })
+      }
 
-        const configRecord = await this.configs.where({ userId }).first()
-        if (configRecord && configRecord.latestUpdateId > config.latestUpdateId) {
-          Dexie.currentTransaction.abort()  // The DebtorRecord we just wrote is probably outdated.
+      const configRecord = await this.configs.where({ userId }).first()
+      if (!(configRecord && configRecord.latestUpdateId > config.latestUpdateId)) {
+        await this.debtors.put({ ...debtor, userId, config: { uri: config.uri } })
+      }
+      if (!(configRecord && configRecord.latestUpdateId >= config.latestUpdateId)) {
+        const uri = new URL(config.uri, debtor.uri).href
+        await this.configs.put({ ...config, userId, uri })
+        if (document) {
+          await this.documents.put({ ...document, userId })
         }
-        if (!(configRecord && configRecord.latestUpdateId === config.latestUpdateId)) {
-          const uri = new URL(config.uri, debtor.uri).href
-          await this.configs.put({ ...config, userId, uri })
-          if (document) {
-            await this.documents.put({ ...document, userId })
+      }
+
+      for (const transfer of transfers) {
+        const uri = transfer.uri
+        if (!await this.isConcludedTransfer(uri)) {
+          switch (getTransferState(transfer)) {
+            case 'unsuccessful':
+            case 'delayed':
+              await this.putTransferRecord(userId, transfer)
+              const existingAbortTransferAction = await this.actions
+                .where({ userId })
+                .filter(action => action.actionType === 'AbortTransfer' && action.uri === uri)
+                .first()
+              if (!existingAbortTransferAction)
+                await this.actions.add({
+                  userId,
+                  actionType: 'AbortTransfer',
+                  uri,
+                  createdAt: new Date(),
+                })
+              break
+            case 'successful':
+              await this.transfers.update(uri, transfer)
+              await this.scheduledDeletions.put({ uri, userId, resourceType: 'Transfer' })
+              break
           }
         }
-
-        for (const transfer of transfers) {
-          const uri = transfer.uri
-          if (!await this.isConcludedTransfer(uri)) {
-            switch (getTransferState(transfer)) {
-              case 'unsuccessful':
-              case 'delayed':
-                await this.putTransferRecord(userId, transfer)
-                const existingAbortTransferAction = await this.actions
-                  .where({ userId })
-                  .filter(action => action.actionType === 'AbortTransfer' && action.uri === uri)
-                  .first()
-                if (!existingAbortTransferAction)
-                  await this.actions.add({
-                    userId,
-                    actionType: 'AbortTransfer',
-                    uri,
-                    createdAt: new Date(),
-                  })
-                break
-              case 'successful':
-                await this.transfers.update(uri, transfer)
-                await this.scheduledDeletions.put({ uri, userId, resourceType: 'Transfer' })
-                break
-            }
-          }
-        }
-        return userId
-      })
-    } catch (e: unknown) {
-      if (e instanceof Dexie.AbortError && !e.inner) return userId as number
-      else throw e
-    }
+      }
+      return userId
+    })
   }
 
   private async putTransferRecord(userId: number, transfer: Transfer, paymentInfo?: PaymentInfo): Promise<boolean> {
