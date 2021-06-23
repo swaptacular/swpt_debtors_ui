@@ -1,18 +1,17 @@
 <script lang="ts">
   import {stringify} from './web-api/json-bigint'
-  import {login, logout, update, seeIfLoggedIn, getDebtorRecord} from './operations'
-  update()
+  import {login, logout, obtainUserContext } from './operations'
 </script>
 
 
-{#await seeIfLoggedIn()}
+{#await obtainUserContext()}
   <h1>...</h1>
-{:then isLoggedIn}
-  {#if !isLoggedIn }
+{:then userContext}
+  {#if !userContext }
     <button on:click={login}>Login</button>
   {:else}
     <!-- <h3>{entrypoint}</h3> -->
-    {#await getDebtorRecord()}
+    {#await userContext.getDebtorRecord()}
       ...
     {:then debtorRecord}
       <pre>{stringify(debtorRecord)}</pre>
