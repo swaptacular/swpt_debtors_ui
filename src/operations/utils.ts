@@ -1,4 +1,4 @@
-import { db, UserInstallationData, isConcludedTransfer } from './db'
+import { db, UserData, isConcludedTransfer } from './db'
 import { server, Debtor, Transfer, HttpResponse, TransfersList } from './server'
 
 type ConfigData = {
@@ -20,7 +20,7 @@ function extractDocumentInfoUri(configData: string): string | undefined {
   return data?.info?.iri
 }
 
-async function getDebtorInfoDocument(debtor: Debtor): Promise<UserInstallationData['document']> {
+async function getDebtorInfoDocument(debtor: Debtor): Promise<UserData['document']> {
   const uri = extractDocumentInfoUri(debtor.config.configData)
   if (uri !== undefined) {
     let content
@@ -41,7 +41,7 @@ function calcParallelTimeout(numberOfParallelRequests: number): number {
   return appConfig.serverApiTimeout * (numberOfParallelRequests + n - 1) / n
 }
 
-export async function getUserInstallationData(): Promise<UserInstallationData> {
+export async function getUserData(): Promise<UserData> {
   const debtorResponse = await server.getEntrypointResponse() as HttpResponse<Debtor>
   const debtor = { ...debtorResponse.data }
   debtor.uri = debtorResponse.buildUri(debtor.uri)

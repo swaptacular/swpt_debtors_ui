@@ -8,7 +8,7 @@ import {
 } from './db'
 import { parsePaymentRequest, IvalidPaymentRequest } from './payment-requests'
 import { UpdateScheduler, TaskCallback } from './scheduler'
-import { getUserInstallationData } from './utils'
+import { getUserData } from './utils'
 
 export {
   IvalidPaymentRequest,
@@ -57,9 +57,10 @@ export async function obtainUserContext(): Promise<UserContext | undefined> {
 async function update(): Promise<void> {
   let data
   try {
-    data = await getUserInstallationData()
+    data = await getUserData()
   } catch (e: unknown) {
     if (e instanceof ServerSessionError) {
+      console.log(e)
       return
     } else throw e
   }

@@ -34,7 +34,7 @@ type ActionData =
     error?: object,
   }
 
-export type UserInstallationData = {
+export type UserData = {
   debtor: Debtor,
   transfers: Transfer[],
   document?: ResourceReference & { content: Blob },
@@ -321,7 +321,7 @@ class DebtorsDb extends Dexie {
     return await this.documents.get(uri)
   }
 
-  async storeUserData({ debtor, document, transfers }: UserInstallationData): Promise<number> {
+  async storeUserData({ debtor, document, transfers }: UserData): Promise<number> {
     // Note that the `uri` property in `debtor` and `transfers` objects
     // must contain absolute URIs. The server may return relative URIs
     // in the responses, which must be transformed to absolute ones,
