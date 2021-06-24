@@ -130,8 +130,8 @@ class UserContext {
         transfer = response.data
       } catch (e: unknown) {
         if (e instanceof HttpError) {
-          action.error = e.status === 403 ? 'forbidden operation' : 'unexpected error'
-          await db.updateActionRecord(action)
+          const error = e.status === 403 ? 'forbidden operation' : 'unexpected error'
+          await db.replaceActionRecord(action, { ...action, error })
           return undefined
         } else throw e
       }
@@ -154,7 +154,7 @@ class UserContext {
   }
 
   async dismissCreateTransferAction(action: CreateTransferActionWithId): Promise<void> {
-    await db.deleteActionRecord(action.actionId)
+    await db.replaceActionRecord(action)
   }
 
 }

@@ -1,8 +1,9 @@
+import equal from 'fast-deep-equal'
 import App from '../src/App.svelte'
 import { stringify, parse } from '../src/web-api/json-bigint'
 import type { AuthTokenSource } from '../src/web-api/oauth2-token-source'
 import { ServerSession, HttpError } from '../src/web-api'
-import { db, DebtorRecord, RecordDoesNotExist } from '../src/operations/db'
+import { db, DebtorRecord, RecordDoesNotExist, ActionRecordWithId } from '../src/operations/db'
 import { parsePaymentRequest, generatePr0Blob, MIME_TYPE_PR0 } from '../src/operations/payment-requests'
 import { UpdateScheduler } from '../src/operations/scheduler'
 
@@ -179,7 +180,7 @@ test("Install and uninstall user", async () => {
   const actions = await db.getActionRecords(userId)
   expect(actions.length).toBe(1)
   expect(actions[0].actionType).toBe('AbortTransfer')
-  await db.deleteActionRecord(actions[0].actionId)
+  await db.replaceActionRecord(actions[0])
   await expect(db.getActionRecords(userId)).resolves.toEqual([])
 
   const actionRecord = {
@@ -197,20 +198,26 @@ test("Install and uninstall user", async () => {
   expect(actionRecord.actionId).toEqual(actionId)
   await expect(db.getActionRecord(actionId)).resolves.toBeDefined()
   const ar2 = { ...actionRecord, actionId: undefined }
-  await expect(db.replaceActionRecord(actionId, ar2)).resolves.toBeGreaterThan(actionId)
+  await expect(db.replaceActionRecord({ ...actionRecord, actionId }, ar2)).resolves.toBeGreaterThan(actionId)
   expect(ar2.actionId).toBeDefined()
   expect(ar2.actionId).toBeGreaterThan(actionId)
   await expect(db.getActionRecord(actionId)).resolves.toBeUndefined()
   const ar3 = { ...actionRecord, actionId: undefined }
-  await expect(db.replaceActionRecord(actionId, ar3)).rejects.toBeInstanceOf(RecordDoesNotExist)
+  await expect(db.replaceActionRecord({ ...actionRecord, actionId }, ar3)).rejects.toBeInstanceOf(RecordDoesNotExist)
   await expect(db.getActionRecords(userId)).resolves.toEqual([ar2])
-  expect(db.deleteActionRecord(ar2.actionId as any as number)).resolves.toBeUndefined()
+  await expect(db.replaceActionRecord(ar2 as any as ActionRecordWithId)).resolves.toBeUndefined()
   await expect(db.getActionRecords(userId)).resolves.toEqual([])
   const x = await db.createActionRecord({ ...actionRecord, actionId: undefined })
   await expect(db.getActionRecords(userId)).resolves.toEqual([{ ...actionRecord, actionId: x }])
-  await expect(db.updateActionRecord({ ...actionRecord, actionId: x, uri: 'https://example.com/1/transfers/updated' })).resolves.toBeUndefined()
+  await expect(db.replaceActionRecord(
+    { ...actionRecord, actionId: x },
+    { ...actionRecord, actionId: x, uri: 'https://example.com/1/transfers/updated' },
+  )).resolves.toBeDefined()
   await expect(db.getActionRecords(userId)).resolves.toEqual([{ ...actionRecord, actionId: x, uri: 'https://example.com/1/transfers/updated' }])
-  await expect(db.updateActionRecord({ ...actionRecord, actionId: -1 })).rejects.toBeInstanceOf(RecordDoesNotExist)
+  await expect(db.replaceActionRecord(
+    { ...actionRecord, actionId: -1, uri: 'https://example.com/1/transfers/updated' },
+    { ...actionRecord, actionId: -1, uri: 'https://example.com/1/transfers/updated-again' },
+  )).rejects.toBeInstanceOf(RecordDoesNotExist)
 
   const theCreatedTransfer = {
     type: 'Transfer',
@@ -349,4 +356,11 @@ test("Create update scheduler", async () => {
   expect((sch as any).tasks.peek()).toBeDefined()
   sch.close()
   sch.close()
+})
+
+test("Deep equal", async () => {
+  expect(equal({ a: 1n, b: new Date(0) }, { a: 1n, b: new Date(0) })).toBe(true)
+  expect(equal({ a: 1n, b: new Date(0) }, { a: 1n, b: new Date(1) })).toBe(false)
+  expect(equal({ a: 1n, b: new Date(0) }, { a: 2n, b: new Date(0) })).toBe(false)
+  expect(equal({ a: 1n, b: new Date(0) }, undefined)).toBe(false)
 })

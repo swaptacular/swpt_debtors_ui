@@ -1,3 +1,4 @@
+import equal from 'fast-deep-equal'
 import Dexie from 'dexie'
 import type {
   ObjectReference as ResourceReference,
@@ -292,30 +293,29 @@ class DebtorsDb extends Dexie {
     })
   }
 
-  async updateActionRecord(action: ActionRecordWithId): Promise<void> {
+  /* Depending on the passed `replacement` value -- replaces, updates,
+   * or deletes an action record. */
+  async replaceActionRecord(original: ActionRecordWithId, replacement?: ActionRecord): Promise<number | undefined> {
     return await this.transaction('rw', this.actions, async () => {
-      const { actionId, userId } = action
-      const existingActionRecord = await this.actions.get(actionId)
-      if (!(existingActionRecord && existingActionRecord.userId === action.userId)) {
-        throw new RecordDoesNotExist(`ActionRecord(actionId=${actionId}, userId=${userId})`)
+      const { actionId, userId } = original
+      const existing = await this.actions.get(actionId)
+      if (!equal(existing, original)) {
+        throw new RecordDoesNotExist('The original record has been changed or deleted.')
       }
-      await this.actions.put(action)
-    })
-  }
-
-  async replaceActionRecord(actionId: number, action: ActionRecord & { actionId?: undefined }): Promise<number> {
-    return await this.transaction('rw', this.actions, async () => {
-      const userId = action.userId
-      const found = await this.actions.where({ actionId }).filter(a => a.userId === userId).delete() == 1
-      if (!found) {
-        throw new RecordDoesNotExist(`ActionRecord(actionId=${actionId}, userId=${userId})`)
+      if (replacement === undefined) {
+        await this.actions.delete(actionId)
+      } else if (replacement.userId !== userId) {
+        throw new Error('can not alter userId')
+      } else if (replacement.actionId === undefined) {
+        await this.actions.delete(actionId)
+        await this.actions.add(replacement)
+      } else if (replacement.actionId !== actionId) {
+        throw new Error('can not alter actionId')
+      } else {
+        await this.actions.put(replacement)
       }
-      return await this.actions.add(action)  // Returns the new actionId.
+      return replacement?.actionId
     })
-  }
-
-  async deleteActionRecord(actionId: number): Promise<void> {
-    await this.actions.delete(actionId)
   }
 
   async getDocumentRecord(uri: string): Promise<DocumentRecord | undefined> {
