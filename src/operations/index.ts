@@ -2,30 +2,28 @@ import { v4 as uuidv4 } from 'uuid';
 import { server, ServerSessionError, HttpResponse, HttpError, Transfer } from './server'
 import {
   db,
-  RecordDoesNotExist,
   DebtorRecordWithId,
-  ActionRecordWithId,
   CreateTransferAction,
+  CreateTransferActionWithId,
   TransferRecord,
+  RecordDoesNotExist,
 } from './db'
 import { parsePaymentRequest, IvalidPaymentRequest } from './payment-requests'
-import { UpdateScheduler, TaskCallback } from './scheduler'
+import { UpdateScheduler } from './scheduler'
 import { getUserData } from './utils'
 
 export {
+  RecordDoesNotExist,
   IvalidPaymentRequest,
+  ServerSessionError,
 }
 
 export type {
-  TaskCallback,
   DebtorRecordWithId,
-  ActionRecordWithId,
   CreateTransferAction,
+  CreateTransferActionWithId,
+  TransferRecord,
 }
-
-export type CreateTransferActionWithId =
-  & ActionRecordWithId
-  & CreateTransferAction
 
 /* If the user is logged in -- does nothing. Otherwise, redirects to
  * the login page, and never resolves. */
@@ -89,8 +87,10 @@ class UserContext {
     return await db.getDebtorRecord(this.userId)
   }
 
+  /* Reads a payment request, and adds and returns a new
+   * `CreateTransferAction`. May throw `IvalidPaymentRequest`. */
   async processPaymentRequest(blob: Blob): Promise<CreateTransferActionWithId> {
-    const request = await parsePaymentRequest(blob)  // may throw `IvalidPaymentRequest`
+    const request = await parsePaymentRequest(blob)
     const actionRecord = {
       userId: this.userId,
       actionType: 'CreateTransfer' as const,
@@ -108,52 +108,65 @@ class UserContext {
         paymentRequest: new Blob([blob], { type: request.contentType }),
       }
     }
-    await db.createActionRecord(actionRecord)  // This adds actionId to `actionRecord`.
+    await db.createActionRecord(actionRecord)  // adds `actionId` field
     return actionRecord as CreateTransferActionWithId
   }
 
+  /* Tries to execute/re-execute the given `CreateTransferAction`. When
+   * the execution has been successful -- returns a `TransferRecord`
+   * instance. When the execution has failed -- returns
+   * `undefined`. The caller must be prepared this method to throw
+   * `ServerSessionError` in case of a network error, and
+   * `RecordDoesNotExist` in case of a failure due to concurrent
+   * execution/deletion of the action. In both cases the transfer may,
+   * or may not, be successfully sent to the server. */
   async executeCreateTransferAction(action: CreateTransferActionWithId): Promise<TransferRecord | undefined> {
-    // TODO: This approach is wrong! The CreateTransferAction should
-    // be marked as executed, and then a scheduled task should make
-    // sure that the request is made. In the meantime canceling should
-    // not be allowed.
 
-    let transferRecord
-    if (!action.error) {
-      let transfer
-      try {
-        const response = await server.post(
-          this.createTransferUri,
-          action.creationRequest,
-          { attemptLogin: true },
-        ) as HttpResponse<Transfer>
-        transfer = response.data
-      } catch (e: unknown) {
-        if (e instanceof HttpError) {
-          const error = e.status === 403 ? 'forbidden operation' : 'unexpected error'
-          await db.replaceActionRecord(action, { ...action, error })
-          return undefined
-        } else throw e
-      }
-      try {
-        transferRecord = await db.createTransfer(action.actionId, transfer)
-      } catch (e: unknown) {
-        if (e instanceof RecordDoesNotExist) {
-          // Looks like this `CreateTransferAction` has bee dismissed
-          // before its execution has been finished. In this case, the
-          // transfer will be appear as a transfer coming from another
-          // device.
-        }
-        else throw e
-      }
-      if (transfer.checkupAt) {
-        this.scheduleUpdate(new Date(transfer.checkupAt))
-      }
+    // (Re)start the execution of the action if necessary.
+    let { startedAt, error } = action.execution ?? {}
+    if (!startedAt || error) {
+      startedAt = new Date()
+      const startedAction = { ...action, execution: { startedAt } }
+      await db.replaceActionRecord(action, startedAction)
+      action = startedAction
     }
+
+    // Make a request to the server.
+    let response
+    try {
+      response = await server.post(
+        this.createTransferUri,
+        action.creationRequest,
+        { attemptLogin: true },
+      ) as HttpResponse<Transfer>
+    } catch (e: unknown) {
+      if (e instanceof HttpError) {
+        error = e.status === 403 ? 'forbidden operation' : 'unexpected error'
+        await db.replaceActionRecord(action, { ...action, execution: { startedAt, error } })
+        return undefined
+      } else throw e
+    }
+
+    // Create a new transfer record.
+    const transfer = response.data
+    const transferRecord = await db.createTransferRecord(action, transfer)
+    if (transfer.checkupAt) {
+      this.scheduleUpdate(new Date(transfer.checkupAt))
+    }
+
     return transferRecord
   }
 
-  async dismissCreateTransferAction(action: CreateTransferActionWithId): Promise<void> {
+  /* Deletes a failed `CreateTransferAction`. Note that the passed
+   * `action` should either be failed, or never started. The caller
+   * must be prepared this method to throw `RecordDoesNotExist` in
+   * case of a failure due to concurrent execution/deletion of the
+   * action.*/
+  async deleteCreateTransferAction(action: CreateTransferActionWithId): Promise<void> {
+    const { startedAt, error } = action.execution ?? {}
+    if (startedAt && !error) {
+      throw new Error('Can not delete started but unfinished create transfer action.')
+    }
     await db.replaceActionRecord(action)
   }
 

@@ -88,24 +88,50 @@ export type UpdateConfigAction =
   & ConfigData
   & { actionType: 'UpdateConfig' }
 
+export type CreateTransferError = 'forbidden operation' | 'unexpected error'
+
 export type CreateTransferAction =
   & ActionData
   & {
     actionType: 'CreateTransfer',
     creationRequest: TransferCreationRequest,
     paymentInfo: PaymentInfo,
-    error?: 'forbidden operation' | 'unexpected error',
+    execution?: {
+      startedAt: Date,
+      error?: CreateTransferError,
+    }
   }
+
+export type CreateTransferActionWithId =
+  & ActionRecordWithId
+  & CreateTransferAction
 
 export type AbortTransferAction =
   & ActionData
   & ResourceReference
   & { actionType: 'AbortTransfer' }
 
-export type ScheduledDeletionRecord =
+export type TaskData =
   & UserReference
+  & {
+    taskId?: number,
+    taskType: string,
+  }
+
+export type TaskRecord =
+  | DeleteTransferTask
+
+export type TaskRecordWithId =
+  & TaskRecord
+  & { taskId: number }
+
+export type DeleteTransferTask =
+  & TaskData
   & ResourceReference
-  & { resourceType: 'Transfer' }
+  & {
+    taskType: 'DeleteTransfer',
+    transferUuid: string,  // TODO: use this to ensure that there is no hanging CreateTransferTask.
+  }
 
 export class RecordDoesNotExist extends Error {
   name = 'RecordDoesNotExist'
@@ -139,7 +165,7 @@ class DebtorsDb extends Dexie {
   transfers: Dexie.Table<TransferRecord, string>
   documents: Dexie.Table<DocumentRecord, string>
   actions: Dexie.Table<ActionRecord, number>
-  scheduledDeletions: Dexie.Table<ScheduledDeletionRecord, string>
+  tasks: Dexie.Table<TaskRecord, number>
 
   constructor() {
     super('debtors')
@@ -156,8 +182,8 @@ class DebtorsDb extends Dexie {
       transfers: 'uri,&[userId+time]',
 
       documents: 'uri,userId',
-      actions: '++actionId,&[userId+actionId]',
-      scheduledDeletions: 'uri,userId',
+      actions: '++actionId,&[userId+actionId],creationRequest.transferUuid',
+      tasks: '++taskId,userId',
     })
 
     this.debtors = this.table('debtors')
@@ -165,7 +191,7 @@ class DebtorsDb extends Dexie {
     this.transfers = this.table('transfers')
     this.documents = this.table('documents')
     this.actions = this.table('actions')
-    this.scheduledDeletions = this.table('scheduledDeletions')
+    this.tasks = this.table('tasks')
   }
 
   async getUserId(debtorUri: string): Promise<number | undefined> {
@@ -232,16 +258,15 @@ class DebtorsDb extends Dexie {
     return await this.transfers.get(uri)
   }
 
-  async createTransfer(actionId: number, transfer: Transfer): Promise<TransferRecord> {
+  async createTransferRecord(action: CreateTransferActionWithId, transfer: Transfer): Promise<TransferRecord> {
     return await this.transaction('rw', [this.transfers, this.actions], async () => {
-      const actionRecord = await this.actions.get(actionId)
-      if (!(actionRecord && actionRecord.actionType === 'CreateTransfer')) {
-        throw new RecordDoesNotExist(`ActionRecord(actionId=${actionId}, actionType="CreateTransfer")`)
+      const { actionId, userId, paymentInfo } = action
+      const existing = await this.actions.get(actionId)
+      if (!equal(existing, action)) {
+        throw new RecordDoesNotExist('The original record has been changed or deleted.')
       }
       this.actions.delete(actionId)
-      const { userId, paymentInfo } = actionRecord
-      const alreadyExists = await this.putTransferRecord(userId, transfer, paymentInfo)
-      if (alreadyExists) {
+      if (await this.putTransferRecord(userId, transfer, paymentInfo)) {
         console.error(
           `Instead of creating a new transfer record, an existing record has ` +
           `been overwritten (uri="${transfer.uri}"). This can happen when a ` +
@@ -283,19 +308,23 @@ class DebtorsDb extends Dexie {
     return await this.actions.get(actionId) as ActionRecordWithId | undefined
   }
 
+  /* Creates a new `ActionRecord` and returns its `actionId`. Note
+   * that the passed `action` object should not have an `actionId`
+   * field, and it will be added automatically. */
   async createActionRecord(action: ActionRecord & { actionId?: undefined }): Promise<number> {
     return await this.transaction('rw', [this.debtors, this.actions], async () => {
       const userId = action.userId
       if (!await this.isInstalledUser(userId)) {
         throw new RecordDoesNotExist(`DebtorRecord(userId=${userId})`)
       }
-      return await this.actions.add(action)  // Returns the new actionId.
+      return await this.actions.add(action)
     })
   }
 
   /* Depending on the passed `replacement` value -- replaces, updates,
    * or deletes the original action record. Returns the actionId of
-   * the replacement. */
+   * the replacement. Note that an `actionId` field will be added to
+   * the passed `replacement` object if it does not have one. */
   async replaceActionRecord(original: ActionRecordWithId, replacement?: ActionRecord): Promise<number | undefined> {
     return await this.transaction('rw', this.actions, async () => {
       const { actionId, userId } = original
@@ -369,7 +398,7 @@ class DebtorsDb extends Dexie {
               break
             case 'successful':
               await this.transfers.update(uri, transfer)
-              await this.scheduledDeletions.put({ uri, userId, resourceType: 'Transfer' })
+              await this.tasks.put({ uri, userId, taskType: 'DeleteTransfer', transferUuid: transfer.transferUuid })
               break
           }
         }
@@ -420,7 +449,7 @@ class DebtorsDb extends Dexie {
   }
 
   private get allTables() {
-    return [this.debtors, this.configs, this.transfers, this.documents, this.actions, this.scheduledDeletions]
+    return [this.debtors, this.configs, this.transfers, this.documents, this.actions, this.tasks]
   }
 }
 

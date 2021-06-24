@@ -3,7 +3,7 @@ import App from '../src/App.svelte'
 import { stringify, parse } from '../src/web-api/json-bigint'
 import type { AuthTokenSource } from '../src/web-api/oauth2-token-source'
 import { ServerSession, HttpError } from '../src/web-api'
-import { db, DebtorRecord, RecordDoesNotExist, ActionRecordWithId } from '../src/operations/db'
+import { db, DebtorRecord, RecordDoesNotExist, ActionRecordWithId, CreateTransferActionWithId } from '../src/operations/db'
 import { parsePaymentRequest, generatePr0Blob, MIME_TYPE_PR0 } from '../src/operations/payment-requests'
 import { UpdateScheduler } from '../src/operations/scheduler'
 
@@ -230,10 +230,9 @@ test("Install and uninstall user", async () => {
     noteFormat: '',
     initiatedAt: isoNow,
   }
-  await expect(db.createTransfer(-1, theCreatedTransfer)).rejects.toBeInstanceOf(RecordDoesNotExist)
-  const createTransferActionId = await db.createActionRecord({
+  let createTransferAction = {
     userId,
-    actionType: 'CreateTransfer',
+    actionType: 'CreateTransfer' as const,
     createdAt: new Date(),
     creationRequest: {
       recipient: { uri: 'swpt:1/2' },
@@ -242,10 +241,14 @@ test("Install and uninstall user", async () => {
     },
     paymentInfo: {
       payeeName: 'XYZ',
-    }
-  })
+    },
+  }
+  await expect(db.createTransferRecord({ ...createTransferAction, actionId: -1 }, theCreatedTransfer))
+    .rejects.toBeInstanceOf(RecordDoesNotExist)
+  const createTransferActionId = await db.createActionRecord(createTransferAction)
   expect(createTransferActionId).toBeDefined()
-  const transferRecord = await db.createTransfer(createTransferActionId, theCreatedTransfer)
+  const transferRecord = await db.createTransferRecord(
+    createTransferAction as any as CreateTransferActionWithId, theCreatedTransfer)
   expect(transferRecord.time).toBeDefined()
   await expect(db.getActionRecord(createTransferActionId)).resolves.toBe(undefined)
 
