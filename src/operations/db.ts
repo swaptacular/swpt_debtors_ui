@@ -32,7 +32,6 @@ type ActionData =
     actionId?: number,
     actionType: string,
     createdAt: Date,
-    error?: object,
   }
 
 export type UserData = {
@@ -94,6 +93,7 @@ export type CreateTransferAction =
     actionType: 'CreateTransfer',
     creationRequest: TransferCreationRequest,
     paymentInfo: PaymentInfo,
+    error?: 'forbidden operation' | 'unexpected error',
   }
 
 export type AbortTransferAction =
