@@ -294,7 +294,8 @@ class DebtorsDb extends Dexie {
   }
 
   /* Depending on the passed `replacement` value -- replaces, updates,
-   * or deletes an action record. */
+   * or deletes the original action record. Returns the actionId of
+   * the replacement. */
   async replaceActionRecord(original: ActionRecordWithId, replacement?: ActionRecord): Promise<number | undefined> {
     return await this.transaction('rw', this.actions, async () => {
       const { actionId, userId } = original
