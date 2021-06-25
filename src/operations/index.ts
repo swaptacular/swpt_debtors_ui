@@ -92,7 +92,7 @@ class UserContext {
   /* Reads a payment request, and adds and returns a new
    * `CreateTransferAction`. May throw `IvalidPaymentRequest`. */
   async processPaymentRequest(blob: Blob): Promise<CreateTransferActionWithId> {
-    const request = await parsePaymentRequest(blob, this.noteMaxBytes)
+    const request = await parsePaymentRequest(blob)
     const actionRecord = {
       userId: this.userId,
       actionType: 'CreateTransfer' as const,
