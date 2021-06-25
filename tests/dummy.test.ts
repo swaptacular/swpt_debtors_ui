@@ -174,7 +174,7 @@ test("Install and uninstall user", async () => {
     userId,
   })
   await expect(db.getTransferRecords(userId)).resolves.toEqual(
-    [{ ...transfers[1], userId, time: new Date(isoNow).getTime() }]
+    [{ ...transfers[1], userId, time: new Date(isoNow).getTime(), paymentInfo: {} }]
   )
   await expect(db.getDocumentRecord('https://example.com/1/documents/123')).resolves.toEqual({ ...document, userId })
   const actions = await db.getActionRecords(userId)
@@ -295,18 +295,19 @@ test("Install and uninstall user", async () => {
 
   const t = transfers[0]
   const time = new Date(t.initiatedAt).getTime()
-  await expect((db as any).putTransferRecord(userId, t)).resolves.toEqual(false)
-  await expect(db.getTransferRecord(t.uri)).resolves.toEqual({ ...t, userId, time })
-  await expect((db as any).putTransferRecord(userId, t)).resolves.toEqual(true)
-  await expect(db.getTransferRecord(t.uri)).resolves.toEqual({ ...t, userId, time })
-  await expect((db as any).putTransferRecord(userId + 1, t)).rejects.toBeInstanceOf(Error)
+  await expect((db as any).putTransferRecord(userId, t, {})).resolves.toEqual(false)
+  await expect(db.getTransferRecord(t.uri)).resolves.toEqual({ ...t, userId, time, paymentInfo: {} })
+  await expect((db as any).putTransferRecord(userId, t, {})).resolves.toEqual(true)
+  await expect(db.getTransferRecord(t.uri)).resolves.toEqual({ ...t, userId, time, paymentInfo: {} })
+  await expect((db as any).putTransferRecord(userId + 1, t, {})).rejects.toBeInstanceOf(Error)
   const alteredUri = t.uri + '/something'
-  await expect((db as any).putTransferRecord(userId, { ...t, uri: alteredUri })).resolves.toEqual(false)
+  await expect((db as any).putTransferRecord(userId, { ...t, uri: alteredUri }, {})).resolves.toEqual(false)
   await expect(db.getTransferRecord(t.uri + '/something')).resolves.toEqual({
     ...t,
     userId,
     uri: alteredUri,
     time: time * (1 + Number.EPSILON),
+    paymentInfo: {},
   })
 })
 
@@ -329,6 +330,20 @@ test("Generate payment request", async () => {
     expect(a1).toEqual(a2)
     expect(contentType).toEqual(MIME_TYPE_PR0)
   }
+})
+
+test("Parse payement request", async () => {
+  const blob = new Blob([
+    'PR0\n',
+    '\n',
+    'swpt:112233445566778899/998877665544332211\n',
+    'Payee Name\n',
+    '1000\n',
+    '2001-01-01\n',
+    '12d3a45642665544\n',
+  ])
+  const request = await parsePaymentRequest(blob)
+  expect(request.payeeName).toEqual('Payee Name')
 })
 
 test("Create update scheduler", async () => {

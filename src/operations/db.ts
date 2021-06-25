@@ -7,6 +7,7 @@ import type {
   Transfer,
   TransferCreationRequest,
 } from '../web-api-schemas'
+import { DocumentUri, PaymentInfo, parseTransferNote } from './payment-requests'
 
 type ListQueryOptions = {
   before?: number,
@@ -18,8 +19,6 @@ type ListQueryOptions = {
 type UserReference = {
   userId: number,
 }
-
-type DocumentUri = string
 
 type ConfigData = {
   // TODO: this is probably wrong.
@@ -41,12 +40,6 @@ export type UserData = {
   document?: ResourceReference & { content: Blob },
 }
 
-export type PaymentInfo = {
-  payeeName: string,
-  paymentRequest?: DocumentUri | Blob,
-  documents?: Map<DocumentUri, Blob>,
-}
-
 export type DebtorRecord =
   & Partial<UserReference>
   & Omit<Debtor, 'config'>
@@ -66,7 +59,7 @@ export type TransferRecord =
   & {
     time: number,
     aborted?: true,
-    paymentInfo?: PaymentInfo,
+    paymentInfo: PaymentInfo,
   }
 
 export type DocumentRecord =
@@ -383,7 +376,7 @@ class DebtorsDb extends Dexie {
           switch (getTransferState(transfer)) {
             case 'unsuccessful':
             case 'delayed':
-              await this.putTransferRecord(userId, transfer)
+              await this.putTransferRecord(userId, transfer, parseTransferNote(transfer))
               const existingAbortTransferAction = await this.actions
                 .where({ userId })
                 .filter(action => action.actionType === 'AbortTransfer' && action.uri === uri)
@@ -397,6 +390,7 @@ class DebtorsDb extends Dexie {
                 })
               break
             case 'successful':
+              // TODO: await this.putTransferRecord(userId, transfer, parseTransferNote(transfer))
               await this.transfers.update(uri, transfer)
               await this.tasks.put({ uri, userId, taskType: 'DeleteTransfer', transferUuid: transfer.transferUuid })
               break
@@ -407,7 +401,7 @@ class DebtorsDb extends Dexie {
     })
   }
 
-  private async putTransferRecord(userId: number, transfer: Transfer, paymentInfo?: PaymentInfo): Promise<boolean> {
+  private async putTransferRecord(userId: number, transfer: Transfer, paymentInfo: PaymentInfo): Promise<boolean> {
     return await this.transaction('rw', this.transfers, async () => {
       const existingTransferRecord = await this.transfers.get(transfer.uri)
 

@@ -8,7 +8,7 @@ import {
   TransferRecord,
   RecordDoesNotExist,
 } from './db'
-import { parsePaymentRequest, IvalidPaymentRequest } from './payment-requests'
+import { parsePaymentRequest, IvalidPaymentRequest, generatePayeerefTransferNote } from './payment-requests'
 import { UpdateScheduler } from './scheduler'
 import { getUserData } from './utils'
 
@@ -74,6 +74,7 @@ async function update(): Promise<void> {
 class UserContext {
   private updateScheduler = new UpdateScheduler(update)
   private createTransferUri: string
+  private noteMaxBytes: number
 
   readonly userId: number
   readonly scheduleUpdate = this.updateScheduler.schedule.bind(this.updateScheduler)
@@ -81,6 +82,7 @@ class UserContext {
   constructor(debtroRecord: DebtorRecordWithId) {
     this.userId = debtroRecord.userId
     this.createTransferUri = new URL(debtroRecord.createTransfer.uri, debtroRecord.uri).href
+    this.noteMaxBytes = Number(debtroRecord.noteMaxBytes)
   }
 
   async getDebtorRecord(): Promise<DebtorRecordWithId> {
@@ -101,11 +103,12 @@ class UserContext {
         amount: request.amount,
         transferUuid: uuidv4(),
         noteFormat: 'payeeref',
-        note: request.payeeReference,
+        note: generatePayeerefTransferNote(request, this.noteMaxBytes),
       },
       paymentInfo: {
+        payeeReference: request.payeeReference,
         payeeName: request.payeeName,
-        paymentRequest: new Blob([blob], { type: request.contentType }),
+        paymentReason: new Blob([blob], { type: request.contentType }),
       }
     }
     await db.createActionRecord(actionRecord)  // adds `actionId` field

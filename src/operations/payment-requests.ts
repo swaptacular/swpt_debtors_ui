@@ -1,8 +1,11 @@
 import CRC32 from 'crc-32'
 
-const PAYMENT_REQUEST_REGEXP = /^PR0\r?\n(?<crc32>(?:[0-9a-f]{8})?)\r?\n(?<accountUri>.{0,200})\r?\n(?<payeeName>.{0,200})\r?\n(?<amount>\d{0,20})\r?\n(?<deadline>(?:\d{4}-\d{2}-\d{2}.{0,200})?)\r?\n(?<payeeReference>.{0,200})\r?\n(?<descriptionFormat>.{0,200})\r?\n(?<description>[\s\S]{0,20000})$/u
+const PAYMENT_REQUEST_REGEXP = /^PR0\r?\n(?<crc32>(?:[0-9a-f]{8})?)\r?\n(?<accountUri>.{0,200})\r?\n(?<payeeName>.{0,500})\r?\n(?<amount>\d{1,20})(?:\r?\n(?<deadline>(?:\d{4}-\d{2}-\d{2}.{0,32})?)(?:\r?\n(?<payeeReference>.{0,500})(?:\r?\n(?<descriptionFormat>.{0,500})(?:\r?\n(?<description>[\s\S]{0,500}))?)?)?)?$/u
+
+const PAYEEREF_TRANSFER_NOTE_REGEXP = /^(?<payeeReference>.{0,500})(?:\r?\n(?<payeeName>.{0,500})(?:\r?\n(?<descriptionFormat>.{0,500})(?:\r?\n(?<description>[\s\S]{0,500}))?)?)?/u
 
 const MAX_INT64 = 2n ** 63n - 1n
+const uft8encoder = new TextEncoder()
 
 function removePr0Header(bytes: Uint8Array): Uint8Array {
   const endOfFirstLine = bytes.indexOf(10)
@@ -10,7 +13,30 @@ function removePr0Header(bytes: Uint8Array): Uint8Array {
   return bytes.slice(endOfSecondLine + 1)
 }
 
-export const MIME_TYPE_PR0 = 'text/vnd.swaptacular.pr0'
+function isTooBig(request: PaymentRequest): boolean {
+  const note = generatePayeerefTransferNote(request)
+  return (uft8encoder.encode(note).length > 500)
+}
+
+function createTextBlob(text: string): Blob {
+  return new Blob([uft8encoder.encode(text)], { type: 'text/plain; charset=utf-8' })
+}
+
+type NoteAndNoteFormat = {
+  note: string,
+  noteFormat: string,
+}
+
+export const MIME_TYPE_PR0 = 'application/vnd.swaptacular.pr0'
+
+export type DocumentUri = string
+
+export type PaymentInfo = {
+  payeeReference?: string,
+  payeeName?: string,
+  paymentReason?: DocumentUri | Blob,
+  documents?: Map<DocumentUri, Blob>,
+}
 
 export type PaymentRequest = {
   accountUri: string,
@@ -54,7 +80,7 @@ export class IvalidPaymentRequest extends Error {
  * "PR0" identifies the type of the file.
 
  * An optional CRC32 value can be included with the request (the empty
-   second row). If included, it should contain exactly 8 hexadecimal
+   second line). If included, it should contain exactly 8 hexadecimal
    lowercase symbols.
 
  * "swpt:112233445566778899/998877665544332211" refers to the payee's
@@ -71,9 +97,9 @@ export class IvalidPaymentRequest extends Error {
    should to be included by the payer in the payment note, so that the
    payee can match the incoming payment with the payment request.
 
- * Also, an optional description format can be passed (the empty row
+ * Also, an optional description format can be passed (the empty line
    right before the description). When an empty string is passed, this
-   means that the description is in plain text. The symbol "@"
+   means that the description is in plain text. The symbol "."
    indicates that the description contains the URI of the document
    that describes the payment request.
 
@@ -104,27 +130,33 @@ export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest & 
   }
 
   let deadline
-  if (groups.deadline !== '') {
+  if (groups.deadline) {
     deadline = new Date(groups.deadline)
     if (Number.isNaN(deadline.getTime())) {
       throw new IvalidPaymentRequest('invalid deadline')
     }
   }
 
-  return {
+  const request = {
     contentType: MIME_TYPE_PR0,
     accountUri: groups.accountUri,
     payeeName: groups.payeeName,
     amount,
     deadline,
-    payeeReference: groups.payeeReference,
-    descriptionFormat: groups.descriptionFormat,
-    description: groups.description,
+    payeeReference: groups.payeeReference ?? '',
+    descriptionFormat: groups.descriptionFormat ?? '',
+    description: groups.description ?? '',
   }
+  if (isTooBig(request)) {
+    throw new IvalidPaymentRequest('too big')
+  }
+  return request
 }
 
 export function generatePr0Blob(request: PaymentRequest, includeCrc: boolean = true): Blob {
-  const uft8encoder = new TextEncoder()
+  if (isTooBig(request)) {
+    throw new IvalidPaymentRequest('too big')
+  }
   const deadline = request.deadline ? request.deadline.toISOString() : ''
   const body = uft8encoder.encode(
     `${request.accountUri}\n` +
@@ -138,4 +170,95 @@ export function generatePr0Blob(request: PaymentRequest, includeCrc: boolean = t
   const crc32 = includeCrc ? (CRC32.buf(body) >>> 0).toString(16).padStart(8, '0') : ''
   const header = uft8encoder.encode(`PR0\n${crc32}\n`)
   return new Blob([header, body], { type: MIME_TYPE_PR0 })
+}
+
+export function parseTransferNote({ note, noteFormat }: NoteAndNoteFormat): PaymentInfo {
+  switch (noteFormat) {
+    case '':
+      return note === '' ? {} : { paymentReason: createTextBlob(note) }
+    case 'payeeref':
+      return parsePayeerefTransferNote(note)
+    default:
+      return {}
+  }
+}
+
+/*
+ This function parses transfer notes having the "payeeref" note
+ format. This is a very simple format that contains the payee
+ reference as a first line, and optionally may include the payee name,
+ and a payment description.
+
+ An example payeeref transfer note:
+ ```````````````````````````````````````````````
+ 12d3a45642665544
+ Payee Name
+
+ This is a description of the reason
+ for the payment. It may contain multiple
+ lines. Everything until the end of the file
+ is considered as part of the description.
+ ```````````````````````````````````````````````
+
+ In the example above:
+
+ * "12d3a45642665544" is the payee reference (a unique string), which
+   is included by the payer in the payment note, so that the payee can
+   match the incoming payment with the payment request.
+
+ * "Payee Name" indicates the name of the payee (optional).
+
+ * Also, an optional description format can be passed (the empty line
+   right before the description). When an empty string is passed, this
+   means that the description is in plain text. The symbol "."
+   indicates that the description contains the URI of the document
+   that describes the payment.
+
+*/
+function parsePayeerefTransferNote(note: string): PaymentInfo {
+  const regexpMatch = note.match(PAYEEREF_TRANSFER_NOTE_REGEXP) as RegExpMatchArray  // Should always match!
+  const groups = regexpMatch.groups
+  const paymentInfo: PaymentInfo = {}
+
+  const payeeReference = groups?.payeeReference
+  if (payeeReference !== undefined) {
+    paymentInfo.payeeReference = payeeReference
+  }
+  const payeeName = groups?.payeeName
+  if (payeeName !== undefined) {
+    paymentInfo.payeeName = payeeName
+  }
+  const description = groups?.desciption
+  if (description !== undefined) {
+    switch (groups?.descriptionFormat) {
+      case '':
+        paymentInfo.paymentReason = createTextBlob(description)
+        break
+      case '.':
+        paymentInfo.paymentReason = description  // The description contains an URL.
+        break
+    }
+  }
+  return paymentInfo
+}
+
+export function generatePayeerefTransferNote(request: PaymentRequest, noteMaxBytes: number = Infinity): string {
+  let note = ''
+  let noteBytes = 0
+  const parts = [
+    `${request.payeeReference}`,
+    `\n${request.payeeName}`,
+    `\n${request.descriptionFormat}\n${request.description}`,
+  ]
+  for (const part of parts) {
+    noteBytes += uft8encoder.encode(part).length
+    if (noteBytes > noteMaxBytes) {
+      break
+    }
+    note += part
+  }
+  if (!note.startsWith(request.payeeReference)) {
+    throw new IvalidPaymentRequest('the payee reference is too big')
+  }
+  return note
 }
