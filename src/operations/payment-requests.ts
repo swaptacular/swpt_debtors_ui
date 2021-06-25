@@ -250,7 +250,7 @@ function parsePayeerefTransferNote(note: string): PaymentInfo {
   return paymentInfo
 }
 
-export function generatePayeerefTransferNote(request: PaymentRequest, noteMaxBytes: number = Infinity): string {
+export function generatePayeerefTransferNote(request: PaymentRequest, noteMaxBytes: number = 500): string {
   const note =
     `${request.payeeReference}\n` +
     `${request.payeeName}\n` +
