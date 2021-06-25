@@ -13,9 +13,9 @@ function removePr0Header(bytes: Uint8Array): Uint8Array {
   return bytes.slice(endOfSecondLine + 1)
 }
 
-function isTooBig(request: PaymentRequest): boolean {
+function isTooBig(request: PaymentRequest, noteMaxBytes: number): boolean {
   const note = generatePayeerefTransferNote(request)
-  return (uft8encoder.encode(note).length > 500)
+  return (uft8encoder.encode(note).length > noteMaxBytes)
 }
 
 function createTextBlob(text: string): Blob {
@@ -104,7 +104,11 @@ export class IvalidPaymentRequest extends Error {
    that describes the payment request.
 
 */
-export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest & { contentType: string }> {
+export async function parsePaymentRequest(
+  blob: Blob,
+  noteMaxBytes: number = 500,
+): Promise<PaymentRequest & { contentType: string }> {
+
   if (blob.type && blob.type !== MIME_TYPE_PR0) {
     throw new IvalidPaymentRequest('wrong content type')
   }
@@ -147,14 +151,18 @@ export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest & 
     descriptionFormat: groups.descriptionFormat ?? '',
     description: groups.description ?? '',
   }
-  if (isTooBig(request)) {
+  if (isTooBig(request, noteMaxBytes)) {
     throw new IvalidPaymentRequest('too big')
   }
   return request
 }
 
-export function generatePr0Blob(request: PaymentRequest, includeCrc: boolean = true): Blob {
-  if (isTooBig(request)) {
+export function generatePr0Blob(
+  request: PaymentRequest,
+  options: { noteMaxBytes?: number, includeCrc?: boolean } = {}
+): Blob {
+  const { noteMaxBytes = 500, includeCrc = true } = options
+  if (isTooBig(request, noteMaxBytes)) {
     throw new IvalidPaymentRequest('too big')
   }
   const deadline = request.deadline ? request.deadline.toISOString() : ''
@@ -243,22 +251,14 @@ function parsePayeerefTransferNote(note: string): PaymentInfo {
 }
 
 export function generatePayeerefTransferNote(request: PaymentRequest, noteMaxBytes: number = Infinity): string {
-  let note = ''
-  let noteBytes = 0
-  const parts = [
-    `${request.payeeReference}`,
-    `\n${request.payeeName}`,
-    `\n${request.descriptionFormat}\n${request.description}`,
-  ]
-  for (const part of parts) {
-    noteBytes += uft8encoder.encode(part).length
-    if (noteBytes > noteMaxBytes) {
-      break
-    }
-    note += part
-  }
-  if (!note.startsWith(request.payeeReference)) {
-    throw new IvalidPaymentRequest('the payee reference is too big')
+  const note =
+    `${request.payeeReference}\n` +
+    `${request.payeeName}\n` +
+    `${request.descriptionFormat}\n` +
+    `${request.description}`
+
+  if (uft8encoder.encode(note).length > noteMaxBytes) {
+    throw new IvalidPaymentRequest('too big')
   }
   return note
 }

@@ -322,7 +322,7 @@ test("Generate payment request", async () => {
     description: 'This is a multi-line\ndescription.',
   }
   for (const includeCrc of [true, false]) {
-    const blob = generatePr0Blob(request, includeCrc)
+    const blob = generatePr0Blob(request, { includeCrc })
     expect(blob.type).toEqual(MIME_TYPE_PR0)
     const { contentType, amount: a1, ...r1 } = await parsePaymentRequest(blob)
     const { amount: a2, ...r2 } = request
