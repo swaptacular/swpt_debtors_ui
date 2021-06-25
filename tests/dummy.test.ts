@@ -4,7 +4,14 @@ import { stringify, parse } from '../src/web-api/json-bigint'
 import type { AuthTokenSource } from '../src/web-api/oauth2-token-source'
 import { ServerSession, HttpError } from '../src/web-api'
 import { db, DebtorRecord, RecordDoesNotExist, ActionRecordWithId, CreateTransferActionWithId } from '../src/operations/db'
-import { parsePaymentRequest, generatePr0Blob, MIME_TYPE_PR0 } from '../src/operations/payment-requests'
+import {
+  parsePaymentRequest,
+  parseTransferNote,
+  generatePr0Blob,
+  generatePayeerefTransferNote,
+  IvalidPaymentRequest,
+  MIME_TYPE_PR0,
+} from '../src/operations/payment-requests'
 import { UpdateScheduler } from '../src/operations/scheduler'
 
 const authToken = '3x-KAxNWrYPJUWNKTbpnTWxoR0Arr0gG_uEqeWUNDkk.B-Iqy02FM7rK1rKSb4I7D9gaqGFXc2vdyJQ6Uuv3EF4'
@@ -330,6 +337,29 @@ test("Generate payment request", async () => {
     expect(a1).toEqual(a2)
     expect(contentType).toEqual(MIME_TYPE_PR0)
   }
+})
+
+test("Generate and parse payeeref transfer note", async () => {
+  const request = {
+    accountUri: 'swpt:124/456',
+    payeeName: 'Payee name',
+    amount: 1000n,
+    deadline: new Date(),
+    payeeReference: 'payeeReference',
+    descriptionFormat: '',
+    description: 'This is a multi-line\ndescription.',
+  }
+  const noteFormat = 'payeeref'
+  const note = generatePayeerefTransferNote(request)
+  const r = parseTransferNote({ note, noteFormat })
+  expect(r.payeeReference).toEqual('payeeReference')
+  expect(r.payeeName).toEqual('Payee name')
+  expect(r.paymentReason).toBeInstanceOf(Blob)
+  expect((r.paymentReason as Blob).type).toEqual('text/plain; charset=utf-8')
+  expect(await (r.paymentReason as Blob).text()).toEqual(request.description)
+  expect(parseTransferNote({ note: 'Hi!', noteFormat: 'unknown' })).toEqual({})
+  expect(parseTransferNote({ note: 'Hi!', noteFormat: '' })).toHaveProperty('paymentReason')
+  expect(() => generatePayeerefTransferNote(request, 10)).toThrowError(IvalidPaymentRequest)
 })
 
 test("Parse payement request", async () => {

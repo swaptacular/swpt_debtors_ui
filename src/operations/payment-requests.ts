@@ -17,6 +17,33 @@ function createTextBlob(text: string): Blob {
   return new Blob([uft8encoder.encode(text)], { type: 'text/plain; charset=utf-8' })
 }
 
+function parsePayeerefTransferNote(note: string): PaymentInfo {
+  const regexpMatch = note.match(PAYEEREF_TRANSFER_NOTE_REGEXP) as RegExpMatchArray  // Should always match!
+  const groups = regexpMatch.groups
+  const paymentInfo: PaymentInfo = {}
+
+  const payeeReference = groups?.payeeReference
+  if (payeeReference !== undefined) {
+    paymentInfo.payeeReference = payeeReference
+  }
+  const payeeName = groups?.payeeName
+  if (payeeName !== undefined) {
+    paymentInfo.payeeName = payeeName
+  }
+  const description = groups?.description
+  if (description !== undefined) {
+    switch (groups?.descriptionFormat) {
+      case '':
+        paymentInfo.paymentReason = createTextBlob(description)
+        break
+      case '.':
+        paymentInfo.paymentReason = description  // The description contains an URL.
+        break
+    }
+  }
+  return paymentInfo
+}
+
 type NoteAndNoteFormat = {
   note: string,
   noteFormat: string,
@@ -45,58 +72,6 @@ export type PaymentRequest = {
 
 export class IvalidPaymentRequest extends Error {
   name = 'IvalidPaymentRequest'
-}
-
-/*
- Currently, this function can parse only files with content type
- "text/vnd.swaptacular.pr0" (Swaptacular Payment Request v0). This is
- a minimalist text format, whose goal is to be human readable, and yet
- be as concise as possible, so that it can be transferred via QR
- codes.
-*/
-export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest & { contentType: string }> {
-  if (blob.type && blob.type !== MIME_TYPE_PR0) {
-    throw new IvalidPaymentRequest('wrong content type')
-  }
-  const regexpMatch = (await blob.text()).match(PAYMENT_REQUEST_REGEXP)
-  if (!regexpMatch) {
-    throw new IvalidPaymentRequest('parse error')
-  }
-  const groups: any = regexpMatch.groups
-
-  if (groups.crc32 !== '') {
-    const buffer = await blob.arrayBuffer()
-    const uint32 = CRC32.buf(removePr0Header(new Uint8Array(buffer))) >>> 0
-    const crc32 = uint32.toString(16).padStart(8, '0')
-    if (crc32 !== groups.crc32) {
-      throw new IvalidPaymentRequest('CRC error')
-    }
-  }
-
-  const amount = BigInt(groups.amount)
-  if (amount > MAX_INT64) {
-    throw new IvalidPaymentRequest('invalid amount')
-  }
-
-  let deadline
-  if (groups.deadline) {
-    deadline = new Date(groups.deadline)
-    if (Number.isNaN(deadline.getTime())) {
-      throw new IvalidPaymentRequest('invalid deadline')
-    }
-  }
-
-  const request = {
-    contentType: MIME_TYPE_PR0,
-    accountUri: groups.accountUri,
-    payeeName: groups.payeeName,
-    amount,
-    deadline,
-    payeeReference: groups.payeeReference ?? '',
-    descriptionFormat: groups.descriptionFormat ?? '',
-    description: groups.description ?? '',
-  }
-  return request
 }
 
 /*
@@ -177,27 +152,64 @@ export function generatePr0Blob(
 }
 
 /*
- Currently, this function can usefully parse only transfer notes with
- format "" (plain text), and "payeeref".
+ Currently, this function can parse only files with content type
+ "text/vnd.swaptacular.pr0" (Swaptacular Payment Request v0). This is
+ a minimalist text format, whose goal is to be human readable, and yet
+ be as concise as possible, so that it can be transferred via QR
+ codes.
 */
-export function parseTransferNote({ note, noteFormat }: NoteAndNoteFormat): PaymentInfo {
-  switch (noteFormat) {
-    case '':
-      return note === '' ? {} : { paymentReason: createTextBlob(note) }
-    case 'payeeref':
-      return parsePayeerefTransferNote(note)
-    default:
-      return {}
+export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest & { contentType: string }> {
+  if (blob.type && blob.type !== MIME_TYPE_PR0) {
+    throw new IvalidPaymentRequest('wrong content type')
   }
+  const regexpMatch = (await blob.text()).match(PAYMENT_REQUEST_REGEXP)
+  if (!regexpMatch) {
+    throw new IvalidPaymentRequest('parse error')
+  }
+  const groups: any = regexpMatch.groups
+
+  if (groups.crc32 !== '') {
+    const buffer = await blob.arrayBuffer()
+    const uint32 = CRC32.buf(removePr0Header(new Uint8Array(buffer))) >>> 0
+    const crc32 = uint32.toString(16).padStart(8, '0')
+    if (crc32 !== groups.crc32) {
+      throw new IvalidPaymentRequest('CRC error')
+    }
+  }
+
+  const amount = BigInt(groups.amount)
+  if (amount > MAX_INT64) {
+    throw new IvalidPaymentRequest('invalid amount')
+  }
+
+  let deadline
+  if (groups.deadline) {
+    deadline = new Date(groups.deadline)
+    if (Number.isNaN(deadline.getTime())) {
+      throw new IvalidPaymentRequest('invalid deadline')
+    }
+  }
+
+  const request = {
+    contentType: MIME_TYPE_PR0,
+    accountUri: groups.accountUri,
+    payeeName: groups.payeeName,
+    amount,
+    deadline,
+    payeeReference: groups.payeeReference ?? '',
+    descriptionFormat: groups.descriptionFormat ?? '',
+    description: groups.description ?? '',
+  }
+  return request
 }
 
 /*
- This function parses transfer notes having the "payeeref" note
+ This function generates a tranfer note for a payment in "payeeref"
  format. This is a very simple format that contains the payee
  reference as a first line, and optionally may include the payee name,
  and a payment description.
 
- An example payeeref transfer note:
+ An example transfer note in "payeeref" fromat:
  ```````````````````````````````````````````````
  12d3a45642665544
  Payee Name
@@ -221,38 +233,9 @@ export function parseTransferNote({ note, noteFormat }: NoteAndNoteFormat): Paym
    means that the description is in plain text. The symbol "."
    indicates that the description contains the URI of the document
    that describes the payment.
-*/
-function parsePayeerefTransferNote(note: string): PaymentInfo {
-  const regexpMatch = note.match(PAYEEREF_TRANSFER_NOTE_REGEXP) as RegExpMatchArray  // Should always match!
-  const groups = regexpMatch.groups
-  const paymentInfo: PaymentInfo = {}
 
-  const payeeReference = groups?.payeeReference
-  if (payeeReference !== undefined) {
-    paymentInfo.payeeReference = payeeReference
-  }
-  const payeeName = groups?.payeeName
-  if (payeeName !== undefined) {
-    paymentInfo.payeeName = payeeName
-  }
-  const description = groups?.desciption
-  if (description !== undefined) {
-    switch (groups?.descriptionFormat) {
-      case '':
-        paymentInfo.paymentReason = createTextBlob(description)
-        break
-      case '.':
-        paymentInfo.paymentReason = description  // The description contains an URL.
-        break
-    }
-  }
-  return paymentInfo
-}
-
-/*
- This function generates a tranfer note in "payeeref" format for a
- payment. A `IvalidPaymentRequest` error will be thrown if the length
- of the generated note exceeds `noteMaxBytes`.
+ A `IvalidPaymentRequest` error will be thrown if the length of the
+ generated note exceeds `noteMaxBytes`.
 */
 export function generatePayeerefTransferNote(request: PaymentRequest, noteMaxBytes: number = 500): string {
   const note =
@@ -265,4 +248,19 @@ export function generatePayeerefTransferNote(request: PaymentRequest, noteMaxByt
     throw new IvalidPaymentRequest('too big')
   }
   return note
+}
+
+/*
+ Currently, this function can usefully parse only transfer notes with
+ format "" (plain text), and "payeeref".
+*/
+export function parseTransferNote({ note, noteFormat }: NoteAndNoteFormat): PaymentInfo {
+  switch (noteFormat) {
+    case '':
+      return note === '' ? {} : { paymentReason: createTextBlob(note) }
+    case 'payeeref':
+      return parsePayeerefTransferNote(note)
+    default:
+      return {}
+  }
 }
