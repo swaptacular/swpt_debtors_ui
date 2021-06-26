@@ -96,6 +96,10 @@ export class IvalidPaymentRequest extends Error {
   name = 'IvalidPaymentRequest'
 }
 
+export class IvalidPaymentData extends Error {
+  name = 'IvalidPaymentData'
+}
+
 /*
  This function genarates a payment request file (a `Blob`) in
  "text/vnd.swaptacular.pr0" format (Swaptacular Payment Request
@@ -158,7 +162,7 @@ export function generatePr0Blob(
 ): Blob {
   const { includeCrc = true, noteMaxBytes = 500, noteFormat } = options
   if (!isValidPr0Data(request)) {
-    throw new Error('invalid payment data')
+    throw new IvalidPaymentData('can not generate payment request')
   }
   if (noteFormat !== undefined) {
     tryToGenerateTransferNote(request, noteFormat, noteMaxBytes)
@@ -260,7 +264,7 @@ export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest> {
 */
 export function generatePayeerefTransferNote(info: PaymentInfo, noteMaxBytes: number = 500): string {
   if (!isValidPayeerefData(info)) {
-    throw new Error('invalid payment data')
+    throw new IvalidPaymentData('can not generate payeeref tranfer note')
   }
   const note =
     `${info.payeeReference}\n` +
