@@ -18,35 +18,29 @@ function createTextBlob(text: string): Blob {
 }
 
 function parsePayeerefTransferNote(note: string): PaymentInfo {
-  const regexpMatch = note.match(PAYEEREF_TRANSFER_NOTE_REGEXP) as RegExpMatchArray  // Should always match!
+  const regexpMatch = note.match(PAYEEREF_TRANSFER_NOTE_REGEXP) as RegExpMatchArray  // always matches
   const groups = regexpMatch.groups
-  const paymentInfo: PaymentInfo = {}
+  const paymentInfo: PaymentInfo = { payeeReference: groups!.payeeReference }
 
-  const payeeReference = groups?.payeeReference
-  if (payeeReference !== undefined) {
-    paymentInfo.payeeReference = payeeReference
-  }
   const payeeName = groups?.payeeName
-  if (payeeName !== undefined) {
+  if (payeeName) {
     paymentInfo.payeeName = payeeName
   }
-  const description = groups?.description
-  if (description !== undefined) {
-    switch (groups?.descriptionFormat) {
-      case '':
+
+  const description = groups?.description ?? ''
+  switch (groups?.descriptionFormat) {
+    case '':
+      // plain text
+      if (description !== '') {
         paymentInfo.paymentReason = createTextBlob(description)
-        break
-      case '.':
-        paymentInfo.paymentReason = description  // The description contains an URL.
-        break
-    }
+      }
+      break
+    case '.':
+      // an URL
+      paymentInfo.paymentReason = description
+      break
   }
   return paymentInfo
-}
-
-type NoteAndNoteFormat = {
-  note: string,
-  noteFormat: string,
 }
 
 export const MIME_TYPE_PR0 = 'application/vnd.swaptacular.pr0'
@@ -254,7 +248,7 @@ export function generatePayeerefTransferNote(request: PaymentRequest, noteMaxByt
  Currently, this function can usefully parse only transfer notes with
  format "" (plain text), and "payeeref".
 */
-export function parseTransferNote({ note, noteFormat }: NoteAndNoteFormat): PaymentInfo {
+export function parseTransferNote({ note, noteFormat }: { note: string, noteFormat: string }): PaymentInfo {
   switch (noteFormat) {
     case '':
       return note === '' ? {} : { paymentReason: createTextBlob(note) }
