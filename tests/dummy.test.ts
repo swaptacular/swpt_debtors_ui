@@ -376,7 +376,22 @@ test("Generate and parse payeeref transfer note", async () => {
       content: 'Hi!',
     }
   })
-  expect(parseTransferNote({ note: 'Hi!', noteFormat: '' })).toHaveProperty('description')
+  expect(parseTransferNote({ note: 'Hi!', noteFormat: '' })).toEqual({
+    'description': {
+      'content': 'Hi!',
+      'contentFormat': '',
+    },
+    'payeeName': '',
+    'payeeReference': '',
+  })
+  expect(parseTransferNote({ note: 'A payment for `Santa\nClaus`.', noteFormat: '' })).toEqual({
+    'description': {
+      'content': 'A payment for `Santa\nClaus`.',
+      'contentFormat': '',
+    },
+    'payeeName': 'Santa Claus',
+    'payeeReference': '',
+  })
   expect(() => generatePayeerefTransferNote(request, 10)).toThrowError(IvalidPaymentRequest)
 })
 

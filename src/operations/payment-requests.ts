@@ -240,6 +240,20 @@ export function generatePayeerefTransferNote(info: PaymentInfo, noteMaxBytes: nu
 export function parseTransferNote(noteData: { noteFormat: string, note: string }): PaymentInfo {
   const { noteFormat, note } = noteData
   switch (noteFormat) {
+    case '':
+      // A simple convenience: In plain text messages, if the payee's
+      // name is enclosed in backticks, it will be recognized and
+      // extracted. For example: "Paying my debt to `Santa Claus`".
+      const payeeName = note.match(/`([^`]+)`/)?.[1] ?? ''
+
+      return {
+        payeeName: payeeName.split(/\s+/).join(' '),
+        payeeReference: '',
+        description: {
+          contentFormat: noteFormat,
+          content: note,
+        },
+      }
     case 'payeeref':
       return parsePayeerefTransferNote(note)
     default:
