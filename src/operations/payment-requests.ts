@@ -4,7 +4,7 @@ const PAYMENT_REQUEST_REGEXP = /^PR0\r?\n(?<crc32>(?:[0-9a-f]{8})?)\r?\n(?<accou
 const PAYEEREF_TRANSFER_NOTE_REGEXP = /^(?<payeeReference>.{0,200})(?:\r?\n(?<payeeName>.{0,200})(?:\r?\n(?<descriptionFormat>[0-9A-Za-z.-]{0,8})(?:\r?\n(?<description>[\s\S]{0,3000}))?)?)?/u
 const MAX_INT64 = 2n ** 63n - 1n
 const UTF8_ENCODER = new TextEncoder()
-const SPACES_32 = ' '.repeat(32)
+const SPACES_36 = ' '.repeat(36)
 
 function removePr0Header(bytes: Uint8Array): Uint8Array {
   const endOfFirstLine = bytes.indexOf(10)
@@ -37,13 +37,13 @@ function tryToGenerateTransferNote(request: PaymentRequest, noteFormat: string, 
   switch (noteFormat) {
     case 'payeeref':
       // We want to ensure that the payer will be able use a short (at
-      // most 32-bytes) payer reference, instead of the original
+      // most 36-bytes) payer reference, instead of the original
       // payment request description.
       const content = request.description.content
       const contentBytes = UTF8_ENCODER.encode(content).length
       const description = {
         contentFormat: 'payerref',  // uses the maximum allowed 8 symbols
-        content: contentBytes >= 32 ? content : SPACES_32,  // uses at least 32 bytes
+        content: contentBytes >= 36 ? content : SPACES_36,  // uses at least 36 bytes
       }
       generatePayeerefTransferNote({ ...request, description }, noteMaxBytes)
       break
