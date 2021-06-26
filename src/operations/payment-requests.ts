@@ -47,6 +47,7 @@ function tryToGenerateTransferNote(request: PaymentRequest, noteFormat: string, 
       }
       generatePayeerefTransferNote({ ...request, description }, noteMaxBytes)
       break
+
     default:
       throw new Error('invalid note format')
   }
@@ -151,10 +152,11 @@ export class IvalidPaymentData extends Error {
    indicates that the description contains the URI of the document
    that describes the payment request.
 
- When the `noteFormat` option is passed, this function will try to
- generate a transfer note for the payment, in the specified format. An
- `IvalidPaymentData` error will be thrown if the length of the
- generated transfer note exceeds `noteMaxBytes`.
+ An `IvalidPaymentData` error will be thrown if invalid payment data
+ is passed. Also, when the `noteFormat` option is passed, this
+ function will try to generate a transfer note for the payment, in the
+ specified format. An `IvalidPaymentData` error will be thrown if the
+ length of the generated transfer note exceeds `noteMaxBytes`.
 */
 export function generatePr0Blob(
   request: PaymentRequest,
@@ -184,7 +186,8 @@ export function generatePr0Blob(
 
 /*
  Currently, this function can parse only files with content type
- "text/vnd.swaptacular.pr0" (Swaptacular Payment Request v0).
+ "text/vnd.swaptacular.pr0" (Swaptacular Payment Request v0). An
+ `IvalidPaymentRequest` error will be thrown if the blob can not be parsed.
 */
 export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest> {
   if (blob.type && blob.type !== MIME_TYPE_PR0) {
@@ -260,7 +263,8 @@ export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest> {
    that describes the payment.
 
  An `IvalidPaymentData` error will be thrown if the length of the
- generated note exceeds `noteMaxBytes`.
+ generated note exceeds `noteMaxBytes`, or invalid payment data is
+ passed.
 */
 export function generatePayeerefTransferNote(info: PaymentInfo, noteMaxBytes: number = 500): string {
   if (!isValidPayeerefData(info)) {
@@ -299,8 +303,10 @@ export function parseTransferNote(noteData: { noteFormat: string, note: string }
           content: note,
         },
       }
+
     case 'payeeref':
       return parsePayeerefTransferNote(note)
+
     default:
       return {
         payeeName: '',
