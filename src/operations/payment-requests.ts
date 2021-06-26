@@ -153,7 +153,7 @@ export class IvalidPaymentData extends Error {
 
  When the `noteFormat` option is passed, this function will try to
  generate a transfer note for the payment, in the specified format. An
- `IvalidPaymentRequest` error will be thrown if the length of the
+ `IvalidPaymentData` error will be thrown if the length of the
  generated transfer note exceeds `noteMaxBytes`.
 */
 export function generatePr0Blob(
@@ -259,7 +259,7 @@ export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest> {
    indicates that the description contains the URI of the document
    that describes the payment.
 
- A `IvalidPaymentRequest` error will be thrown if the length of the
+ An `IvalidPaymentData` error will be thrown if the length of the
  generated note exceeds `noteMaxBytes`.
 */
 export function generatePayeerefTransferNote(info: PaymentInfo, noteMaxBytes: number = 500): string {
@@ -273,7 +273,7 @@ export function generatePayeerefTransferNote(info: PaymentInfo, noteMaxBytes: nu
     `${info.description.content}`
 
   if (UTF8_ENCODER.encode(note).length > noteMaxBytes) {
-    throw new IvalidPaymentRequest('too big')
+    throw new IvalidPaymentData('too big')
   }
   return note
 }
