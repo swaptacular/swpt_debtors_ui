@@ -107,7 +107,7 @@ export class IvalidPaymentRequest extends Error {
    that describes the payment request.
 
  When the `noteFormat` option is passed, this function will try to
- generate a transfer note for the payment, in the specified format. A
+ generate a transfer note for the payment, in the specified format. An
  `IvalidPaymentRequest` error will be thrown if the length of the
  generated transfer note exceeds `noteMaxBytes`.
 */
