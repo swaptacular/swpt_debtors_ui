@@ -3,7 +3,8 @@ import CRC32 from 'crc-32'
 const PAYMENT_REQUEST_REGEXP = /^PR0\r?\n(?<crc32>(?:[0-9a-f]{8})?)\r?\n(?<accountUri>.{0,200})\r?\n(?<payeeName>.{0,200})\r?\n(?<amount>\d{1,20})(?:\r?\n(?<deadline>(?:\d{4}-\d{2}-\d{2}.{0,32})?)(?:\r?\n(?<payeeReference>.{0,200})(?:\r?\n(?<descriptionFormat>[0-9A-Za-z.-]{0,8})(?:\r?\n(?<description>[\s\S]{0,3000}))?)?)?)?$/u
 const PAYEEREF_TRANSFER_NOTE_REGEXP = /^(?<payeeReference>.{0,200})(?:\r?\n(?<payeeName>.{0,200})(?:\r?\n(?<descriptionFormat>[0-9A-Za-z.-]{0,8})(?:\r?\n(?<description>[\s\S]{0,3000}))?)?)?/u
 const MAX_INT64 = 2n ** 63n - 1n
-const UFT8_ENCODER = new TextEncoder()
+const UTF8_ENCODER = new TextEncoder()
+const SPACES_32 = ' '.repeat(32)
 
 function removePr0Header(bytes: Uint8Array): Uint8Array {
   const endOfFirstLine = bytes.indexOf(10)
@@ -120,13 +121,22 @@ export function generatePr0Blob(
     case undefined:
       break
     case 'payeeref':
-      generatePayeerefTransferNote(request, noteMaxBytes)
+      // We want to ensure that the payer will be able use a short (at
+      // most 32-bytes) payer reference, instead of the original
+      // payment request description.
+      const content = request.description.content
+      const contentBytes = UTF8_ENCODER.encode(content).length
+      const description = {
+        contentFormat: 'payerref',  // uses the maximum allowed 8 symbols
+        content: contentBytes >= 32 ? content : SPACES_32,  // uses at least 32 bytes
+      }
+      generatePayeerefTransferNote({ ...request, description }, noteMaxBytes)
       break
     default:
       throw new Error('invalid note format')
   }
   const isoDeadline = request.deadline ? request.deadline.toISOString() : ''
-  const body = UFT8_ENCODER.encode(
+  const body = UTF8_ENCODER.encode(
     `${request.accountUri}\n` +
     `${request.payeeName}\n` +
     `${request.amount}\n` +
@@ -136,7 +146,7 @@ export function generatePr0Blob(
     `${request.description.content}`
   )
   const crc32 = includeCrc ? (CRC32.buf(body) >>> 0).toString(16).padStart(8, '0') : ''
-  const header = UFT8_ENCODER.encode(`PR0\n${crc32}\n`)
+  const header = UTF8_ENCODER.encode(`PR0\n${crc32}\n`)
   return new Blob([header, body], { type: MIME_TYPE_PR0 })
 }
 
@@ -227,7 +237,7 @@ export function generatePayeerefTransferNote(info: PaymentInfo, noteMaxBytes: nu
     `${info.description.contentFormat}\n` +
     `${info.description.content}`
 
-  if (UFT8_ENCODER.encode(note).length > noteMaxBytes) {
+  if (UTF8_ENCODER.encode(note).length > noteMaxBytes) {
     throw new IvalidPaymentRequest('too big')
   }
   return note
@@ -244,10 +254,10 @@ export function parseTransferNote(noteData: { noteFormat: string, note: string }
       // A simple convenience: In plain text messages, if the payee's
       // name is enclosed in backticks, it will be recognized and
       // extracted. For example: "Paying my debt to `Santa Claus`".
-      const payeeName = note.match(/`([^`]+)`/)?.[1] ?? ''
+      const payeeName = note.match(/`([^`]+)`/u)?.[1] ?? ''
 
       return {
-        payeeName: payeeName.split(/\s+/).join(' '),
+        payeeName: payeeName.split(/\s+/u).join(' '),
         payeeReference: '',
         description: {
           contentFormat: noteFormat,
