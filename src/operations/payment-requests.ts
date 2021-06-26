@@ -35,6 +35,7 @@ function isValidPayeerefData(request: PaymentInfo): boolean {
 
 function tryToGenerateTransferNote(request: PaymentRequest, noteFormat: string, noteMaxBytes: number): void {
   switch (noteFormat) {
+    case 'payeere0':
     case 'payeeref':
       // We want to ensure that the payer will be able use a short (at
       // most 36-bytes) payer reference, instead of the original
@@ -82,7 +83,6 @@ export type PaymentInfo = {
   payeeName: string,
   payeeReference: string,
   description: PaymentDescription,
-  documents?: Map<DocumentUri, Blob>,
 }
 
 export type PaymentRequest =
@@ -262,6 +262,9 @@ export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest> {
    indicates that the description contains the URI of the document
    that describes the payment.
 
+ An alternative name for the "payeeref" format is "payeere0". Both
+ names can be used interchangeably.
+
  An `IvalidPaymentData` error will be thrown if the length of the
  generated note exceeds `noteMaxBytes`, or invalid payment data is
  passed.
@@ -304,6 +307,7 @@ export function parseTransferNote(noteData: { noteFormat: string, note: string }
         },
       }
 
+    case 'payeere0':
     case 'payeeref':
       return parsePayeerefTransferNote(note)
 
