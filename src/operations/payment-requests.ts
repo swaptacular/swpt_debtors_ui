@@ -24,6 +24,15 @@ function isValidPr0Data(request: PaymentRequest): boolean {
   )
 }
 
+function isValidPayeerefData(request: PaymentInfo): boolean {
+  return Boolean(
+    request.payeeName.length <= 200 &&
+    request.payeeReference.length <= 200 &&
+    request.description.content.length <= 3000 &&
+    request.description.contentFormat.match(/[0-9A-Za-z.-]{0,8}/)
+  )
+}
+
 function tryToGenerateTransferNote(request: PaymentRequest, noteFormat: string, noteMaxBytes: number): void {
   switch (noteFormat) {
     case 'payeeref':
@@ -149,7 +158,7 @@ export function generatePr0Blob(
 ): Blob {
   const { includeCrc = true, noteMaxBytes = 500, noteFormat } = options
   if (!isValidPr0Data(request)) {
-    throw new Error('invalid request data')
+    throw new Error('invalid payment data')
   }
   if (noteFormat !== undefined) {
     tryToGenerateTransferNote(request, noteFormat, noteMaxBytes)
@@ -250,6 +259,9 @@ export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest> {
  generated note exceeds `noteMaxBytes`.
 */
 export function generatePayeerefTransferNote(info: PaymentInfo, noteMaxBytes: number = 500): string {
+  if (!isValidPayeerefData(info)) {
+    throw new Error('invalid payment data')
+  }
   const note =
     `${info.payeeReference}\n` +
     `${info.payeeName}\n` +
