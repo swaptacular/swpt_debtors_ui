@@ -9,7 +9,7 @@ import {
   parseTransferNote,
   generatePr0Blob,
   generatePayeerefTransferNote,
-  IvalidPaymentRequest,
+  IvalidPaymentData,
   PaymentDescription,
   MIME_TYPE_PR0,
 } from '../src/operations/payment-requests'
@@ -392,7 +392,7 @@ test("Generate and parse payeeref transfer note", async () => {
     'payeeName': 'Santa Claus',
     'payeeReference': '',
   })
-  expect(() => generatePayeerefTransferNote(request, 10)).toThrowError(IvalidPaymentRequest)
+  expect(() => generatePayeerefTransferNote(request, 10)).toThrowError(IvalidPaymentData)
 })
 
 test("Parse payement request", async () => {
