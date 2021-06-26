@@ -12,6 +12,37 @@ function removePr0Header(bytes: Uint8Array): Uint8Array {
   return bytes.slice(endOfSecondLine + 1)
 }
 
+function isValidPr0Data(request: PaymentRequest): boolean {
+  return Boolean(
+    request.accountUri.length <= 200 &&
+    request.payeeName.length <= 200 &&
+    request.amount >= 0n &&
+    request.amount <= MAX_INT64 &&
+    request.payeeReference.length <= 200 &&
+    request.description.content.length <= 3000 &&
+    request.description.contentFormat.match(/[0-9A-Za-z.-]{0,8}/)
+  )
+}
+
+function tryToGenerateTransferNote(request: PaymentRequest, noteFormat: string, noteMaxBytes: number): void {
+  switch (noteFormat) {
+    case 'payeeref':
+      // We want to ensure that the payer will be able use a short (at
+      // most 32-bytes) payer reference, instead of the original
+      // payment request description.
+      const content = request.description.content
+      const contentBytes = UTF8_ENCODER.encode(content).length
+      const description = {
+        contentFormat: 'payerref',  // uses the maximum allowed 8 symbols
+        content: contentBytes >= 32 ? content : SPACES_32,  // uses at least 32 bytes
+      }
+      generatePayeerefTransferNote({ ...request, description }, noteMaxBytes)
+      break
+    default:
+      throw new Error('invalid note format')
+  }
+}
+
 function parsePayeerefTransferNote(note: string): PaymentInfo {
   const groups = note.match(PAYEEREF_TRANSFER_NOTE_REGEXP)?.groups
   return {
@@ -117,23 +148,11 @@ export function generatePr0Blob(
   options: { includeCrc?: boolean, noteMaxBytes?: number, noteFormat?: string } = {}
 ): Blob {
   const { includeCrc = true, noteMaxBytes = 500, noteFormat } = options
-  switch (noteFormat) {
-    case undefined:
-      break
-    case 'payeeref':
-      // We want to ensure that the payer will be able use a short (at
-      // most 32-bytes) payer reference, instead of the original
-      // payment request description.
-      const content = request.description.content
-      const contentBytes = UTF8_ENCODER.encode(content).length
-      const description = {
-        contentFormat: 'payerref',  // uses the maximum allowed 8 symbols
-        content: contentBytes >= 32 ? content : SPACES_32,  // uses at least 32 bytes
-      }
-      generatePayeerefTransferNote({ ...request, description }, noteMaxBytes)
-      break
-    default:
-      throw new Error('invalid note format')
+  if (!isValidPr0Data(request)) {
+    throw new Error('invalid request data')
+  }
+  if (noteFormat !== undefined) {
+    tryToGenerateTransferNote(request, noteFormat, noteMaxBytes)
   }
   const isoDeadline = request.deadline ? request.deadline.toISOString() : ''
   const body = UTF8_ENCODER.encode(

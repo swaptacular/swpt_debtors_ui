@@ -335,7 +335,7 @@ test("Generate payment request", async () => {
     },
   }
   for (const includeCrc of [true, false]) {
-    const blob = generatePr0Blob(request, { includeCrc })
+    const blob = generatePr0Blob(request, { includeCrc, noteFormat: 'payeeref' })
     expect(blob.type).toEqual(MIME_TYPE_PR0)
     const { amount: a1, ...r1 } = await parsePaymentRequest(blob)
     const { amount: a2, ...r2 } = request
