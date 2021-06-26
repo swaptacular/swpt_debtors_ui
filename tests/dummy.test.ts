@@ -356,9 +356,9 @@ test("Generate and parse payeeref transfer note", async () => {
       content: 'This is a multi-line\ndescription.',
     },
   }
-  const contentFormat = 'payeeref'
-  const content = generatePayeerefTransferNote(request)
-  const r = parseTransferNote({ contentFormat, content })
+  const noteFormat = 'payeeref'
+  const note = generatePayeerefTransferNote(request)
+  const r = parseTransferNote({ noteFormat, note })
   expect(r.payeeReference).toEqual('payeeReference')
   expect(r.payeeName).toEqual('Payee name')
   const description = {
@@ -368,7 +368,7 @@ test("Generate and parse payeeref transfer note", async () => {
   expect(r.description).toEqual(description)
   expect(r.description as PaymentDescription).toEqual(description)
   expect(r.description as PaymentDescription).toEqual(request.description)
-  expect(parseTransferNote({ content: 'Hi!', contentFormat: 'unknown' })).toEqual({
+  expect(parseTransferNote({ note: 'Hi!', noteFormat: 'unknown' })).toEqual({
     payeeName: '',
     payeeReference: '',
     description: {
@@ -376,7 +376,7 @@ test("Generate and parse payeeref transfer note", async () => {
       content: 'Hi!',
     }
   })
-  expect(parseTransferNote({ content: 'Hi!', contentFormat: '' })).toHaveProperty('description')
+  expect(parseTransferNote({ note: 'Hi!', noteFormat: '' })).toHaveProperty('description')
   expect(() => generatePayeerefTransferNote(request, 10)).toThrowError(IvalidPaymentRequest)
 })
 

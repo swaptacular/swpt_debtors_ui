@@ -237,16 +237,19 @@ export function generatePayeerefTransferNote(info: PaymentInfo, noteMaxBytes: nu
  Currently, this function can usefully parse only transfer notes with
  format "" (plain text), and "payeeref".
 */
-export function parseTransferNote(description: PaymentDescription): PaymentInfo {
-  const { contentFormat, content } = description
-  switch (contentFormat) {
+export function parseTransferNote(noteData: { noteFormat: string, note: string }): PaymentInfo {
+  const { noteFormat, note } = noteData
+  switch (noteFormat) {
     case 'payeeref':
-      return parsePayeerefTransferNote(content)
+      return parsePayeerefTransferNote(note)
     default:
       return {
         payeeName: '',
         payeeReference: '',
-        description,
+        description: {
+          contentFormat: noteFormat,
+          content: note,
+        },
       }
   }
 }
