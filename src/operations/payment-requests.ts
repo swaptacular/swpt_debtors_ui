@@ -3,7 +3,7 @@ import CRC32 from 'crc-32'
 const PAYMENT_REQUEST_REGEXP = /^PR0\r?\n(?<crc32>(?:[0-9a-f]{8})?)\r?\n(?<accountUri>.{0,200})\r?\n(?<payeeName>.{0,500})\r?\n(?<amount>\d{1,20})(?:\r?\n(?<deadline>(?:\d{4}-\d{2}-\d{2}.{0,32})?)(?:\r?\n(?<payeeReference>.{0,500})(?:\r?\n(?<descriptionFormat>.{0,500})(?:\r?\n(?<description>[\s\S]{0,500}))?)?)?)?$/u
 const PAYEEREF_TRANSFER_NOTE_REGEXP = /^(?<payeeReference>.{0,500})(?:\r?\n(?<payeeName>.{0,500})(?:\r?\n(?<descriptionFormat>.{0,500})(?:\r?\n(?<description>[\s\S]{0,500}))?)?)?/u
 const MAX_INT64 = 2n ** 63n - 1n
-const uft8encoder = new TextEncoder()
+const UFT8_ENCODER = new TextEncoder()
 
 function removePr0Header(bytes: Uint8Array): Uint8Array {
   const endOfFirstLine = bytes.indexOf(10)
@@ -11,56 +11,45 @@ function removePr0Header(bytes: Uint8Array): Uint8Array {
   return bytes.slice(endOfSecondLine + 1)
 }
 
-function createTextBlob(text: string): Blob {
-  return new Blob([uft8encoder.encode(text)], { type: 'text/plain; charset=utf-8' })
-}
-
 function parsePayeerefTransferNote(note: string): PaymentInfo {
-  const regexpMatch = note.match(PAYEEREF_TRANSFER_NOTE_REGEXP) as RegExpMatchArray  // always matches
-  const groups = regexpMatch.groups
-  const paymentInfo: PaymentInfo = { payeeReference: groups!.payeeReference }
-
-  const payeeName = groups?.payeeName
-  if (payeeName) {
-    paymentInfo.payeeName = payeeName
+  const groups = note.match(PAYEEREF_TRANSFER_NOTE_REGEXP)?.groups
+  return {
+    payeeReference: groups?.payeeReference ?? '',
+    payeeName: groups?.payeeName ?? '',
+    description: {
+      contentFormat: groups?.descriptionFormat ?? '',
+      content: groups?.description ?? '',
+    },
   }
-
-  const description = groups?.description ?? ''
-  switch (groups?.descriptionFormat) {
-    case '':
-      // plain text
-      if (description !== '') {
-        paymentInfo.paymentReason = createTextBlob(description)
-      }
-      break
-    case '.':
-      // an URL
-      paymentInfo.paymentReason = description
-      break
-  }
-  return paymentInfo
 }
 
 export const MIME_TYPE_PR0 = 'application/vnd.swaptacular.pr0'
 
 export type DocumentUri = string
 
+export type PaymentDescription = {
+  /* The currently defined `contentFormat`s are: */
+  /*   "" plain text
+  /*   "." an URI
+  */
+  contentFormat: string,
+  content: string,
+}
+
 export type PaymentInfo = {
-  payeeReference?: string,
-  payeeName?: string,
-  paymentReason?: DocumentUri | Blob,
+  payeeName: string,
+  payeeReference: string,
+  description: PaymentDescription,
   documents?: Map<DocumentUri, Blob>,
 }
 
-export type PaymentRequest = {
-  accountUri: string,
-  payeeName: string,
-  amount: bigint,
-  deadline?: Date,
-  payeeReference: string,
-  descriptionFormat: string,
-  description: string,
-}
+export type PaymentRequest =
+  & PaymentInfo
+  & {
+    accountUri: string,
+    amount: bigint,
+    deadline?: Date,
+  }
 
 export class IvalidPaymentRequest extends Error {
   name = 'IvalidPaymentRequest'
@@ -108,8 +97,8 @@ export class IvalidPaymentRequest extends Error {
    field is optional and can be an empty string.
 
  * "12d3a45642665544" is the payee reference (a unique string), which
-   should to be included by the payer in the payment note, so that the
-   payee can match the incoming payment with the payment request.
+   should to be included by the payer in the transfer note, so that
+   the payee can match the incoming transfer with the payment request.
 
  * Also, an optional description format can be passed (the empty line
    right before the description). When an empty string is passed, this
@@ -117,40 +106,46 @@ export class IvalidPaymentRequest extends Error {
    indicates that the description contains the URI of the document
    that describes the payment request.
 
- A `IvalidPaymentRequest` error will be thrown if the length of the
- automatically generated "payeeref" transfer note for the payment
- exceeds `noteMaxBytes`.
+ When the `noteFormat` option is passed, this function will try to
+ generate a transfer note for the payment, in the specified format. A
+ `IvalidPaymentRequest` error will be thrown if the length of the
+ generated transfer note exceeds `noteMaxBytes`.
 */
 export function generatePr0Blob(
   request: PaymentRequest,
-  options: { noteMaxBytes?: number, includeCrc?: boolean } = {}
+  options: { includeCrc?: boolean, noteMaxBytes?: number, noteFormat?: string } = {}
 ): Blob {
-  const { noteMaxBytes = 500, includeCrc = true } = options
-  generatePayeerefTransferNote(request, noteMaxBytes)  // May throw `IvalidPaymentRequest`.
-
-  const deadline = request.deadline ? request.deadline.toISOString() : ''
-  const body = uft8encoder.encode(
+  const { includeCrc = true, noteMaxBytes = 500, noteFormat } = options
+  switch (noteFormat) {
+    // TODO: handle '' and '.'?
+    case undefined:
+      break
+    case 'payeeref':
+      generatePayeerefTransferNote(request, noteMaxBytes)
+      break
+    default:
+      throw new Error('unknown note format')
+  }
+  const isoDeadline = request.deadline ? request.deadline.toISOString() : ''
+  const body = UFT8_ENCODER.encode(
     `${request.accountUri}\n` +
     `${request.payeeName}\n` +
     `${request.amount}\n` +
-    `${deadline}\n` +
+    `${isoDeadline}\n` +
     `${request.payeeReference}\n` +
-    `${request.descriptionFormat}\n` +
-    `${request.description}`
+    `${request.description.contentFormat}\n` +
+    `${request.description.content}`
   )
   const crc32 = includeCrc ? (CRC32.buf(body) >>> 0).toString(16).padStart(8, '0') : ''
-  const header = uft8encoder.encode(`PR0\n${crc32}\n`)
+  const header = UFT8_ENCODER.encode(`PR0\n${crc32}\n`)
   return new Blob([header, body], { type: MIME_TYPE_PR0 })
 }
 
 /*
  Currently, this function can parse only files with content type
- "text/vnd.swaptacular.pr0" (Swaptacular Payment Request v0). This is
- a minimalist text format, whose goal is to be human readable, and yet
- be as concise as possible, so that it can be transferred via QR
- codes.
+ "text/vnd.swaptacular.pr0" (Swaptacular Payment Request v0).
 */
-export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest & { contentType: string }> {
+export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest> {
   if (blob.type && blob.type !== MIME_TYPE_PR0) {
     throw new IvalidPaymentRequest('wrong content type')
   }
@@ -158,48 +153,43 @@ export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest & 
   if (!regexpMatch) {
     throw new IvalidPaymentRequest('parse error')
   }
-  const groups: any = regexpMatch.groups
-
-  if (groups.crc32 !== '') {
+  const groups = regexpMatch.groups
+  const crc32 = groups!.crc32
+  if (crc32) {
     const buffer = await blob.arrayBuffer()
     const uint32 = CRC32.buf(removePr0Header(new Uint8Array(buffer))) >>> 0
     const crc32 = uint32.toString(16).padStart(8, '0')
-    if (crc32 !== groups.crc32) {
+    if (crc32 !== crc32) {
       throw new IvalidPaymentRequest('CRC error')
     }
   }
-
-  const amount = BigInt(groups.amount)
+  const amount = BigInt(groups!.amount)
   if (amount > MAX_INT64) {
     throw new IvalidPaymentRequest('invalid amount')
   }
-
-  let deadline
-  if (groups.deadline) {
-    deadline = new Date(groups.deadline)
-    if (Number.isNaN(deadline.getTime())) {
-      throw new IvalidPaymentRequest('invalid deadline')
-    }
+  const isoDeadline = groups?.deadline
+  const deadline = isoDeadline ? new Date(isoDeadline) : undefined
+  if (deadline && Number.isNaN(deadline.getTime())) {
+    throw new IvalidPaymentRequest('invalid deadline')
   }
-
-  const request = {
-    contentType: MIME_TYPE_PR0,
-    accountUri: groups.accountUri,
-    payeeName: groups.payeeName,
+  return {
     amount,
     deadline,
-    payeeReference: groups.payeeReference ?? '',
-    descriptionFormat: groups.descriptionFormat ?? '',
-    description: groups.description ?? '',
+    accountUri: groups!.accountUri,
+    payeeName: groups!.payeeName,
+    payeeReference: groups?.payeeReference ?? '',
+    description: {
+      contentFormat: groups?.descriptionFormat ?? '',
+      content: groups?.description ?? '',
+    },
   }
-  return request
 }
 
 /*
  This function generates a tranfer note for a payment in "payeeref"
  format. This is a very simple format that contains the payee
- reference as a first line, and optionally may include the payee name,
- and a payment description.
+ reference as a first line, and optionally may include the payee
+ name, and a payment description.
 
  An example transfer note in "payeeref" fromat:
  ```````````````````````````````````````````````
@@ -214,11 +204,13 @@ export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest & 
 
  In the example above:
 
- * "12d3a45642665544" is the payee reference (a unique string), which
-   is included by the payer in the payment note, so that the payee can
-   match the incoming payment with the payment request.
+ * "12d3a45642665544" is the payee reference (it can be an empty
+   string), which is included by the payer in the transfer note, so
+   that the payee can match the incoming transfer with the payment
+   request.
 
- * "Payee Name" indicates the name of the payee (optional).
+ * "Payee Name" indicates the name of the payee (it can be an empty
+   string).
 
  * Also, an optional description format can be passed (the empty line
    right before the description). When an empty string is passed, this
@@ -229,14 +221,14 @@ export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest & 
  A `IvalidPaymentRequest` error will be thrown if the length of the
  generated note exceeds `noteMaxBytes`.
 */
-export function generatePayeerefTransferNote(request: PaymentRequest, noteMaxBytes: number = 500): string {
+export function generatePayeerefTransferNote(info: PaymentInfo, noteMaxBytes: number = 500): string {
   const note =
-    `${request.payeeReference}\n` +
-    `${request.payeeName}\n` +
-    `${request.descriptionFormat}\n` +
-    `${request.description}`
+    `${info.payeeReference}\n` +
+    `${info.payeeName}\n` +
+    `${info.description.contentFormat}\n` +
+    `${info.description.content}`
 
-  if (uft8encoder.encode(note).length > noteMaxBytes) {
+  if (UFT8_ENCODER.encode(note).length > noteMaxBytes) {
     throw new IvalidPaymentRequest('too big')
   }
   return note
@@ -246,13 +238,16 @@ export function generatePayeerefTransferNote(request: PaymentRequest, noteMaxByt
  Currently, this function can usefully parse only transfer notes with
  format "" (plain text), and "payeeref".
 */
-export function parseTransferNote({ note, noteFormat }: { note: string, noteFormat: string }): PaymentInfo {
-  switch (noteFormat) {
-    case '':
-      return note === '' ? {} : { paymentReason: createTextBlob(note) }
+export function parseTransferNote(description: PaymentDescription): PaymentInfo {
+  const { contentFormat, content } = description
+  switch (contentFormat) {
     case 'payeeref':
-      return parsePayeerefTransferNote(note)
+      return parsePayeerefTransferNote(content)
     default:
-      return {}
+      return {
+        payeeName: '',
+        payeeReference: '',
+        description,
+      }
   }
 }

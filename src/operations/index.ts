@@ -108,7 +108,7 @@ class UserContext {
       paymentInfo: {
         payeeReference: request.payeeReference,
         payeeName: request.payeeName,
-        paymentReason: new Blob([blob], { type: request.contentType }),
+        description: request.description,
       }
     }
     await db.createActionRecord(actionRecord)  // adds `actionId` field

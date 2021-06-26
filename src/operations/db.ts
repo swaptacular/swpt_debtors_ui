@@ -376,7 +376,11 @@ class DebtorsDb extends Dexie {
           switch (getTransferState(transfer)) {
             case 'unsuccessful':
             case 'delayed':
-              await this.putTransferRecord(userId, transfer, parseTransferNote(transfer))
+              const paymentInfo = parseTransferNote({
+                contentFormat: transfer.noteFormat,
+                content: transfer.note,
+              })
+              await this.putTransferRecord(userId, transfer, paymentInfo)
               const existingAbortTransferAction = await this.actions
                 .where({ userId })
                 .filter(action => action.actionType === 'AbortTransfer' && action.uri === uri)

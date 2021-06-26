@@ -10,6 +10,7 @@ import {
   generatePr0Blob,
   generatePayeerefTransferNote,
   IvalidPaymentRequest,
+  PaymentDescription,
   MIME_TYPE_PR0,
 } from '../src/operations/payment-requests'
 import { UpdateScheduler } from '../src/operations/scheduler'
@@ -181,7 +182,10 @@ test("Install and uninstall user", async () => {
     userId,
   })
   await expect(db.getTransferRecords(userId)).resolves.toEqual(
-    [{ ...transfers[1], userId, time: new Date(isoNow).getTime(), paymentInfo: {} }]
+    [{
+      ...transfers[1], userId, time: new Date(isoNow).getTime(),
+      paymentInfo: { payeeName: '', payeeReference: '', description: { content: '', contentFormat: '' } }
+    }]
   )
   await expect(db.getDocumentRecord('https://example.com/1/documents/123')).resolves.toEqual({ ...document, userId })
   const actions = await db.getActionRecords(userId)
@@ -325,17 +329,18 @@ test("Generate payment request", async () => {
     amount: 1000n,
     deadline: new Date(),
     payeeReference: 'payeeReference',
-    descriptionFormat: '',
-    description: 'This is a multi-line\ndescription.',
+    description: {
+      contentFormat: '',
+      content: 'This is a multi-line\ndescription.',
+    },
   }
   for (const includeCrc of [true, false]) {
     const blob = generatePr0Blob(request, { includeCrc })
     expect(blob.type).toEqual(MIME_TYPE_PR0)
-    const { contentType, amount: a1, ...r1 } = await parsePaymentRequest(blob)
+    const { amount: a1, ...r1 } = await parsePaymentRequest(blob)
     const { amount: a2, ...r2 } = request
     expect(r1).toEqual(r2)
     expect(a1).toEqual(a2)
-    expect(contentType).toEqual(MIME_TYPE_PR0)
   }
 })
 
@@ -346,19 +351,32 @@ test("Generate and parse payeeref transfer note", async () => {
     amount: 1000n,
     deadline: new Date(),
     payeeReference: 'payeeReference',
-    descriptionFormat: '',
-    description: 'This is a multi-line\ndescription.',
+    description: {
+      contentFormat: '',
+      content: 'This is a multi-line\ndescription.',
+    },
   }
-  const noteFormat = 'payeeref'
-  const note = generatePayeerefTransferNote(request)
-  const r = parseTransferNote({ note, noteFormat })
+  const contentFormat = 'payeeref'
+  const content = generatePayeerefTransferNote(request)
+  const r = parseTransferNote({ contentFormat, content })
   expect(r.payeeReference).toEqual('payeeReference')
   expect(r.payeeName).toEqual('Payee name')
-  expect(r.paymentReason).toBeInstanceOf(Blob)
-  expect((r.paymentReason as Blob).type).toEqual('text/plain; charset=utf-8')
-  expect(await (r.paymentReason as Blob).text()).toEqual(request.description)
-  expect(parseTransferNote({ note: 'Hi!', noteFormat: 'unknown' })).toEqual({})
-  expect(parseTransferNote({ note: 'Hi!', noteFormat: '' })).toHaveProperty('paymentReason')
+  const description = {
+    contentFormat: '',
+    content: 'This is a multi-line\ndescription.',
+  }
+  expect(r.description).toEqual(description)
+  expect(r.description as PaymentDescription).toEqual(description)
+  expect(r.description as PaymentDescription).toEqual(request.description)
+  expect(parseTransferNote({ content: 'Hi!', contentFormat: 'unknown' })).toEqual({
+    payeeName: '',
+    payeeReference: '',
+    description: {
+      contentFormat: 'unknown',
+      content: 'Hi!',
+    }
+  })
+  expect(parseTransferNote({ content: 'Hi!', contentFormat: '' })).toHaveProperty('description')
   expect(() => generatePayeerefTransferNote(request, 10)).toThrowError(IvalidPaymentRequest)
 })
 
