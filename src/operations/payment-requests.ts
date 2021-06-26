@@ -1,9 +1,7 @@
 import CRC32 from 'crc-32'
 
 const PAYMENT_REQUEST_REGEXP = /^PR0\r?\n(?<crc32>(?:[0-9a-f]{8})?)\r?\n(?<accountUri>.{0,200})\r?\n(?<payeeName>.{0,500})\r?\n(?<amount>\d{1,20})(?:\r?\n(?<deadline>(?:\d{4}-\d{2}-\d{2}.{0,32})?)(?:\r?\n(?<payeeReference>.{0,500})(?:\r?\n(?<descriptionFormat>.{0,500})(?:\r?\n(?<description>[\s\S]{0,500}))?)?)?)?$/u
-
 const PAYEEREF_TRANSFER_NOTE_REGEXP = /^(?<payeeReference>.{0,500})(?:\r?\n(?<payeeName>.{0,500})(?:\r?\n(?<descriptionFormat>.{0,500})(?:\r?\n(?<description>[\s\S]{0,500}))?)?)?/u
-
 const MAX_INT64 = 2n ** 63n - 1n
 const uft8encoder = new TextEncoder()
 
