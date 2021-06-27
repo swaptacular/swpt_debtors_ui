@@ -368,12 +368,12 @@ test("Generate and parse payeeref transfer note", async () => {
   expect(r.description).toEqual(description)
   expect(r.description as PaymentDescription).toEqual(description)
   expect(r.description as PaymentDescription).toEqual(request.description)
-  expect(parseTransferNote({ note: 'Hi!', noteFormat: 'unknown' })).toEqual({
+  expect(parseTransferNote({ note: 'Hi!\nHere is a payment.', noteFormat: 'unknown' })).toEqual({
     payeeName: '',
-    payeeReference: '',
+    payeeReference: 'Hi!',
     description: {
       contentFormat: 'unknown',
-      content: 'Hi!',
+      content: 'Hi!\nHere is a payment.',
     }
   })
   expect(parseTransferNote({ note: 'Hi!', noteFormat: '' })).toEqual({

@@ -307,7 +307,7 @@ export function parseTransferNote(noteData: { noteFormat: string, note: string }
         // extracted. For example: "Paying my debt to `Santa Claus`".
         const payeeName = note.match(/`([^`]+)`/u)?.[1] ?? ''
         return {
-          payeeName: payeeName.split(/\s+/u).join(' ').match(/.{0,200}/u)?.[0] as string,
+          payeeName: payeeName.split(/\s+/u).join(' ').match(/.{0,200}/u)?.[0] ?? '',
           payeeReference: '',
           description: {
             contentFormat: noteFormat,
@@ -324,7 +324,7 @@ export function parseTransferNote(noteData: { noteFormat: string, note: string }
   }
   return {
     payeeName: '',
-    payeeReference: '',
+    payeeReference: note.match(/.{0,200}/u)?.[0] ?? '',
     description: {
       contentFormat: noteFormat,
       content: note,
