@@ -1,7 +1,7 @@
 import CRC32 from 'crc-32'
 
 const PAYMENT_REQUEST_REGEXP = /^PR0\r?\n(?<crc32>(?:[0-9a-f]{8})?)\r?\n(?<accountUri>.{0,200})\r?\n(?<payeeName>.{0,200})\r?\n(?<amount>\d{1,20})(?:\r?\n(?<deadline>(?:\d{4}-\d{2}-\d{2}.{0,32})?)(?:\r?\n(?<payeeReference>.{0,200})(?:\r?\n(?<descriptionFormat>[0-9A-Za-z.-]{0,8})(?:\r?\n(?<description>[\s\S]{0,3000}))?)?)?)?$/u
-const PAYEEREF_TRANSFER_NOTE_REGEXP = /^(?<payeeReference>.{0,200})(?:\r?\n(?<payeeName>.{0,200})(?:\r?\n(?<descriptionFormat>[0-9A-Za-z.-]{0,8})(?:\r?\n(?<description>[\s\S]{0,3000}))?)?)?$/u
+const PAYMENT0_TRANSFER_NOTE_REGEXP = /^(?<payeeReference>.{0,200})(?:\r?\n(?<payeeName>.{0,200})(?:\r?\n(?<descriptionFormat>[0-9A-Za-z.-]{0,8})(?:\r?\n(?<description>[\s\S]{0,3000}))?)?)?$/u
 const MAX_INT64 = 2n ** 63n - 1n
 const UTF8_ENCODER = new TextEncoder()
 const DEFAULT_NOTE_MAX_BYTES = 500  // Defined in the spec as an upper limit.
@@ -23,8 +23,8 @@ class InvalidTransferNote extends Error {
 function isForbiddenRequestFormat(format: string): boolean {
   return (
     // These formats not make sense in a payment request.
-    format === 'payeeref' ||
-    format === 'payeere0' ||
+    format === 'payment0' ||
+    format === 'paymentA' ||
 
     // The content of all formats that start with "-" is
     // client-specific, so they also do not make sense in a payment
@@ -52,7 +52,7 @@ function isValidPr0Data(request: PaymentRequest): boolean {
   )
 }
 
-function isValidPayeerefData(request: PaymentInfo): boolean {
+function isValidPayment0Data(request: PaymentInfo): boolean {
   return Boolean(
     request.payeeName.match(/^.{0,200}$/u) &&
     request.payeeReference.match(/^.{0,200}$/u) &&
@@ -61,9 +61,9 @@ function isValidPayeerefData(request: PaymentInfo): boolean {
   )
 }
 
-function calcPayeerefNoteByteLength(info: PaymentInfo): number {
+function calcPayment0NoteByteLength(info: PaymentInfo): number {
   // The "+ 3" thing allows for the use of "\r\n", instead of "\n".
-  return UTF8_ENCODER.encode(generatePayeerefTransferNote(info, Infinity)).length + 3
+  return UTF8_ENCODER.encode(generatePayment0TransferNote(info, Infinity)).length + 3
 }
 
 function parsePlaintextTransferNote(note: string): PaymentInfo {
@@ -82,8 +82,8 @@ function parsePlaintextTransferNote(note: string): PaymentInfo {
   }
 }
 
-function parsePayeerefTransferNote(note: string): PaymentInfo {
-  const regexpMatch = note.match(PAYEEREF_TRANSFER_NOTE_REGEXP)
+function parsePayment0TransferNote(note: string): PaymentInfo {
+  const regexpMatch = note.match(PAYMENT0_TRANSFER_NOTE_REGEXP)
   if (!regexpMatch) {
     throw new InvalidTransferNote('parse error')
   }
@@ -108,8 +108,8 @@ export type PaymentDescription = {
      "" plain text
      "." an URI
      "-" an opaque payer reference (the content is client-specific)
-     "payeeref" payee reference container format
-     "payeere0" payee reference container format (an alternative name)
+     "payment0" payment format v0
+     "paymentA" payment format v0 (an alternative name)
   */
   contentFormat: string,
   content: string,
@@ -190,7 +190,7 @@ export class IvalidPaymentData extends Error {
 
  An `IvalidPaymentData` error will be thrown if invalid payment data
  is passed. Also, this function will try to simulate generating a
- "payeeref" transfer note for the payment. An `IvalidPaymentData`
+ "payment0" transfer note for the payment. An `IvalidPaymentData`
  error will be thrown if the length of the generated transfer note
  (plus `surplusBytes`) would exceed `noteMaxBytes`.
 */
@@ -202,7 +202,7 @@ export function generatePr0Blob(
   if (!isValidPr0Data(request)) {
     throw new IvalidPaymentData('invalid field')
   }
-  if (calcPayeerefNoteByteLength(request) + surplusBytes > noteMaxBytes) {
+  if (calcPayment0NoteByteLength(request) + surplusBytes > noteMaxBytes) {
     throw new IvalidPaymentData('too big')
   }
   const isoDeadline = request.deadline ? request.deadline.toISOString() : ''
@@ -270,12 +270,12 @@ export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest> {
 }
 
 /*
- This function generates a tranfer note for a payment in "payeeref"
+ This function generates a tranfer note for a payment in "payment0"
  format. This is a very simple format that contains the payee
  reference as a first line, and optionally may include the payee
  name, and a payment description.
 
- An example transfer note in "payeeref" fromat:
+ An example transfer note in "payment0" fromat:
  ```````````````````````````````````````````````
  12d3a45642665544
  Payee Name
@@ -302,16 +302,16 @@ export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest> {
    indicates that the description contains the URI of the document
    that describes the payment.
 
- An alternative name for the "payeeref" format is
- "payeere0". Implementations may use both names interchangeably, as
+ An alternative name for the "payment0" format is
+ "paymentA". Implementations may use both names interchangeably, as
  they see fit.
 
  An `IvalidPaymentData` error will be thrown if the length of the
  generated note exceeds `noteMaxBytes`, or invalid payment data is
  passed.
 */
-export function generatePayeerefTransferNote(info: PaymentInfo, noteMaxBytes: number = DEFAULT_NOTE_MAX_BYTES): string {
-  if (!isValidPayeerefData(info)) {
+export function generatePayment0TransferNote(info: PaymentInfo, noteMaxBytes: number = DEFAULT_NOTE_MAX_BYTES): string {
+  if (!isValidPayment0Data(info)) {
     throw new IvalidPaymentData('invalid field')
   }
   const note =
@@ -328,7 +328,7 @@ export function generatePayeerefTransferNote(info: PaymentInfo, noteMaxBytes: nu
 
 /*
  Currently, this function can usefully parse only transfer notes with
- format "" (plain text), and "payeeref".
+ format "" (plain text), and "payment0".
 */
 export function parseTransferNote(noteData: { noteFormat: string, note: string }): PaymentInfo {
   const { noteFormat, note } = noteData
@@ -338,9 +338,9 @@ export function parseTransferNote(noteData: { noteFormat: string, note: string }
       case '':
         return parsePlaintextTransferNote(note)
 
-      case 'payeere0':
-      case 'payeeref':
-        return parsePayeerefTransferNote(note)
+      case 'payment0':
+      case 'paymentA':
+        return parsePayment0TransferNote(note)
 
       case '.':
       case '-':

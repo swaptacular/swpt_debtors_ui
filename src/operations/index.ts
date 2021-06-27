@@ -8,7 +8,7 @@ import {
   TransferRecord,
   RecordDoesNotExist,
 } from './db'
-import { parsePaymentRequest, IvalidPaymentRequest, generatePayeerefTransferNote } from './payment-requests'
+import { parsePaymentRequest, IvalidPaymentRequest, generatePayment0TransferNote } from './payment-requests'
 import { UpdateScheduler } from './scheduler'
 import { getUserData } from './utils'
 
@@ -102,8 +102,8 @@ class UserContext {
         recipient: { uri: request.accountUri },
         amount: request.amount,
         transferUuid: uuidv4(),
-        noteFormat: 'payeeref',
-        note: generatePayeerefTransferNote(request, this.noteMaxBytes),
+        noteFormat: 'payment0',
+        note: generatePayment0TransferNote(request, this.noteMaxBytes),
       },
       paymentInfo: {
         payeeReference: request.payeeReference,

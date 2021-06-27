@@ -8,7 +8,7 @@ import {
   parsePaymentRequest,
   parseTransferNote,
   generatePr0Blob,
-  generatePayeerefTransferNote,
+  generatePayment0TransferNote,
   IvalidPaymentData,
   PaymentDescription,
   MIME_TYPE_PR0,
@@ -252,6 +252,11 @@ test("Install and uninstall user", async () => {
     },
     paymentInfo: {
       payeeName: 'XYZ',
+      payeeReference: '',
+      description: {
+        contentFormat: '',
+        content: '',
+      }
     },
   }
   await expect(db.createTransferRecord({ ...createTransferAction, actionId: -1 }, theCreatedTransfer))
@@ -335,7 +340,7 @@ test("Generate payment request", async () => {
     },
   }
   for (const includeCrc of [true, false]) {
-    const blob = generatePr0Blob(request, { includeCrc, noteFormat: 'payeeref' })
+    const blob = generatePr0Blob(request, { includeCrc })
     expect(blob.type).toEqual(MIME_TYPE_PR0)
     const { amount: a1, ...r1 } = await parsePaymentRequest(blob)
     const { amount: a2, ...r2 } = request
@@ -344,7 +349,7 @@ test("Generate payment request", async () => {
   }
 })
 
-test("Generate and parse payeeref transfer note", async () => {
+test("Generate and parse payment0 transfer note", async () => {
   const request = {
     accountUri: 'swpt:124/456',
     payeeName: 'Payee name',
@@ -356,8 +361,8 @@ test("Generate and parse payeeref transfer note", async () => {
       content: 'This is a multi-line\ndescription.',
     },
   }
-  const noteFormat = 'payeeref'
-  const note = generatePayeerefTransferNote(request)
+  const noteFormat = 'payment0'
+  const note = generatePayment0TransferNote(request)
   const r = parseTransferNote({ noteFormat, note })
   expect(r.payeeReference).toEqual('payeeReference')
   expect(r.payeeName).toEqual('Payee name')
@@ -392,11 +397,11 @@ test("Generate and parse payeeref transfer note", async () => {
     'payeeName': 'Santa Claus',
     'payeeReference': '',
   })
-  expect(() => generatePayeerefTransferNote(request, 10)).toThrowError(IvalidPaymentData)
+  expect(() => generatePayment0TransferNote(request, 10)).toThrowError(IvalidPaymentData)
 })
 
-test("Parse payeeref note", async () => {
-  const noteFormat = 'payeere0'
+test("Parse payment0 note", async () => {
+  const noteFormat = 'paymentA'
   const note = [
     '12d3a45642665544\n',
     'Payee Name\n',
