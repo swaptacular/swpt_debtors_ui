@@ -5,11 +5,12 @@ const PAYEEREF_TRANSFER_NOTE_REGEXP = /^(?<payeeReference>.{0,200})(?:\r?\n(?<pa
 const MAX_INT64 = 2n ** 63n - 1n
 const UTF8_ENCODER = new TextEncoder()
 const DEFAULT_NOTE_MAX_BYTES = 500  // Defined in the spec as an upper limit.
+const FORBIDDEN_REQUEST_FORMATS = new Set<string>(['-', 'payeeref', 'payeere0'])
 
 /*
  We want to ensure that the payer will be able use an UUID as a short
- payer reference, instead of the original payment request description,
- even if the original description is empty.
+ payer reference instead of, or in addition to, the original payment
+ request description.
 */
 const DEFAULT_SURPLUS_BYTES = (
   8  // the maximun allowed `noteFormat` bytes
@@ -34,6 +35,7 @@ function isValidPr0Data(request: PaymentRequest): boolean {
     request.amount <= MAX_INT64 &&
     request.payeeReference.match(/^.{0,200}$/u) &&
     request.description.content.length <= 3000 &&
+    !FORBIDDEN_REQUEST_FORMATS.has(request.description.contentFormat) &&
     request.description.contentFormat.match(/[0-9A-Za-z.-]{0,8}/)
   )
 }
@@ -73,9 +75,13 @@ export const MIME_TYPE_PR0 = 'application/vnd.swaptacular.pr0'
 export type DocumentUri = string
 
 export type PaymentDescription = {
-  /* The currently defined `contentFormat`s are: */
-  /*   "" plain text
-  /*   "." an URI
+  /*
+   The currently defined content formats are:
+     "" plain text
+     "." an URI
+     "-" a payer reference (the content is client-specific)
+     "payeeref" payee reference container format
+     "payeere0" payee reference container format (an alternative name)
   */
   contentFormat: string,
   content: string,
@@ -218,6 +224,10 @@ export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest> {
   if (deadline && Number.isNaN(deadline.getTime())) {
     throw new IvalidPaymentRequest('invalid deadline')
   }
+  const contentFormat = groups?.descriptionFormat ?? ''
+  if (FORBIDDEN_REQUEST_FORMATS.has(contentFormat)) {
+    throw new IvalidPaymentRequest('forbidden description format')
+  }
   return {
     amount,
     deadline,
@@ -225,7 +235,7 @@ export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest> {
     payeeName: groups!.payeeName,
     payeeReference: groups?.payeeReference ?? '',
     description: {
-      contentFormat: groups?.descriptionFormat ?? '',
+      contentFormat,
       content: groups?.description ?? '',
     },
   }
@@ -264,8 +274,9 @@ export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest> {
    indicates that the description contains the URI of the document
    that describes the payment.
 
- An alternative name for the "payeeref" format is "payeere0". Both
- names can be used interchangeably.
+ An alternative name for the "payeeref" format is
+ "payeere0". Implementations may use both names interchangeably, as
+ they see fit.
 
  An `IvalidPaymentData` error will be thrown if the length of the
  generated note exceeds `noteMaxBytes`, or invalid payment data is
