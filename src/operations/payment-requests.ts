@@ -304,6 +304,7 @@ export function generatePayeerefTransferNote(info: PaymentInfo, noteMaxBytes: nu
 */
 export function parseTransferNote(noteData: { noteFormat: string, note: string }): PaymentInfo {
   const { noteFormat, note } = noteData
+  const description = { contentFormat: noteFormat, content: note }
   try {
     switch (noteFormat) {
       case '':
@@ -314,10 +315,15 @@ export function parseTransferNote(noteData: { noteFormat: string, note: string }
         return {
           payeeName: payeeName.split(/\s+/u).join(' ').match(/.{0,200}/u)?.[0] ?? '',
           payeeReference: '',
-          description: {
-            contentFormat: noteFormat,
-            content: note,
-          },
+          description,
+        }
+
+      case '.':
+      case '-':
+        return {
+          payeeName: '',
+          payeeReference: '',
+          description,
         }
 
       case 'payeere0':
@@ -327,12 +333,10 @@ export function parseTransferNote(noteData: { noteFormat: string, note: string }
   } catch (e: unknown) {
     if (!(e instanceof InvalidTransferNote)) throw e
   }
+
   return {
     payeeName: '',
     payeeReference: note.match(/.{0,200}/u)?.[0] ?? '',
-    description: {
-      contentFormat: noteFormat,
-      content: note,
-    },
+    description,
   }
 }
