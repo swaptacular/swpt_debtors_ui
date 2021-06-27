@@ -6,6 +6,10 @@ const MAX_INT64 = 2n ** 63n - 1n
 const UTF8_ENCODER = new TextEncoder()
 const SPACES_36 = ' '.repeat(36)
 
+class InvalidTransferNote extends Error {
+  name = 'InvalidTransferNote'
+}
+
 function removePr0Header(bytes: Uint8Array): Uint8Array {
   const endOfFirstLine = bytes.indexOf(10)
   const endOfSecondLine = bytes.indexOf(10, endOfFirstLine + 1)
@@ -68,10 +72,6 @@ function parsePayeerefTransferNote(note: string): PaymentInfo {
       content: groups?.description ?? '',
     },
   }
-}
-
-class InvalidTransferNote extends Error {
-  name = 'InvalidTransferNote'
 }
 
 export const MIME_TYPE_PR0 = 'application/vnd.swaptacular.pr0'
