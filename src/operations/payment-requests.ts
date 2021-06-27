@@ -55,7 +55,7 @@ function calcPayeerefNoteByteLength(info: PaymentInfo): number {
 function parsePayeerefTransferNote(note: string): PaymentInfo {
   const regexpMatch = note.match(PAYEEREF_TRANSFER_NOTE_REGEXP)
   if (!regexpMatch) {
-    throw new InvalidTransferNote('invalid payeefer note')
+    throw new InvalidTransferNote('parse error')
   }
   const groups = regexpMatch.groups
   return {
