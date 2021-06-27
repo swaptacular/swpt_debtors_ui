@@ -395,6 +395,21 @@ test("Generate and parse payeeref transfer note", async () => {
   expect(() => generatePayeerefTransferNote(request, 10)).toThrowError(IvalidPaymentData)
 })
 
+test("Parse payeeref note", async () => {
+  const noteFormat = 'payeere0'
+  const note = [
+    '12d3a45642665544\n',
+    'Payee Name\n',
+    'alabala\n',
+    'This is a multi-line\ndescription.',
+  ].join('')
+  const info = parseTransferNote({ note, noteFormat })
+  expect(info.payeeReference).toEqual('12d3a45642665544')
+  expect(info.payeeName).toEqual('Payee Name')
+  expect(info.description.contentFormat).toEqual('alabala')
+  expect(info.description.content).toEqual('This is a multi-line\ndescription.')
+})
+
 test("Parse payement request", async () => {
   const blob = new Blob([
     'PR0\n',

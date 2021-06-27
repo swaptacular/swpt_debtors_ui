@@ -1,7 +1,7 @@
 import CRC32 from 'crc-32'
 
 const PAYMENT_REQUEST_REGEXP = /^PR0\r?\n(?<crc32>(?:[0-9a-f]{8})?)\r?\n(?<accountUri>.{0,200})\r?\n(?<payeeName>.{0,200})\r?\n(?<amount>\d{1,20})(?:\r?\n(?<deadline>(?:\d{4}-\d{2}-\d{2}.{0,32})?)(?:\r?\n(?<payeeReference>.{0,200})(?:\r?\n(?<descriptionFormat>[0-9A-Za-z.-]{0,8})(?:\r?\n(?<description>[\s\S]{0,3000}))?)?)?)?$/u
-const PAYEEREF_TRANSFER_NOTE_REGEXP = /^(?<payeeReference>.{0,200})(?:\r?\n(?<payeeName>.{0,200})(?:\r?\n(?<descriptionFormat>[0-9A-Za-z.-]{0,8})(?:\r?\n(?<description>[\s\S]{0,3000}))?)?)?/u
+const PAYEEREF_TRANSFER_NOTE_REGEXP = /^(?<payeeReference>.{0,200})(?:\r?\n(?<payeeName>.{0,200})(?:\r?\n(?<descriptionFormat>[0-9A-Za-z.-]{0,8})(?:\r?\n(?<description>[\s\S]{0,3000}))?)?)?$/u
 const MAX_INT64 = 2n ** 63n - 1n
 const UTF8_ENCODER = new TextEncoder()
 const SPACES_36 = ' '.repeat(36)
@@ -55,7 +55,11 @@ function tryToGenerateTransferNote(request: PaymentRequest, noteFormat: string, 
 }
 
 function parsePayeerefTransferNote(note: string): PaymentInfo {
-  const groups = note.match(PAYEEREF_TRANSFER_NOTE_REGEXP)?.groups
+  const regexpMatch = note.match(PAYEEREF_TRANSFER_NOTE_REGEXP)
+  if (!regexpMatch) {
+    throw new InvalidTransferNote('invalid payeefer note')
+  }
+  const groups = regexpMatch.groups
   return {
     payeeReference: groups?.payeeReference ?? '',
     payeeName: groups?.payeeName ?? '',
@@ -64,6 +68,10 @@ function parsePayeerefTransferNote(note: string): PaymentInfo {
       content: groups?.description ?? '',
     },
   }
+}
+
+class InvalidTransferNote extends Error {
+  name = 'InvalidTransferNote'
 }
 
 export const MIME_TYPE_PR0 = 'application/vnd.swaptacular.pr0'
@@ -291,34 +299,35 @@ export function generatePayeerefTransferNote(info: PaymentInfo, noteMaxBytes: nu
 */
 export function parseTransferNote(noteData: { noteFormat: string, note: string }): PaymentInfo {
   const { noteFormat, note } = noteData
-  switch (noteFormat) {
-    case '':
-      // A simple convenience: In plain text messages, if the payee's
-      // name is enclosed in backticks, it will be recognized and
-      // extracted. For example: "Paying my debt to `Santa Claus`".
-      const payeeName = note.match(/`([^`]+)`/u)?.[1] ?? ''
+  try {
+    switch (noteFormat) {
+      case '':
+        // A simple convenience: In plain text messages, if the payee's
+        // name is enclosed in backticks, it will be recognized and
+        // extracted. For example: "Paying my debt to `Santa Claus`".
+        const payeeName = note.match(/`([^`]+)`/u)?.[1] ?? ''
+        return {
+          payeeName: payeeName.split(/\s+/u).join(' ').match(/.{0,200}/u)?.[0] as string,
+          payeeReference: '',
+          description: {
+            contentFormat: noteFormat,
+            content: note,
+          },
+        }
 
-      return {
-        payeeName: payeeName.split(/\s+/u).join(' ').match(/.{0,200}/u)?.[0] as string,
-        payeeReference: '',
-        description: {
-          contentFormat: noteFormat,
-          content: note,
-        },
-      }
-
-    case 'payeere0':
-    case 'payeeref':
-      return parsePayeerefTransferNote(note)
-
-    default:
-      return {
-        payeeName: '',
-        payeeReference: '',
-        description: {
-          contentFormat: noteFormat,
-          content: note,
-        },
-      }
+      case 'payeere0':
+      case 'payeeref':
+        return parsePayeerefTransferNote(note)
+    }
+  } catch (e: unknown) {
+    if (!(e instanceof InvalidTransferNote)) throw e
+  }
+  return {
+    payeeName: '',
+    payeeReference: '',
+    description: {
+      contentFormat: noteFormat,
+      content: note,
+    },
   }
 }
