@@ -299,7 +299,7 @@ export function parseTransferNote(noteData: { noteFormat: string, note: string }
       const payeeName = note.match(/`([^`]+)`/u)?.[1] ?? ''
 
       return {
-        payeeName: payeeName.split(/\s+/u).join(' '),
+        payeeName: payeeName.split(/\s+/u).join(' ').match(/.{0,200}/u)?.[0] as string,
         payeeReference: '',
         description: {
           contentFormat: noteFormat,
