@@ -4,7 +4,17 @@ const PAYMENT_REQUEST_REGEXP = /^PR0\r?\n(?<crc32>(?:[0-9a-f]{8})?)\r?\n(?<accou
 const PAYEEREF_TRANSFER_NOTE_REGEXP = /^(?<payeeReference>.{0,200})(?:\r?\n(?<payeeName>.{0,200})(?:\r?\n(?<descriptionFormat>[0-9A-Za-z.-]{0,8})(?:\r?\n(?<description>[\s\S]{0,3000}))?)?)?$/u
 const MAX_INT64 = 2n ** 63n - 1n
 const UTF8_ENCODER = new TextEncoder()
-const SPACES_36 = ' '.repeat(36)
+const DEFAULT_NOTE_MAX_BYTES = 500  // Defined in the spec as an upper limit.
+
+/*
+ We want to ensure that the payer will be able use an UUID as a short
+ payer reference, instead of the original payment request description,
+ even if the original description is empty.
+*/
+const DEFAULT_SURPLUS_BYTES = (
+  8  // the maximun allowed `noteFormat` bytes
+  + 36  // the number of bytes in the canonical UUID textual representation
+)
 
 class InvalidTransferNote extends Error {
   name = 'InvalidTransferNote'
@@ -37,25 +47,9 @@ function isValidPayeerefData(request: PaymentInfo): boolean {
   )
 }
 
-function tryToGenerateTransferNote(request: PaymentRequest, noteFormat: string, noteMaxBytes: number): void {
-  switch (noteFormat) {
-    case 'payeere0':
-    case 'payeeref':
-      // We want to ensure that the payer will be able use a short (at
-      // most 36-bytes) payer reference, instead of the original
-      // payment request description.
-      const content = request.description.content
-      const contentBytes = UTF8_ENCODER.encode(content).length
-      const description = {
-        contentFormat: 'payerref',  // uses the maximum allowed 8 symbols
-        content: contentBytes >= 36 ? content : SPACES_36,  // uses at least 36 bytes
-      }
-      generatePayeerefTransferNote({ ...request, description }, noteMaxBytes)
-      break
-
-    default:
-      throw new Error('invalid note format')
-  }
+function calcPayeerefNoteByteLength(info: PaymentInfo): number {
+  // The "+ 3" thing allows for the use of "\r\n", instead of "\n".
+  return UTF8_ENCODER.encode(generatePayeerefTransferNote(info, Infinity)).length + 3
 }
 
 function parsePayeerefTransferNote(note: string): PaymentInfo {
@@ -161,21 +155,21 @@ export class IvalidPaymentData extends Error {
    that describes the payment request.
 
  An `IvalidPaymentData` error will be thrown if invalid payment data
- is passed. Also, when the `noteFormat` option is passed, this
- function will try to generate a transfer note for the payment, in the
- specified format. An `IvalidPaymentData` error will be thrown if the
- length of the generated transfer note exceeds `noteMaxBytes`.
+ is passed. Also, this function will try to simulate generating a
+ "payeeref" transfer note for the payment. An `IvalidPaymentData`
+ error will be thrown if the length of the generated transfer note
+ (plus `surplusBytes`) would exceed `noteMaxBytes`.
 */
 export function generatePr0Blob(
   request: PaymentRequest,
-  options: { includeCrc?: boolean, noteMaxBytes?: number, noteFormat?: string } = {}
+  options: { includeCrc?: boolean, noteMaxBytes?: number, surplusBytes?: number } = {}
 ): Blob {
-  const { includeCrc = true, noteMaxBytes = 500, noteFormat } = options
+  const { includeCrc = true, noteMaxBytes = DEFAULT_NOTE_MAX_BYTES, surplusBytes = DEFAULT_SURPLUS_BYTES } = options
   if (!isValidPr0Data(request)) {
     throw new IvalidPaymentData('invalid field')
   }
-  if (noteFormat !== undefined) {
-    tryToGenerateTransferNote(request, noteFormat, noteMaxBytes)
+  if (calcPayeerefNoteByteLength(request) + surplusBytes > noteMaxBytes) {
+    throw new IvalidPaymentData('too big')
   }
   const isoDeadline = request.deadline ? request.deadline.toISOString() : ''
   const body = UTF8_ENCODER.encode(
@@ -277,7 +271,7 @@ export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest> {
  generated note exceeds `noteMaxBytes`, or invalid payment data is
  passed.
 */
-export function generatePayeerefTransferNote(info: PaymentInfo, noteMaxBytes: number = 500): string {
+export function generatePayeerefTransferNote(info: PaymentInfo, noteMaxBytes: number = DEFAULT_NOTE_MAX_BYTES): string {
   if (!isValidPayeerefData(info)) {
     throw new IvalidPaymentData('invalid field')
   }
