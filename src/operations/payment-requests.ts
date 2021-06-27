@@ -338,13 +338,13 @@ export function parseTransferNote(noteData: { noteFormat: string, note: string }
       case '':
         return parsePlaintextTransferNote(note)
 
-      case '.':
-      case '-':
-        return { payeeName: '', payeeReference: '', description }
-
       case 'payeere0':
       case 'payeeref':
         return parsePayeerefTransferNote(note)
+
+      case '.':
+      case '-':
+        return { payeeName: '', payeeReference: '', description }
 
       default:
         throw new InvalidTransferNote('unknown format')
