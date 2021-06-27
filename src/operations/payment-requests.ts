@@ -66,6 +66,22 @@ function calcPayeerefNoteByteLength(info: PaymentInfo): number {
   return UTF8_ENCODER.encode(generatePayeerefTransferNote(info, Infinity)).length + 3
 }
 
+function parsePlaintextTransferNote(note: string): PaymentInfo {
+  // A simple convenience: In plain text messages, if the payee's
+  // name is enclosed in backticks, it will be recognized and
+  // extracted. For example: "Paying my debt to `Santa Claus`".
+  const backticksContent = note.match(/`([^`]+)`/u)?.[1] ?? ''
+  const payeeName = backticksContent.split(/\s+/u).join(' ').match(/.{0,200}/u)?.[0] ?? ''
+  return {
+    payeeName,
+    payeeReference: '',
+    description: {
+      contentFormat: '',
+      content: note,
+    },
+  }
+}
+
 function parsePayeerefTransferNote(note: string): PaymentInfo {
   const regexpMatch = note.match(PAYEEREF_TRANSFER_NOTE_REGEXP)
   if (!regexpMatch) {
@@ -320,12 +336,7 @@ export function parseTransferNote(noteData: { noteFormat: string, note: string }
   try {
     switch (noteFormat) {
       case '':
-        // A simple convenience: In plain text messages, if the payee's
-        // name is enclosed in backticks, it will be recognized and
-        // extracted. For example: "Paying my debt to `Santa Claus`".
-        const backticksContent = note.match(/`([^`]+)`/u)?.[1] ?? ''
-        const payeeName = backticksContent.split(/\s+/u).join(' ').match(/.{0,200}/u)?.[0] ?? ''
-        return { payeeName, payeeReference: '', description }
+        return parsePlaintextTransferNote(note)
 
       case '.':
       case '-':
