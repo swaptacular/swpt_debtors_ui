@@ -22,7 +22,7 @@ class InvalidTransferNote extends Error {
 
 function isForbiddenRequestFormat(format: string): boolean {
   return (
-    // These formats not make sense in a payment request.
+    // These formats do not make sense in a payment request.
     format === 'payment0' ||
     format === 'paymentA' ||
 
@@ -298,7 +298,9 @@ export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest> {
 
  * Also, an optional description format can be passed (the empty line
    right before the description). When an empty string is passed, this
-   means that the description is in plain text.
+   means that the description is in plain text. "."  indicates that
+   the description contains an URI, "-" indicates that the description
+   contains a payer reference.
 
  An alternative name for the "payment0" format is
  "paymentA". Implementations may use both names interchangeably, as
