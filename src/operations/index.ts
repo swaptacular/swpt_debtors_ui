@@ -102,7 +102,7 @@ class UserContext {
         recipient: { uri: request.accountUri },
         amount: request.amount,
         transferUuid: uuidv4(),
-        noteFormat: 'payment0',
+        noteFormat: request.amount === 0n ? 'payment0' : 'paymentA',
         note: generatePayment0TransferNote(request, this.noteMaxBytes),
       },
       paymentInfo: {
