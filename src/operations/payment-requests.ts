@@ -334,19 +334,22 @@ export function parseTransferNote(noteData: { noteFormat: string, note: string }
       case 'payeere0':
       case 'payeeref':
         return parsePayeerefTransferNote(note)
+
+      default:
+        throw new InvalidTransferNote('unknown format')
     }
   } catch (e: unknown) {
     if (!(e instanceof InvalidTransferNote)) throw e
-  }
 
-  // NOTE: When the payee can not recognize the format of the transfer
-  // note, it assumes that the first line in the note contains the
-  // payee reference. This assumption gives payers the flexibility to
-  // use a wide variety of formats, still remaining compatible with
-  // payees' clients.
-  return {
-    payeeName: '',
-    payeeReference: note.match(/.{0,200}/u)?.[0] ?? '',
-    description,
+    // NOTE: When the payee can not recognize the format of the transfer
+    // note, it assumes that the first line in the note contains the
+    // payee reference. This assumption gives payers the flexibility to
+    // use a wide variety of formats, still remaining compatible with
+    // payees' clients.
+    return {
+      payeeName: '',
+      payeeReference: note.match(/.{0,200}/u)?.[0] ?? '',
+      description,
+    }
   }
 }
