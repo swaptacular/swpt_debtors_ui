@@ -5,7 +5,6 @@ const PAYEEREF_TRANSFER_NOTE_REGEXP = /^(?<payeeReference>.{0,200})(?:\r?\n(?<pa
 const MAX_INT64 = 2n ** 63n - 1n
 const UTF8_ENCODER = new TextEncoder()
 const DEFAULT_NOTE_MAX_BYTES = 500  // Defined in the spec as an upper limit.
-const FORBIDDEN_REQUEST_FORMATS = new Set<string>(['-', 'payeeref', 'payeere0'])
 
 /*
  We want to ensure that the payer will be able use an UUID as a short
@@ -19,6 +18,19 @@ const DEFAULT_SURPLUS_BYTES = (
 
 class InvalidTransferNote extends Error {
   name = 'InvalidTransferNote'
+}
+
+function isForbiddenRequestFormat(format: string): boolean {
+  return (
+    // These formats not make sense in a payment request.
+    format === 'payeeref' ||
+    format === 'payeere0' ||
+
+    // The content of all formats that start with "-" is
+    // client-specific, so they also do not make sense in a payment
+    // request.
+    format.startsWith('-')
+  )
 }
 
 function removePr0Header(bytes: Uint8Array): Uint8Array {
@@ -35,7 +47,7 @@ function isValidPr0Data(request: PaymentRequest): boolean {
     request.amount <= MAX_INT64 &&
     request.payeeReference.match(/^.{0,200}$/u) &&
     request.description.content.length <= 3000 &&
-    !FORBIDDEN_REQUEST_FORMATS.has(request.description.contentFormat) &&
+    !isForbiddenRequestFormat(request.description.contentFormat) &&
     request.description.contentFormat.match(/[0-9A-Za-z.-]{0,8}/)
   )
 }
@@ -79,7 +91,7 @@ export type PaymentDescription = {
    The currently defined content formats are:
      "" plain text
      "." an URI
-     "-" a payer reference (the content is client-specific)
+     "-" an opaque payer reference (the content is client-specific)
      "payeeref" payee reference container format
      "payeere0" payee reference container format (an alternative name)
   */
@@ -225,7 +237,7 @@ export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest> {
     throw new IvalidPaymentRequest('invalid deadline')
   }
   const contentFormat = groups?.descriptionFormat ?? ''
-  if (FORBIDDEN_REQUEST_FORMATS.has(contentFormat)) {
+  if (isForbiddenRequestFormat(contentFormat)) {
     throw new IvalidPaymentRequest('forbidden description format')
   }
   return {
@@ -311,20 +323,13 @@ export function parseTransferNote(noteData: { noteFormat: string, note: string }
         // A simple convenience: In plain text messages, if the payee's
         // name is enclosed in backticks, it will be recognized and
         // extracted. For example: "Paying my debt to `Santa Claus`".
-        const payeeName = note.match(/`([^`]+)`/u)?.[1] ?? ''
-        return {
-          payeeName: payeeName.split(/\s+/u).join(' ').match(/.{0,200}/u)?.[0] ?? '',
-          payeeReference: '',
-          description,
-        }
+        const backticksContent = note.match(/`([^`]+)`/u)?.[1] ?? ''
+        const payeeName = backticksContent.split(/\s+/u).join(' ').match(/.{0,200}/u)?.[0] ?? ''
+        return { payeeName, payeeReference: '', description }
 
       case '.':
       case '-':
-        return {
-          payeeName: '',
-          payeeReference: '',
-          description,
-        }
+        return { payeeName: '', payeeReference: '', description }
 
       case 'payeere0':
       case 'payeeref':
@@ -334,6 +339,11 @@ export function parseTransferNote(noteData: { noteFormat: string, note: string }
     if (!(e instanceof InvalidTransferNote)) throw e
   }
 
+  // NOTE: When the payee can not recognize the format of the transfer
+  // note, it assumes that the first line in the note contains the
+  // payee reference. This assumption gives payers the flexibility to
+  // use a wide variety of formats, still remaining compatible with
+  // payees' clients.
   return {
     payeeName: '',
     payeeReference: note.match(/.{0,200}/u)?.[0] ?? '',
