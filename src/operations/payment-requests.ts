@@ -172,7 +172,7 @@ export function generatePr0Blob(
 ): Blob {
   const { includeCrc = true, noteMaxBytes = 500, noteFormat } = options
   if (!isValidPr0Data(request)) {
-    throw new IvalidPaymentData('can not generate payment request')
+    throw new IvalidPaymentData('invalid field')
   }
   if (noteFormat !== undefined) {
     tryToGenerateTransferNote(request, noteFormat, noteMaxBytes)
@@ -279,7 +279,7 @@ export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest> {
 */
 export function generatePayeerefTransferNote(info: PaymentInfo, noteMaxBytes: number = 500): string {
   if (!isValidPayeerefData(info)) {
-    throw new IvalidPaymentData('can not generate payeeref tranfer note')
+    throw new IvalidPaymentData('invalid field')
   }
   const note =
     `${info.payeeReference}\n` +
