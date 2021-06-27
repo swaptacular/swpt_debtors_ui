@@ -119,6 +119,7 @@ export type PaymentInfo = {
   payeeName: string,
   payeeReference: string,
   description: PaymentDescription,
+  flag?: boolean,
 }
 
 export type PaymentRequest =
@@ -339,8 +340,10 @@ export function parseTransferNote(noteData: { noteFormat: string, note: string }
         return parsePlaintextTransferNote(note)
 
       case 'payment0':
+        return { ...parsePayment0TransferNote(note), flag: false }
+
       case 'paymentA':
-        return parsePayment0TransferNote(note)
+        return { ...parsePayment0TransferNote(note), flag: true }
 
       case '.':
       case '-':
