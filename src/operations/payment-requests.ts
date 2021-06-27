@@ -28,11 +28,11 @@ function removePr0Header(bytes: Uint8Array): Uint8Array {
 
 function isValidPr0Data(request: PaymentRequest): boolean {
   return Boolean(
-    request.accountUri.length <= 200 &&
-    request.payeeName.length <= 200 &&
+    request.accountUri.match(/^.{0,200}$/u) &&
+    request.payeeName.match(/^.{0,200}$/u) &&
     request.amount >= 0n &&
     request.amount <= MAX_INT64 &&
-    request.payeeReference.length <= 200 &&
+    request.payeeReference.match(/^.{0,200}$/u) &&
     request.description.content.length <= 3000 &&
     request.description.contentFormat.match(/[0-9A-Za-z.-]{0,8}/)
   )
@@ -40,8 +40,8 @@ function isValidPr0Data(request: PaymentRequest): boolean {
 
 function isValidPayeerefData(request: PaymentInfo): boolean {
   return Boolean(
-    request.payeeName.length <= 200 &&
-    request.payeeReference.length <= 200 &&
+    request.payeeName.match(/^.{0,200}$/u) &&
+    request.payeeReference.match(/^.{0,200}$/u) &&
     request.description.content.length <= 3000 &&
     request.description.contentFormat.match(/[0-9A-Za-z.-]{0,8}/)
   )
