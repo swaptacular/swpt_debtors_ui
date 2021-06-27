@@ -184,9 +184,7 @@ export class IvalidPaymentData extends Error {
 
  * Also, an optional description format can be passed (the empty line
    right before the description). When an empty string is passed, this
-   means that the description is in plain text. The symbol "."
-   indicates that the description contains the URI of the document
-   that describes the payment request.
+   means that the description is in plain text.
 
  An `IvalidPaymentData` error will be thrown if invalid payment data
  is passed. Also, this function will try to simulate generating a
@@ -270,10 +268,10 @@ export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest> {
 }
 
 /*
- This function generates a tranfer note for a payment in "payment0"
+ This function generates a transfer note for a payment in "payment0"
  format. This is a very simple format that contains the payee
- reference as a first line, and optionally may include the payee
- name, and a payment description.
+ reference, the payee name, and a payment description (all are
+ optional).
 
  An example transfer note in "payment0" fromat:
  ```````````````````````````````````````````````
@@ -289,7 +287,7 @@ export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest> {
  In the example above:
 
  * "12d3a45642665544" is the payee reference (it can be an empty
-   string), which is included by the payer in the transfer note, so
+   string), which may included by the payer in the transfer note, so
    that the payee can match the incoming transfer with the payment
    request.
 
@@ -298,9 +296,7 @@ export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest> {
 
  * Also, an optional description format can be passed (the empty line
    right before the description). When an empty string is passed, this
-   means that the description is in plain text. The symbol "."
-   indicates that the description contains the URI of the document
-   that describes the payment.
+   means that the description is in plain text.
 
  An alternative name for the "payment0" format is
  "paymentA". Implementations may use both names interchangeably, as
