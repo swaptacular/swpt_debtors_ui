@@ -184,7 +184,9 @@ export class IvalidPaymentData extends Error {
 
  * Also, an optional description format can be passed (the empty line
    right before the description). When an empty string is passed, this
-   means that the description is in plain text.
+   means that the description is in plain text. The symbol "."
+   indicates that the description contains the URI of the document
+   that describes the payment request.
 
  An `IvalidPaymentData` error will be thrown if invalid payment data
  is passed. Also, this function will try to simulate generating a
