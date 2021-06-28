@@ -189,7 +189,7 @@ export class IvalidPaymentData extends Error {
    that describes the payment request.
 
  An `IvalidPaymentData` error will be thrown if invalid payment data
- is passed. Also, this function will try to simulate generating a
+ is passed. Also, this function will tries to simulate generating a
  "payment0" transfer note for the payment. An `IvalidPaymentData`
  error will be thrown if the length of the generated transfer note
  (plus `surplusBytes`) would exceed `noteMaxBytes`.
@@ -289,12 +289,11 @@ export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest> {
  In the example above:
 
  * "12d3a45642665544" is the payee reference (it can be an empty
-   string), which may included by the payer in the transfer note, so
-   that the payee can match the incoming transfer with the payment
+   string), which may be included by the payer in the transfer note,
+   so that the payee can match the incoming transfer with the payment
    request.
 
- * "Payee Name" indicates the name of the payee (it can be an empty
-   string).
+ * "Payee Name" indicates the name of the payee.
 
  * Also, an optional description format can be passed (the empty line
    right before the description). When an empty string is passed, this
@@ -307,9 +306,9 @@ export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest> {
  response to payment requests that specify an non-negotiable amount,
  and use "payment0" for all the other types of payments.
 
- An `IvalidPaymentData` error will be thrown if the length of the
- generated note exceeds `noteMaxBytes`, or invalid payment data is
- passed.
+ An `IvalidPaymentData` error will be thrown if invalid payment data
+ is passed, or the length of the generated note exceeds
+ `noteMaxBytes`.
 */
 export function generatePayment0TransferNote(info: PaymentInfo, noteMaxBytes: number = DEFAULT_NOTE_MAX_BYTES): string {
   if (!isValidPayment0Data(info)) {
