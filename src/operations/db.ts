@@ -7,7 +7,7 @@ import type {
   Transfer,
   TransferCreationRequest,
 } from '../web-api-schemas'
-import { DocumentUri, PaymentInfo, parseTransferNote } from './payment-requests'
+import { PaymentInfo, parseTransferNote } from './payment-requests'
 
 type ListQueryOptions = {
   before?: number,
@@ -19,6 +19,8 @@ type ListQueryOptions = {
 type UserReference = {
   userId: number,
 }
+
+type DocumentUri = string
 
 type ConfigData = {
   // TODO: this is probably wrong.

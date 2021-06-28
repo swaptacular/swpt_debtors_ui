@@ -99,17 +99,17 @@ function parsePayment0TransferNote(note: string): PaymentInfo {
 
 export const MIME_TYPE_PR0 = 'application/vnd.swaptacular.pr0'
 
-export type DocumentUri = string
+/*
+ The currently defined content formats are:
 
+ "" plain text
+ "." an URI
+ "-" an opaque payer reference (the content is client-specific)
+ "payment0" payment format v0
+ "paymentA" payment format v0 (an alternative name)
+
+*/
 export type PaymentDescription = {
-  /*
-   The currently defined content formats are:
-     "" plain text
-     "." an URI
-     "-" an opaque payer reference (the content is client-specific)
-     "payment0" payment format v0
-     "paymentA" payment format v0 (an alternative name)
-  */
   contentFormat: string,
   content: string,
 }
@@ -188,7 +188,7 @@ export class IvalidPaymentData extends Error {
    that describes the payment request.
 
  An `IvalidPaymentData` error will be thrown if invalid payment data
- is passed. Also, this function will tries to simulate generating a
+ is passed. Also, this function will try to simulate generating a
  "payment0" transfer note for the payment. An `IvalidPaymentData`
  error will be thrown if the length of the generated transfer note
  (plus `surplusBytes`) would exceed `noteMaxBytes`.
