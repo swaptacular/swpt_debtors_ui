@@ -302,9 +302,10 @@ export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest> {
    the description contains an URI, "-" indicates that the description
    contains a payer reference.
 
- An alternative name for the "payment0" format is
- "paymentA". Implementations may use both names interchangeably, as
- they see fit.
+ An alternative name for the "payment0" format is "paymentA". It is
+ recommended that client applications use "paymentA" for payments in
+ response to payment requests that specify an non-negotiable amount,
+ and use "payment0" for all the other types of payments.
 
  An `IvalidPaymentData` error will be thrown if the length of the
  generated note exceeds `noteMaxBytes`, or invalid payment data is
