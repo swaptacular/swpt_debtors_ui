@@ -345,10 +345,6 @@ export function parseTransferNote(noteData: { noteFormat: string, note: string }
       case 'paymentA':
         return { ...parsePayment0TransferNote(note), flag: true }
 
-      case '.':
-      case '-':
-        return { payeeName: '', payeeReference: '', description }
-
       default:
         throw new InvalidTransferNote('unknown format')
     }
