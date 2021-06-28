@@ -93,7 +93,6 @@ class UserContext {
    * `CreateTransferAction`. May throw `IvalidPaymentRequest`. */
   async processPaymentRequest(blob: Blob): Promise<CreateTransferActionWithId> {
     const request = await parsePaymentRequest(blob)
-    const nonzeroAmount = request.amount !== 0n
     const actionRecord = {
       userId: this.userId,
       actionType: 'CreateTransfer' as const,
@@ -103,14 +102,13 @@ class UserContext {
         recipient: { uri: request.accountUri },
         amount: request.amount,
         transferUuid: uuidv4(),
-        noteFormat: nonzeroAmount ? 'paymentA' : 'payment0',
+        noteFormat: request.amount === 0n ? 'payment0' : 'paymentA',
         note: generatePayment0TransferNote(request, this.noteMaxBytes),
       },
       paymentInfo: {
         payeeReference: request.payeeReference,
         payeeName: request.payeeName,
         description: request.description,
-        flag: nonzeroAmount,
       }
     }
     await db.createActionRecord(actionRecord)  // adds `actionId` field
