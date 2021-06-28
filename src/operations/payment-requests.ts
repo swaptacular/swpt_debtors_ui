@@ -6,12 +6,11 @@ const MAX_INT64 = 2n ** 63n - 1n
 const UTF8_ENCODER = new TextEncoder()
 const DEFAULT_NOTE_MAX_BYTES = 500  // Defined in the spec as an upper limit.
 
-/*
- We want to ensure that the payer will be able use an UUID as a short
- payer reference instead of, or in addition to, the original payment
- request description.
-*/
 const DEFAULT_SURPLUS_BYTES = (
+  // We want to ensure that the payer will be able use an UUID as a short
+  // payer reference instead of, or in addition to, the original payment
+  // request description.
+
   8  // the maximun allowed `noteFormat` bytes
   + 36  // the number of bytes in the canonical UUID textual representation
 )
@@ -329,6 +328,12 @@ export function generatePayment0TransferNote(info: PaymentInfo, noteMaxBytes: nu
 /*
  Currently, this function can usefully parse only transfer notes with
  format "" (plain text), and "payment0".
+
+ Important note: When the payee can not recognize the format of the
+ transfer note, it assumes that the first line in the note contains
+ the payee reference. This assumption gives payers the flexibility to
+ use a wide variety of formats, still remaining compatible with
+ payees' clients.
 */
 export function parseTransferNote(noteData: { noteFormat: string, note: string }): PaymentInfo {
   const { noteFormat, note } = noteData
@@ -346,13 +351,9 @@ export function parseTransferNote(noteData: { noteFormat: string, note: string }
         throw new InvalidTransferNote('unknown format')
     }
   } catch (e: unknown) {
-    if (!(e instanceof InvalidTransferNote)) throw e
-
-    // Important note: When the payee can not recognize the format of
-    // the transfer note, it assumes that the first line in the note
-    // contains the payee reference. This assumption gives payers the
-    // flexibility to use a wide variety of formats, still remaining
-    // compatible with payees' clients.
+    if (!(e instanceof InvalidTransferNote)) {
+      throw e
+    }
     return {
       payeeName: '',
       payeeReference: note.match(/.{0,200}/u)?.[0] ?? '',
