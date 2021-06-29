@@ -23,7 +23,7 @@ function isForbiddenRequestFormat(format: string): boolean {
   return (
     // These formats do not make sense in a payment request.
     format === 'payment0' ||
-    format === 'paymentA' ||
+    format === 'PAYMENT0' ||
 
     // The content of all formats that start with "-" is
     // client-specific, so they also do not make sense in a payment
@@ -100,13 +100,19 @@ function parsePayment0TransferNote(note: string): PaymentInfo {
 export const MIME_TYPE_PR0 = 'application/vnd.swaptacular.pr0'
 
 /*
- The currently defined content formats are:
+ The currently defined standard content formats are:
 
- "" plain text
- "." an URI
- "-" an opaque payer reference (the content is client-specific)
- "payment0" payment format v0
- "paymentA" payment format v0 (an alternative name)
+ ""         : plain text
+ "."        : an URI
+ "-"        : an opaque payer reference (the content is client-specific)
+ "payment0" : payment format v0
+ "PAYMENT0" : payment format v0 (an alternative name)
+
+ All format names that contain at least two symbols, and the frist
+ symbol is ".", are reserved for non-standard (yet) formats.
+
+ All format names that contain at least two symbols, and the frist
+ symbol is "-", are reserved for private client formats.
 
 */
 export type PaymentDescription = {
@@ -300,8 +306,8 @@ export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest> {
    the description contains an URI, "-" indicates that the description
    contains a payer reference.
 
- An alternative name for the "payment0" format is "paymentA". It is
- recommended that client applications use "paymentA" for payments in
+ An alternative name for the "payment0" format is "PAYMENT0". It is
+ recommended that client applications use "PAYMENT0" for payments in
  response to payment requests that specify an non-negotiable amount,
  and use "payment0" for all the other types of payments.
 
@@ -344,7 +350,7 @@ export function parseTransferNote(noteData: { noteFormat: string, note: string }
         return parsePlaintextTransferNote(note)
 
       case 'payment0':
-      case 'paymentA':
+      case 'PAYMENT0':
         return parsePayment0TransferNote(note)
 
       default:

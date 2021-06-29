@@ -401,7 +401,7 @@ test("Generate and parse payment0 transfer note", async () => {
 })
 
 test("Parse payment0 note", async () => {
-  const noteFormat = 'paymentA'
+  const noteFormat = 'PAYMENT0'
   const note = [
     '12d3a45642665544\n',
     'Payee Name\n',
