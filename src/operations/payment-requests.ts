@@ -109,10 +109,10 @@ export const MIME_TYPE_PR0 = 'application/vnd.swaptacular.pr0'
  "PAYMENT0" : payment format v0 (an alternative name)
 
  All format names that contain at least two symbols, and the frist
- symbol is ".", are reserved for non-standard (yet) formats.
+ symbol is ".", are set aside for non-standard (yet) formats.
 
  All format names that contain at least two symbols, and the frist
- symbol is "-", are reserved for private client formats.
+ symbol is "-", are set aside for private client formats.
 
 */
 export type PaymentDescription = {
