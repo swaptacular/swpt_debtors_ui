@@ -191,7 +191,7 @@ class UserContext {
     return (
       !startedAt ||
       result?.ok === false ||
-      (!result && (Date.now() - startedAt.getTime()) > 1000 * (TRANSFER_DELETION_DELAY_SECONDS - 3600))
+      (!result && Date.now() - startedAt.getTime() > 1000 * (TRANSFER_DELETION_DELAY_SECONDS - 3600))
     )
   }
 
