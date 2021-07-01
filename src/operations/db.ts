@@ -93,7 +93,9 @@ export type CreateTransferAction =
     paymentInfo: PaymentInfo,
     execution?: {
       startedAt: Date,
-      error?: CreateTransferError,
+      result?:
+      | { ok: true, transferUri: string }
+      | { ok: false, error: CreateTransferError },
     }
   }
 
@@ -111,6 +113,7 @@ export type TaskData =
   & {
     taskId?: number,
     taskType: string,
+    scheduledFor: Date,
   }
 
 export type TaskRecord =
@@ -125,12 +128,13 @@ export type DeleteTransferTask =
   & ResourceReference
   & {
     taskType: 'DeleteTransfer',
-    transferUuid: string,  // TODO: use this to ensure that there is no hanging CreateTransferTask.
   }
 
 export class RecordDoesNotExist extends Error {
   name = 'RecordDoesNotExist'
 }
+
+export const TRANSFER_DELETION_DELAY_SECONDS = 10 * 86400  // 10 days
 
 const TRANSFER_WAIT_SECONDS = 86400  // 24 hours
 
@@ -178,7 +182,7 @@ class DebtorsDb extends Dexie {
 
       documents: 'uri,userId',
       actions: '++actionId,&[userId+actionId],creationRequest.transferUuid',
-      tasks: '++taskId,userId',
+      tasks: '++taskId,[userId+scheduledFor]',
     })
 
     this.debtors = this.table('debtors')
@@ -254,7 +258,7 @@ class DebtorsDb extends Dexie {
   }
 
   async createTransferRecord(action: CreateTransferActionWithId, transfer: Transfer): Promise<TransferRecord> {
-    return await this.transaction('rw', [this.transfers, this.actions], async () => {
+    return await this.transaction('rw', [this.transfers, this.actions, this.tasks], async () => {
       const { actionId, userId, paymentInfo } = action
       const existing = await this.actions.get(actionId)
       if (!equal(existing, action)) {
@@ -392,9 +396,7 @@ class DebtorsDb extends Dexie {
                 })
               break
             case 'successful':
-              // TODO: await this.putTransferRecord(userId, transfer, parseTransferNote(transfer))
-              await this.transfers.update(uri, transfer)
-              await this.tasks.put({ uri, userId, taskType: 'DeleteTransfer', transferUuid: transfer.transferUuid })
+              await this.putTransferRecord(userId, transfer, parseTransferNote(transfer))
               break
           }
         }
@@ -404,34 +406,52 @@ class DebtorsDb extends Dexie {
   }
 
   private async putTransferRecord(userId: number, transfer: Transfer, paymentInfo: PaymentInfo): Promise<boolean> {
-    return await this.transaction('rw', this.transfers, async () => {
+    return await this.transaction('rw', [this.transfers, this.actions, this.tasks], async () => {
       const existingTransferRecord = await this.transfers.get(transfer.uri)
 
-      // When the transfer record already exists, make sure that
-      // `userId` and `time` stay the same.
       if (existingTransferRecord) {
         if (userId !== existingTransferRecord.userId) {
           throw new Error('Can not alter the userId of an existing transfer record.')
         }
-        paymentInfo ??= existingTransferRecord.paymentInfo
-        const time = existingTransferRecord.time
-        await this.transfers.put({ ...transfer, userId, time, paymentInfo })
-        return true
+        await this.transfers.put({
+          ...transfer,
+          userId,
+          time: existingTransferRecord.time,
+          paymentInfo: existingTransferRecord.paymentInfo ?? paymentInfo,
+        })
+
+      } else {
+        let time = new Date(transfer.initiatedAt).getTime() || Date.now()
+        while (true) {
+          try {
+            await this.transfers.put({ ...transfer, userId, time, paymentInfo })
+            break
+          } catch (e: unknown) {
+            if (!(e instanceof Dexie.ConstraintError)) throw e
+            time *= (1 + Number.EPSILON)
+          }
+        }
+        await this.actions
+          .where({ 'creationRequest.transferUuid': transfer.transferUuid })
+          .modify((action: CreateTransferAction) => {
+            action.execution = {
+              startedAt: action.execution?.startedAt ?? new Date(time),
+              result: { ok: true, transferUri: transfer.uri },
+            }
+          })
       }
 
-      // When the transfer record does not exist, obtain the `time`
-      // from the transfer's `initiatedAt` field, and if it is not
-      // unique, increment it with epsilon.
-      let time = new Date(transfer.initiatedAt).getTime() || Date.now()
-      while (true) {
-        try {
-          await this.transfers.put({ ...transfer, userId, time, paymentInfo })
-          return false
-        } catch (e: unknown) {
-          if (!(e instanceof Dexie.ConstraintError)) throw e
-          time *= (1 + Number.EPSILON)
-        }
+      if (transfer.result) {
+        const finalizationTime = new Date(transfer.result.finalizedAt).getTime() || Date.now()
+        await this.tasks.put({
+          userId,
+          taskType: 'DeleteTransfer',
+          scheduledFor: new Date(finalizationTime + 1000 * TRANSFER_DELETION_DELAY_SECONDS),
+          uri: transfer.uri,
+        })
       }
+
+      return Boolean(existingTransferRecord)
     })
   }
 

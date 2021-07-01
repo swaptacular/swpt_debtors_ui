@@ -129,7 +129,9 @@ test("Install and uninstall user", async () => {
       debtor: { uri: 'https://example.com/1/' }
     },
   }
-  const isoNow = new Date().toISOString()
+  const now = Date.now()
+  const isoNow = new Date(now).toISOString()
+  const isoNow2 = new Date(now + 100).toISOString()
   const transfers = [{
     type: 'Transfer',
     uri: 'https://example.com/1/transfers/xxxxxxxxx',
@@ -154,7 +156,7 @@ test("Install and uninstall user", async () => {
     transfersList: { uri: 'https://example.com/1/transfers/' },
     note: '',
     noteFormat: '',
-    initiatedAt: isoNow,
+    initiatedAt: isoNow2,
     result: {
       type: 'TransferResult',
       finalizedAt: isoNow,
@@ -183,7 +185,11 @@ test("Install and uninstall user", async () => {
   })
   await expect(db.getTransferRecords(userId)).resolves.toEqual(
     [{
-      ...transfers[1], userId, time: new Date(isoNow).getTime(),
+      ...transfers[1], userId, time: new Date(isoNow2).getTime(),
+      paymentInfo: { payeeName: '', payeeReference: '', description: { content: '', contentFormat: '' } }
+    },
+    {
+      ...transfers[0], userId, time: new Date(isoNow).getTime(),
       paymentInfo: { payeeName: '', payeeReference: '', description: { content: '', contentFormat: '' } }
     }]
   )
