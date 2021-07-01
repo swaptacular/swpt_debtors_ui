@@ -30,8 +30,8 @@ export class TranferCreationTimeout extends Error {
   name = 'TranferCreationTimeout'
 }
 
-export class TranferCreationError extends Error {
-  name = 'TranferCreationError'
+export class ForbiddenOperation extends Error {
+  name = 'ForbiddenOperation'
 }
 
 /* If the user is logged in -- does nothing. Otherwise, redirects to
@@ -124,13 +124,11 @@ class UserContext {
     return actionRecord as CreateTransferActionWithId
   }
 
-  /* Tries to execute/re-execute the given
-   * `CreateTransferAction`. If the execution is successful, the
-   * given action record is deleted, and a `TransferRecord` instance is
-   * returned. The caller must be prepared this method to throw:
-   * `ServerSessionError` in case of a network error;
-   * `TranferCreationError` in case of failed tranfer creation request;
-   * `TranferCreationTimeout` in case of transfer creation timeout;
+  /* Tries to execute/re-execute the given `CreateTransferAction`. If
+   * the execution is successful, the given action record is deleted,
+   * and a `TransferRecord` instance is returned. The caller must be
+   * prepared this method to throw `ServerSessionError`,
+   * `ForbiddenOperation`, `TranferCreationTimeout`, or
    * `RecordDoesNotExist` in case of a failure due to concurrent
    * execution/deletion of the action. */
   async executeCreateTransferAction(action: CreateTransferActionWithId): Promise<TransferRecord> {
@@ -166,7 +164,7 @@ class UserContext {
           const execution = { startedAt, result }
           await db.replaceActionRecord(action, { ...action, execution })
           action.execution = execution
-          throw new TranferCreationError(error)
+          throw error === 'forbidden operation' ? new ForbiddenOperation() : new ServerSessionError(e.message)
         } else throw e
       }
       transferRecord = await db.createTransferRecord(action, transfer)
