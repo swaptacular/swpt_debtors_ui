@@ -50,7 +50,7 @@ export async function obtainUserContext(): Promise<UserContext | undefined> {
     if (alreadyTriedToUpdate) {
       await logout()
     }
-    await update()
+    await update(false)
     alreadyTriedToUpdate = true
   }
   return new UserContext(await db.getDebtorRecord(userId))
@@ -58,10 +58,10 @@ export async function obtainUserContext(): Promise<UserContext | undefined> {
 
 /* Tries to update the local database, reading the latest data from
  * the server. Any network failures will be swallowed. */
-async function update(): Promise<void> {
+async function update(getTransfers = true): Promise<void> {
   let data
   try {
-    data = await getUserData()
+    data = await getUserData(getTransfers)
   } catch (e: unknown) {
     if (e instanceof ServerSessionError) {
       console.log(e)

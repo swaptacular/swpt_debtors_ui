@@ -30,28 +30,30 @@ function calcParallelTimeout(numberOfParallelRequests: number): number {
   return appConfig.serverApiTimeout * (numberOfParallelRequests + n - 1) / n
 }
 
-export async function getUserData(): Promise<UserData> {
+export async function getUserData(getTransfers = true): Promise<UserData> {
   const debtorResponse = await server.getEntrypointResponse() as HttpResponse<Debtor>
   const debtor = { ...debtorResponse.data }
   debtor.uri = debtorResponse.buildUri(debtor.uri)
 
-  const transfersListUri = debtorResponse.buildUri(debtor.transfersList.uri)
-  const transfersListResponse = await server.get(transfersListUri) as HttpResponse<TransfersList>
-  const transfersListItems = transfersListResponse.data.items
-
-  const transferUris = (
-    await Promise.all(transfersListItems
-      .map(item => transfersListResponse.buildUri(item.uri))
-      .map(async uri => {
-        const t = await db.getTransferRecord(uri)
-        return t && isConcludedTransfer(t) ? undefined : uri
-      })
-    )
-  ).filter(uri => uri !== undefined) as string[]
-  const timeout = calcParallelTimeout(transferUris.length)
-  const transfers = (
-    await Promise.all(transferUris.map(uri => server.get(uri, { timeout }))) as HttpResponse<Transfer>[]
-  ).map(response => ({ ...response.data, uri: response.url } as Transfer))
+  let transfers: Transfer[] = []
+  if (getTransfers) {
+    const transfersListUri = debtorResponse.buildUri(debtor.transfersList.uri)
+    const transfersListResponse = await server.get(transfersListUri) as HttpResponse<TransfersList>
+    const transfersListItems = transfersListResponse.data.items
+    const transferUris = (
+      await Promise.all(transfersListItems
+        .map(item => transfersListResponse.buildUri(item.uri))
+        .map(async uri => {
+          const t = await db.getTransferRecord(uri)
+          return t && isConcludedTransfer(t) ? undefined : uri
+        })
+      )
+    ).filter(uri => uri !== undefined) as string[]
+    const timeout = calcParallelTimeout(transferUris.length)
+    transfers = (
+      await Promise.all(transferUris.map(uri => server.get(uri, { timeout }))) as HttpResponse<Transfer>[]
+    ).map(response => ({ ...response.data, uri: response.url } as Transfer))
+  }
 
   return {
     debtor,
