@@ -183,25 +183,22 @@ class UserContext {
     return transferRecord
   }
 
-  /* Determines if the given create transfer action can be deleted. */
+  /* Determines if the given create transfer action can be deleted. A
+   * started create transfer action can be deleted only if is has
+   * failed, or timed out without initiating a transfer. */
   canDeleteCreateTransferAction(action: CreateTransferActionWithId): boolean {
     const { startedAt, result } = action.execution ?? {}
     return (
       !startedAt ||
       result?.ok === false ||
-      (Date.now() - startedAt.getTime()) > 1000 * (TRANSFER_DELETION_DELAY_SECONDS - 3600)
+      (!result && (Date.now() - startedAt.getTime()) > 1000 * (TRANSFER_DELETION_DELAY_SECONDS - 3600))
     )
   }
 
-  /* Deletes a failed `CreateTransferAction`. Note that the passed
-   * `action` should either be failed, or never started. The caller
-   * must be prepared this method to throw `RecordDoesNotExist` in
-   * case of a failure due to concurrent execution/deletion of the
-   * action.*/
+  /* Deletes a failed `CreateTransferAction`. The caller must be
+   * prepared this method to throw `RecordDoesNotExist` in case of a
+   * failure due to concurrent execution/deletion of the action.*/
   async deleteCreateTransferAction(action: CreateTransferActionWithId): Promise<void> {
-    if (!this.canDeleteCreateTransferAction(action)) {
-      throw new Error('Can not delete started create transfer action which has not failed or timed out.')
-    }
     await db.replaceActionRecord(action)
   }
 
