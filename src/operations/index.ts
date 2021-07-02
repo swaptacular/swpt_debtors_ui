@@ -226,3 +226,9 @@ export function canDeleteCreateTransferAction(action: CreateTransferActionWithId
 export function canExecuteCreateTransferAction(action: CreateTransferActionWithId): boolean {
   return action.execution?.result?.ok !== false
 }
+
+/* Determines whether the given create transfer action can be
+ * edited. */
+export function canEditCreateTransferAction(action: CreateTransferActionWithId): boolean {
+  return !action.execution
+}

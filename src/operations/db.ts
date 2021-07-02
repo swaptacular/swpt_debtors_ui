@@ -107,6 +107,10 @@ export type AbortTransferAction =
   & ResourceReference
   & { actionType: 'AbortTransfer' }
 
+export type AbortTransferActionWithId =
+  & ActionRecordWithId
+  & AbortTransferAction
+
 export type TaskData =
   & UserReference
   & {
