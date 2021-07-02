@@ -1,5 +1,11 @@
 import { v4 as uuidv4 } from 'uuid';
-import { server, ServerSessionError, HttpResponse, HttpError, Transfer } from './server'
+import {
+  server,
+  ServerSessionError,
+  HttpResponse, HttpError,
+  Transfer,
+  Error as WebApiError,
+} from './server'
 import {
   db,
   DebtorRecordWithId,
@@ -28,6 +34,10 @@ export type {
 
 export class TranferCreationTimeout extends Error {
   name = 'TranferCreationTimeout'
+}
+
+export class TranferCreationError extends Error {
+  name = 'TranferCreationError'
 }
 
 export class ForbiddenOperation extends Error {
@@ -128,51 +138,60 @@ class UserContext {
    * the execution is successful, the given action record is deleted,
    * and a `TransferRecord` instance is returned. The caller must be
    * prepared this method to throw `ServerSessionError`,
-   * `ForbiddenOperation`, `TranferCreationTimeout`, or
-   * `RecordDoesNotExist` in case of a failure due to concurrent
-   * execution/deletion of the action. */
+   * `ForbiddenOperation`, `TranferCreationError`,
+   * `TranferCreationTimeout`, or `RecordDoesNotExist` in case of a
+   * failure due to concurrent execution/deletion of the action. */
   async executeCreateTransferAction(action: CreateTransferActionWithId): Promise<TransferRecord> {
     let transferRecord
-
-    // (Re)start the execution of the action if necessary.
     let { startedAt, result } = action.execution ?? {}
-    if (!startedAt || (result?.ok === false)) {
-      startedAt = new Date()
-      result = undefined
-      const execution = { startedAt }
-      await db.replaceActionRecord(action, { ...action, execution })
-      action.execution = execution
-    }
-
-    if (!result) {
-      if (this.canDeleteCreateTransferAction(action)) {
-        throw new TranferCreationTimeout()
-      }
-      let transfer
-      try {
-        const response = await server.post(
-          this.createTransferUri,
-          action.creationRequest,
-          { attemptLogin: true },
-        ) as HttpResponse<Transfer>
-        transfer = response.data
-        transfer.uri = response.buildUri(transfer.uri)
-      } catch (e: unknown) {
-        if (e instanceof HttpError) {
-          const error = e.status === 403 ? 'forbidden operation' as const : 'unexpected error' as const
-          const result = { ok: false as const, error }
-          const execution = { startedAt, result }
+    switch (result?.ok) {
+      case undefined:
+        if (!startedAt) {
+          startedAt = new Date()
+          const execution = { startedAt }
           await db.replaceActionRecord(action, { ...action, execution })
           action.execution = execution
-          throw error === 'forbidden operation' ? new ForbiddenOperation() : new ServerSessionError(e.message)
-        } else throw e
-      }
-      transferRecord = await db.createTransferRecord(action, transfer)
+        }
+        if (this.canDeleteCreateTransferAction(action)) {
+          throw new TranferCreationTimeout()
+        }
+        try {
+          const response = await server.post(
+            this.createTransferUri,
+            action.creationRequest,
+            { attemptLogin: true },
+          ) as HttpResponse<Transfer>
+          const transfer = response.data
+          transfer.uri = response.buildUri(transfer.uri)
+          transferRecord = await db.createTransferRecord(action, transfer)
+        } catch (e: unknown) {
+          if (e instanceof HttpError) {
+            switch (e.status) {
+              case 403:
+                throw new ForbiddenOperation()
+              case 422:
+                const error: WebApiError = (typeof e.data === 'object' ? e.data : null) ?? {}
+                const execution = { startedAt, result: { ...error, ok: false as const } }
+                await db.replaceActionRecord(action, { ...action, execution })
+                action.execution = execution
+                throw new TranferCreationError()
+              default:
+                throw new ServerSessionError(`unexpected status code (${e.status})`)
+            }
+          } else throw e
+        }
+        break
 
-    } else {
-      transferRecord = await db.transfers.get(result.transferUri)
-      if (!transferRecord) throw new Error('no transfer record')
-      db.actions.delete(action.actionId)
+      case true:
+        transferRecord = await db.transfers.get(result.transferUri)
+        if (!transferRecord) {
+          throw new Error('missing transfer record')
+        }
+        db.actions.delete(action.actionId)
+        break
+
+      case false:
+        throw new TranferCreationError()
     }
 
     if (!transferRecord.result && transferRecord.checkupAt) {

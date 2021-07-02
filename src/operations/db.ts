@@ -6,6 +6,7 @@ import type {
   DebtorConfig,
   Transfer,
   TransferCreationRequest,
+  Error as WebApiError,
 } from '../web-api-schemas'
 import { PaymentInfo, parseTransferNote } from './payment-requests'
 
@@ -83,8 +84,6 @@ export type UpdateConfigAction =
   & ConfigData
   & { actionType: 'UpdateConfig' }
 
-export type CreateTransferError = 'forbidden operation' | 'unexpected error'
-
 export type CreateTransferAction =
   & ActionData
   & {
@@ -95,7 +94,7 @@ export type CreateTransferAction =
       startedAt: Date,
       result?:
       | { ok: true, transferUri: string }
-      | { ok: false, error: CreateTransferError },
+      | { ok: false } & WebApiError,
     }
   }
 
