@@ -207,7 +207,7 @@ class UserContext {
 }
 
 /* Determines whether the given create transfer action can be
- * deleted. A started create transfer action can be deleted only if is
+ * deleted. A started create transfer action can be deleted only if it
  * has failed, or timed out without initiating a transfer. */
 export function canDeleteCreateTransferAction(action: CreateTransferActionWithId): boolean {
   const { startedAt, result } = action.execution ?? {}
