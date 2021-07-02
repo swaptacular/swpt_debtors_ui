@@ -389,8 +389,8 @@ class DebtorsDb extends Dexie {
             case 'delayed':
               await this.putTransferRecord(userId, transfer, parseTransferNote(transfer))
               const existingAbortTransferAction = await this.actions
-                .where({ userId })
-                .filter(action => action.actionType === 'AbortTransfer' && action.transferUri === transferUri)
+                .where({ transferUri })
+                .filter(action => action.actionType === 'AbortTransfer' && action.userId === userId)
                 .first()
               if (!existingAbortTransferAction) {
                 await this.actions.add({ userId, transferUri, actionType: 'AbortTransfer', createdAt: new Date() })
