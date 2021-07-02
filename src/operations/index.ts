@@ -134,6 +134,12 @@ class UserContext {
     return actionRecord as CreateTransferActionWithId
   }
 
+  /* Determines whether the given create transfer action can be
+   * (re)executed. */
+  canExecuteCreateTransferAction(action: CreateTransferActionWithId): boolean {
+    return action.execution?.result?.ok !== false
+  }
+
   /* Tries to (re)execute the given create transfer action. If the
    * execution is successful, the given action record is deleted, and
    * a `TransferRecord` instance is returned. The caller must be
@@ -199,6 +205,24 @@ class UserContext {
     return transferRecord
   }
 
+  /* Determines whether the given create transfer action can be safely
+   * deleted. A started create transfer action can be safely deleted
+   * only if it has failed, or timed out without initiating a
+   * transfer. */
+  canDeleteCreateTransferAction(action: CreateTransferActionWithId): boolean {
+    // TODO: Make this function smarter. For example, if the latest
+    // attempt (POST-request) to create the transfer has been
+    // performed some time (like 1 hour) before the latest successful
+    // update, and still there is no corresponding transfer record, it
+    // is probably safe to delete.
+    const { startedAt, result } = action.execution ?? {}
+    return (
+      !startedAt ||
+      result?.ok === false ||
+      (!result && hasTimedOut(startedAt))
+    )
+  }
+
   /* Deletes the given create transfer action. The caller must be
    * prepared this method to throw `RecordDoesNotExist` in case of a
    * failure due to concurrent execution/deletion of the action.*/
@@ -206,33 +230,13 @@ class UserContext {
     await db.replaceActionRecord(action)
   }
 
-}
+  /* Determines whether the given create transfer action can be
+   * edited. */
+  canEditCreateTransferAction(action: CreateTransferActionWithId): boolean {
+    return !action.execution
+  }
 
-/* Determines whether the given create transfer action can be safely
- * deleted. A started create transfer action can be safely deleted
- * only if it has failed, or timed out without initiating a
- * transfer. */
-export function canDeleteCreateTransferAction(action: CreateTransferActionWithId): boolean {
-  const { startedAt, result } = action.execution ?? {}
-  return (
-    !startedAt ||
-    result?.ok === false ||
-    (!result && hasTimedOut(startedAt))
-  )
 }
-
-/* Determines whether the given create transfer action can be
- * (re)executed. */
-export function canExecuteCreateTransferAction(action: CreateTransferActionWithId): boolean {
-  return action.execution?.result?.ok !== false
-}
-
-/* Determines whether the given create transfer action can be
- * edited. */
-export function canEditCreateTransferAction(action: CreateTransferActionWithId): boolean {
-  return !action.execution
-}
-
 
 function hasTimedOut(startedAt: Date): boolean {
   return Date.now() - startedAt.getTime() > 1000 * (TRANSFER_DELETION_DELAY_SECONDS - 3600)
