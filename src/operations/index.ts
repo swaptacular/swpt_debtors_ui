@@ -109,7 +109,7 @@ class UserContext {
   }
 
   /* Reads a payment request, and adds and returns a new
-   * `CreateTransferAction`. May throw `IvalidPaymentRequest`. */
+   * create transfer action. May throw `IvalidPaymentRequest`. */
   async processPaymentRequest(blob: Blob): Promise<CreateTransferActionWithId> {
     const request = await parsePaymentRequest(blob)
     const actionRecord = {
@@ -130,7 +130,7 @@ class UserContext {
         description: request.description,
       }
     }
-    await db.createActionRecord(actionRecord)  // adds `actionId` field
+    await db.createActionRecord(actionRecord)  // adds the `actionId` field
     return actionRecord as CreateTransferActionWithId
   }
 
@@ -140,7 +140,9 @@ class UserContext {
    * prepared this method to throw `ServerSessionError`,
    * `ForbiddenOperation`, `WrongTransferData`,
    * `TranferCreationTimeout`, or `RecordDoesNotExist` in case of a
-   * failure due to concurrent execution/deletion of the action. */
+   * failure due to concurrent execution/deletion of the action. Note
+   * that the passed `action` object will be modified according to the
+   * changes occurring in the state of the action record. */
   async executeCreateTransferAction(action: CreateTransferActionWithId): Promise<TransferRecord> {
     let transferRecord
     let { startedAt, result } = action.execution ?? {}
