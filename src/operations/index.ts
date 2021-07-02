@@ -135,8 +135,8 @@ class UserContext {
   }
 
   /* Tries to (re)execute the given create transfer action. If the
-   * execution is successful, the action record is deleted, and a
-   * `TransferRecord` instance is returned. The caller must be
+   * execution is successful, the given action record is deleted, and
+   * a `TransferRecord` instance is returned. The caller must be
    * prepared this method to throw `ServerSessionError`,
    * `ForbiddenOperation`, `WrongTransferData`,
    * `TranferCreationTimeout`, or `RecordDoesNotExist` in case of a
@@ -197,7 +197,7 @@ class UserContext {
     return transferRecord
   }
 
-  /* Deletes a failed `CreateTransferAction`. The caller must be
+  /* Deletes the given create transfer action. The caller must be
    * prepared this method to throw `RecordDoesNotExist` in case of a
    * failure due to concurrent execution/deletion of the action.*/
   async deleteCreateTransferAction(action: CreateTransferActionWithId): Promise<void> {
@@ -206,9 +206,10 @@ class UserContext {
 
 }
 
-/* Determines whether the given create transfer action can be
- * deleted. A started create transfer action can be deleted only if it
- * has failed, or timed out without initiating a transfer. */
+/* Determines whether the given create transfer action can be safely
+ * deleted. A started create transfer action can be safely deleted
+ * only if it has failed, or timed out without initiating a
+ * transfer. */
 export function canDeleteCreateTransferAction(action: CreateTransferActionWithId): boolean {
   const { startedAt, result } = action.execution ?? {}
   return (
