@@ -417,7 +417,7 @@ class DebtorsDb extends Dexie {
           ...transfer,
           userId,
           time: existingTransferRecord.time,
-          paymentInfo: existingTransferRecord.paymentInfo ?? paymentInfo,
+          paymentInfo: existingTransferRecord.paymentInfo,
         })
 
       } else {
