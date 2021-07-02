@@ -386,8 +386,9 @@ class DebtorsDb extends Dexie {
                 .where({ userId })
                 .filter(action => action.actionType === 'AbortTransfer' && action.uri === uri)
                 .first()
-              if (!existingAbortTransferAction)
+              if (!existingAbortTransferAction) {
                 await this.actions.add({ userId, uri, actionType: 'AbortTransfer', createdAt: new Date() })
+              }
               break
             case 'successful':
               await this.putTransferRecord(userId, transfer, parseTransferNote(transfer))
