@@ -205,7 +205,7 @@ test("Install and uninstall user", async () => {
     userId,
     actionType: 'AbortTransfer',
     createdAt: new Date(),
-    uri: 'https://example.com/1/transfers/xxxxxxxx',
+    transferUri: 'https://example.com/1/transfers/xxxxxxxx',
   } as const
   await expect(db.getActionRecord(456)).resolves.toBeUndefined()
   await expect(db.createActionRecord({ ...actionRecord, userId: -1 })).rejects.toBeInstanceOf(RecordDoesNotExist)
@@ -300,7 +300,7 @@ test("Install and uninstall user", async () => {
     userId,
     actionType: 'AbortTransfer',
     createdAt: new Date(),
-    uri: transfers[1].uri,
+    transferUri: transfers[1].uri,
   })
   expect(abortTransferActionId).toBeDefined()
   await db.abortTransfer(abortTransferActionId)

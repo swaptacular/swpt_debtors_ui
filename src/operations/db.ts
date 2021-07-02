@@ -104,8 +104,10 @@ export type CreateTransferActionWithId =
 
 export type AbortTransferAction =
   & ActionData
-  & ResourceReference
-  & { actionType: 'AbortTransfer' }
+  & {
+    actionType: 'AbortTransfer',
+    transferUri: string,
+  }
 
 export type AbortTransferActionWithId =
   & ActionRecordWithId
@@ -184,7 +186,7 @@ class DebtorsDb extends Dexie {
       transfers: 'uri,&[userId+time]',
 
       documents: 'uri,userId',
-      actions: '++actionId,&[userId+actionId],creationRequest.transferUuid',
+      actions: '++actionId,&[userId+actionId],creationRequest.transferUuid,transferUri',
       tasks: '++taskId,[userId+scheduledFor]',
     })
 
@@ -286,9 +288,9 @@ class DebtorsDb extends Dexie {
         throw new RecordDoesNotExist(`ActionRecord(actionId=${actionId}, actionType="AbortTransfer")`)
       }
       this.actions.delete(actionId)
-      const { uri, userId } = actionRecord
+      const { transferUri, userId } = actionRecord
       this.transfers
-        .where({ uri })
+        .where({ uri: transferUri })
         .filter(record => record.userId === userId)
         .modify({ aborted: true })
     })
@@ -380,18 +382,18 @@ class DebtorsDb extends Dexie {
       }
 
       for (const transfer of transfers) {
-        const uri = transfer.uri
-        if (!await this.isConcludedTransfer(uri)) {
+        const transferUri = transfer.uri
+        if (!await this.isConcludedTransfer(transferUri)) {
           switch (getTransferState(transfer)) {
             case 'unsuccessful':
             case 'delayed':
               await this.putTransferRecord(userId, transfer, parseTransferNote(transfer))
               const existingAbortTransferAction = await this.actions
                 .where({ userId })
-                .filter(action => action.actionType === 'AbortTransfer' && action.uri === uri)
+                .filter(action => action.actionType === 'AbortTransfer' && action.transferUri === transferUri)
                 .first()
               if (!existingAbortTransferAction) {
-                await this.actions.add({ userId, uri, actionType: 'AbortTransfer', createdAt: new Date() })
+                await this.actions.add({ userId, transferUri, actionType: 'AbortTransfer', createdAt: new Date() })
               }
               break
             case 'successful':
