@@ -32,12 +32,12 @@ export type {
   TransferRecord,
 }
 
-export class TranferCreationTimeout extends Error {
-  name = 'TranferCreationTimeout'
+export class TransferCreationTimeout extends Error {
+  name = 'TransferCreationTimeout'
 }
 
-export class TranferCreationError extends Error {
-  name = 'TranferCreationError'
+export class WrongTransferData extends Error {
+  name = 'WrongTransferData'
 }
 
 export class ForbiddenOperation extends Error {
@@ -134,11 +134,11 @@ class UserContext {
     return actionRecord as CreateTransferActionWithId
   }
 
-  /* Tries to execute/re-execute the given create transfer action. If
-   * the execution is successful, the given action record is deleted,
-   * and a `TransferRecord` instance is returned. The caller must be
+  /* Tries to (re)execute the given create transfer action. If the
+   * execution is successful, the action record is deleted, and a
+   * `TransferRecord` instance is returned. The caller must be
    * prepared this method to throw `ServerSessionError`,
-   * `ForbiddenOperation`, `TranferCreationError`,
+   * `ForbiddenOperation`, `WrongTransferData`,
    * `TranferCreationTimeout`, or `RecordDoesNotExist` in case of a
    * failure due to concurrent execution/deletion of the action. */
   async executeCreateTransferAction(action: CreateTransferActionWithId): Promise<TransferRecord> {
@@ -147,7 +147,7 @@ class UserContext {
     switch (result?.ok) {
       case undefined:
         if (startedAt) {
-          if (canDeleteCreateTransferAction(action)) throw new TranferCreationTimeout()
+          if (canDeleteCreateTransferAction(action)) throw new TransferCreationTimeout()
         } else {
           startedAt = new Date()
           const execution = { startedAt }
@@ -173,7 +173,7 @@ class UserContext {
                 const execution = { startedAt, result: { ...error, ok: false as const } }
                 await db.replaceActionRecord(action, { ...action, execution })
                 action.execution = execution
-                throw new TranferCreationError()
+                throw new WrongTransferData()
               default:
                 throw new ServerSessionError(`unexpected status code (${e.status})`)
             }
@@ -188,7 +188,7 @@ class UserContext {
         break
 
       case false:
-        throw new TranferCreationError()
+        throw new WrongTransferData()
     }
 
     if (!transferRecord.result && transferRecord.checkupAt) {
