@@ -149,7 +149,7 @@ class UserContext {
     switch (result?.ok) {
       case undefined:
         if (startedAt) {
-          if (canDeleteCreateTransferAction(action)) throw new TransferCreationTimeout()
+          if (hasTimedOut(startedAt)) throw new TransferCreationTimeout()
         } else {
           startedAt = new Date()
           const execution = { startedAt }
@@ -217,7 +217,7 @@ export function canDeleteCreateTransferAction(action: CreateTransferActionWithId
   return (
     !startedAt ||
     result?.ok === false ||
-    (!result && Date.now() - startedAt.getTime() > 1000 * (TRANSFER_DELETION_DELAY_SECONDS - 3600))
+    (!result && hasTimedOut(startedAt))
   )
 }
 
@@ -231,4 +231,9 @@ export function canExecuteCreateTransferAction(action: CreateTransferActionWithI
  * edited. */
 export function canEditCreateTransferAction(action: CreateTransferActionWithId): boolean {
   return !action.execution
+}
+
+
+function hasTimedOut(startedAt: Date): boolean {
+  return Date.now() - startedAt.getTime() > 1000 * (TRANSFER_DELETION_DELAY_SECONDS - 3600)
 }
