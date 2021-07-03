@@ -329,6 +329,8 @@ class DebtorsDb extends Dexie {
         },
         paymentInfo: transferRecord.paymentInfo,
         requestedAmount: transferRecord.noteFormat === 'PAYMENT0' ? transferRecord.amount : 0n,
+        // TODO: When working with the "Payments Web API", the
+        // `requestedDeadline` field must be restored too.
       }
       await db.createActionRecord(createTransferAction)  // adds the `actionId` field
       return createTransferAction as CreateTransferActionWithId

@@ -113,6 +113,11 @@ class UserContext {
    * create transfer action. May throw `IvalidPaymentRequest`. */
   async processPaymentRequest(blob: Blob): Promise<CreateTransferActionWithId> {
     const request = await parsePaymentRequest(blob)
+    if (request.deadline) {
+      // TODO: When working with the "Payments Web API", deadlines
+      // must be allowed.
+      throw new IvalidPaymentRequest('deadlines are not allowed')
+    }
     const actionRecord = {
       userId: this.userId,
       actionType: 'CreateTransfer' as const,
