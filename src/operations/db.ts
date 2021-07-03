@@ -300,14 +300,17 @@ class DebtorsDb extends Dexie {
       transferRecord.aborted = true
       await this.transfers.put(transferRecord)
 
-      // Schedule the deletion of the transfer as soon as possible.
-      const initiationTime = new Date(transferRecord.initiatedAt).getTime() || Date.now()
-      await this.tasks.put({
-        userId,
-        taskType: 'DeleteTransfer',
-        scheduledFor: new Date(initiationTime + 1000 * TRANSFER_DELETION_MIN_DELAY_SECONDS),
-        transferUri,
-      })
+      // Unless the transfer was delayed, but turned out successful,
+      // schedule transfer's deletion as soon as possible.
+      if (!transferRecord.result?.committedAmount) {
+        const initiationTime = new Date(transferRecord.initiatedAt).getTime() || Date.now()
+        await this.tasks.put({
+          userId,
+          taskType: 'DeleteTransfer',
+          scheduledFor: new Date(initiationTime + 1000 * TRANSFER_DELETION_MIN_DELAY_SECONDS),
+          transferUri,
+        })
+      }
       return transferRecord
     })
   }
