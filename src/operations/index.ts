@@ -232,12 +232,6 @@ class UserContext {
     await db.replaceActionRecord(action)
   }
 
-  /* Determines whether the given create transfer action can be
-   * edited. */
-  canEditCreateTransferAction(action: CreateTransferActionWithId): boolean {
-    return !action.execution
-  }
-
 }
 
 function hasTimedOut(startedAt: Date): boolean {
