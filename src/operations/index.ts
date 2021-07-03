@@ -128,7 +128,9 @@ class UserContext {
         payeeReference: request.payeeReference,
         payeeName: request.payeeName,
         description: request.description,
-      }
+      },
+      requestedAmount: request.amount,
+      requestedDeadline: request.deadline,
     }
     await db.createActionRecord(actionRecord)  // adds the `actionId` field
     return actionRecord as CreateTransferActionWithId

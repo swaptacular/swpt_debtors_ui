@@ -90,12 +90,12 @@ export type CreateTransferAction =
     actionType: 'CreateTransfer',
     creationRequest: TransferCreationRequest,
     paymentInfo: PaymentInfo,
+    requestedAmount: bigint,
+    requestedDeadline?: Date,
     execution?: {
       startedAt: Date,
-      result?:
-      | { ok: true, transferUri: string }
-      | { ok: false } & WebApiError,
-    }
+      result?: { ok: true, transferUri: string } | { ok: false } & WebApiError,
+    },
   }
 
 export type CreateTransferActionWithId =
