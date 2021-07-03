@@ -7,7 +7,7 @@ window.appConfig = {
     clientId: 'localhost',
     redirectUrl: 'http://localhost:5000/',
   },
-  TransferDeletionDelaySeconds: 30 * 86400,
+  TransferDeletionDelaySeconds: 15 * 86400,
 }
 
 // if('serviceWorker' in navigator) {

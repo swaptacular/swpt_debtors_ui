@@ -140,7 +140,7 @@ export class RecordDoesNotExist extends Error {
   name = 'RecordDoesNotExist'
 }
 
-export const TRANSFER_DELETION_MIN_DELAY_SECONDS = 10 * 86400  // 10 days
+export const TRANSFER_DELETION_MIN_DELAY_SECONDS = 5 * 86400  // 5 days
 export const TRANSFER_DELETION_DELAY_SECONDS = Math.max(
   appConfig.TransferDeletionDelaySeconds, TRANSFER_DELETION_MIN_DELAY_SECONDS)
 
