@@ -7,5 +7,6 @@ declare var appConfig = {
     tokenUrl: string,
     clientId: string,
     redirectUrl: string,
-  }
+  },
+  TransferDeletionDelaySeconds: number,
 }

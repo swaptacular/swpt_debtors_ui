@@ -6,7 +6,8 @@ window.appConfig = {
     tokenUrl: 'https://demo.swaptacular.org/debtors-hydra/oauth2/token',
     clientId: 'localhost',
     redirectUrl: 'http://localhost:5000/',
-  }
+  },
+  TransferDeletionDelaySeconds: 30 * 86400,
 }
 
 // if('serviceWorker' in navigator) {

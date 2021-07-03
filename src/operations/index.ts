@@ -13,7 +13,7 @@ import {
   CreateTransferActionWithId,
   TransferRecord,
   RecordDoesNotExist,
-  TRANSFER_DELETION_DELAY_SECONDS,
+  TRANSFER_DELETION_MIN_DELAY_SECONDS,
 } from './db'
 import { parsePaymentRequest, IvalidPaymentRequest, generatePayment0TransferNote } from './payment-requests'
 import { UpdateScheduler } from './scheduler'
@@ -239,5 +239,5 @@ class UserContext {
 }
 
 function hasTimedOut(startedAt: Date): boolean {
-  return Date.now() - startedAt.getTime() > 1000 * (TRANSFER_DELETION_DELAY_SECONDS - 3600)
+  return Date.now() - startedAt.getTime() > 1000 * (TRANSFER_DELETION_MIN_DELAY_SECONDS - 3600)
 }
