@@ -239,5 +239,6 @@ class UserContext {
 }
 
 function hasTimedOut(startedAt: Date): boolean {
-  return Date.now() - startedAt.getTime() > 1000 * (TRANSFER_DELETION_MIN_DELAY_SECONDS - 3600)
+  const safeMarginSeconds = 3600
+  return Date.now() - startedAt.getTime() > 1000 * (TRANSFER_DELETION_MIN_DELAY_SECONDS - safeMarginSeconds)
 }
