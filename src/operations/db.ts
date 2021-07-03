@@ -297,12 +297,13 @@ class DebtorsDb extends Dexie {
       if (!(transferRecord && transferRecord.userId === userId)) {
         throw new Error('missing transfer record')
       }
-      transferRecord.aborted = true
-      await this.transfers.put(transferRecord)
 
       // Unless the transfer was delayed, but turned out successful,
-      // schedule transfer's deletion as soon as possible.
+      // mark the transfer as aborted, and schedule its deletion as
+      // soon as possible.
       if (!transferRecord.result?.committedAmount) {
+        transferRecord.aborted = true
+        await this.transfers.put(transferRecord)
         const initiationTime = new Date(transferRecord.initiatedAt).getTime() || Date.now()
         await this.tasks.put({
           userId,
