@@ -131,9 +131,9 @@ export type TaskRecordWithId =
 
 export type DeleteTransferTask =
   & TaskData
-  & ResourceReference
   & {
     taskType: 'DeleteTransfer',
+    transferUri: string,
   }
 
 export class RecordDoesNotExist extends Error {
@@ -488,7 +488,7 @@ class DebtorsDb extends Dexie {
           userId,
           taskType: 'DeleteTransfer',
           scheduledFor: new Date(finalizationTime + 1000 * TRANSFER_DELETION_DELAY_SECONDS),
-          uri: transfer.uri,
+          transferUri: transfer.uri,
         })
       }
 
