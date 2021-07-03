@@ -318,16 +318,16 @@ class DebtorsDb extends Dexie {
 
   async retryTransfer(actionId: number): Promise<CreateTransferActionWithId>
   async retryTransfer(transferRecord: TransferRecord): Promise<CreateTransferActionWithId>
-  async retryTransfer(x: number | TransferRecord): Promise<CreateTransferActionWithId> {
-    if (typeof x === 'number') {
-      const actionId = x
-      return await this.transaction('rw', [this.transfers, this.actions], async () => {
+  async retryTransfer(param: number | TransferRecord): Promise<CreateTransferActionWithId> {
+    if (typeof param === 'number') {
+      const actionId = param
+      return await this.transaction('rw', [this.transfers, this.actions, this.tasks], async () => {
         const transferRecord = await this.abortTransfer(actionId)
         return await this.retryTransfer(transferRecord)
       })
 
     } else {
-      const transferRecord = x
+      const transferRecord = param
       const createTransferAction = {
         userId: transferRecord.userId,
         actionType: 'CreateTransfer' as const,
