@@ -154,7 +154,7 @@ function getTransferState(transfer: Transfer): 'waiting' | 'delayed' | 'successf
     const now = new Date()
     return now <= deadline ? 'waiting' : 'delayed'
 
-  } else if (result.error) {
+  } else if (result.committedAmount === 0n) {
     return 'unsuccessful'
 
   } else {
@@ -285,7 +285,7 @@ class DebtorsDb extends Dexie {
   }
 
   async abortTransfer(actionId: number): Promise<TransferRecord> {
-    return await this.transaction('rw', [this.transfers, this.actions], async () => {
+    return await this.transaction('rw', [this.transfers, this.actions, this.tasks], async () => {
       const actionRecord = await this.actions.get(actionId)
       if (!(actionRecord && actionRecord.actionType === 'AbortTransfer')) {
         throw new RecordDoesNotExist()
@@ -299,6 +299,15 @@ class DebtorsDb extends Dexie {
       }
       transferRecord.aborted = true
       await this.transfers.put(transferRecord)
+
+      // Schedule the deletion of the transfer as soon as possible.
+      const initiationTime = new Date(transferRecord.initiatedAt).getTime() || Date.now()
+      await this.tasks.put({
+        userId,
+        taskType: 'DeleteTransfer',
+        scheduledFor: new Date(initiationTime + 1000 * TRANSFER_DELETION_MIN_DELAY_SECONDS),
+        transferUri,
+      })
       return transferRecord
     })
   }
@@ -484,7 +493,7 @@ class DebtorsDb extends Dexie {
           })
       }
 
-      if (transfer.result) {
+      if (transfer.result?.committedAmount) {
         const finalizationTime = new Date(transfer.result.finalizedAt).getTime() || Date.now()
         await this.tasks.put({
           userId,
