@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid';
 import equal from 'fast-deep-equal'
 import Dexie from 'dexie'
 import type {
@@ -269,7 +270,7 @@ class DebtorsDb extends Dexie {
       const { actionId, userId, paymentInfo } = action
       const existing = await this.actions.get(actionId)
       if (!equal(existing, action)) {
-        throw new RecordDoesNotExist('The original record has been changed or deleted.')
+        throw new RecordDoesNotExist()
       }
       this.actions.delete(actionId)
       if (await this.putTransferRecord(userId, transfer, paymentInfo)) {
@@ -283,19 +284,55 @@ class DebtorsDb extends Dexie {
     })
   }
 
-  async abortTransfer(actionId: number): Promise<void> {
+  async abortTransfer(actionId: number): Promise<TransferRecord> {
     return await this.transaction('rw', [this.transfers, this.actions], async () => {
       const actionRecord = await this.actions.get(actionId)
       if (!(actionRecord && actionRecord.actionType === 'AbortTransfer')) {
-        throw new RecordDoesNotExist(`ActionRecord(actionId=${actionId}, actionType="AbortTransfer")`)
+        throw new RecordDoesNotExist()
       }
+      const { userId, transferUri } = actionRecord
       this.actions.delete(actionId)
-      const { transferUri, userId } = actionRecord
-      this.transfers
-        .where({ uri: transferUri })
-        .filter(record => record.userId === userId)
-        .modify({ aborted: true })
+
+      let transferRecord = await this.transfers.get(transferUri)
+      if (!(transferRecord && transferRecord.userId === userId)) {
+        throw new Error('missing transfer record')
+      }
+      transferRecord.aborted = true
+      await this.transfers.put(transferRecord)
+      return transferRecord
     })
+  }
+
+  async retryTransfer(actionId: number): Promise<CreateTransferActionWithId>
+  async retryTransfer(transferRecord: TransferRecord): Promise<CreateTransferActionWithId>
+  async retryTransfer(x: number | TransferRecord): Promise<CreateTransferActionWithId> {
+    if (typeof x === 'number') {
+      const actionId = x
+      return await this.transaction('rw', [this.transfers, this.actions], async () => {
+        const transferRecord = await this.abortTransfer(actionId)
+        return await this.retryTransfer(transferRecord)
+      })
+
+    } else {
+      const transferRecord = x
+      const createTransferAction = {
+        userId: transferRecord.userId,
+        actionType: 'CreateTransfer' as const,
+        createdAt: new Date(),
+        creationRequest: {
+          type: 'TransferCreationRequest',
+          recipient: transferRecord.recipient,
+          amount: transferRecord.amount,
+          transferUuid: uuidv4(),
+          noteFormat: transferRecord.noteFormat,
+          note: transferRecord.note,
+        },
+        paymentInfo: transferRecord.paymentInfo,
+        requestedAmount: transferRecord.noteFormat === 'PAYMENT0' ? transferRecord.amount : 0n,
+      }
+      await db.createActionRecord(createTransferAction)  // adds the `actionId` field
+      return createTransferAction as CreateTransferActionWithId
+    }
   }
 
   async getActionRecords(userId: number, options: ListQueryOptions = {}): Promise<ActionRecordWithId[]> {
@@ -336,7 +373,7 @@ class DebtorsDb extends Dexie {
       const { actionId, userId } = original
       const existing = await this.actions.get(actionId)
       if (!equal(existing, original)) {
-        throw new RecordDoesNotExist('The original record has been changed or deleted.')
+        throw new RecordDoesNotExist()
       }
       if (replacement === undefined) {
         await this.actions.delete(actionId)
