@@ -249,7 +249,7 @@ class UserContext {
 }
 
 function hasTimedOut(startedAt: Date): boolean {
-  const safetyMargin = 3_600_000  // 1 hour
+  const safetyMargin = 2 * appConfig.serverApiTimeout + 3_600_000  // at least 1 hour
   return Date.now() + safetyMargin > startedAt.getTime() + 1000 * TRANSFER_DELETION_MIN_DELAY_SECONDS
 }
 
