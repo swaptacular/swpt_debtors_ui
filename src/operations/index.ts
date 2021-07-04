@@ -151,12 +151,6 @@ class UserContext {
     return actionRecord as CreateTransferActionWithId
   }
 
-  /* Determines whether the given create transfer action can be
-   * (re)executed. */
-  canExecuteCreateTransferAction(action: CreateTransferActionWithId): boolean {
-    return action.execution?.result?.ok !== false
-  }
-
   getCreateTransferActionStatus(action: CreateTransferActionWithId): CreateTransferActionStatus {
     if (!action.execution) return 'Draft'
     const { startedAt, unresolvedRequestAt, result } = action.execution
@@ -237,22 +231,12 @@ class UserContext {
     return transferRecord
   }
 
-  /* Determines whether the given create transfer action can be safely
-   * deleted. A started create transfer action can be safely deleted
-   * only if it has failed, or timed out without initiating a
-   * transfer. */
-  canDeleteCreateTransferAction(action: CreateTransferActionWithId): boolean {
-    // TODO: Make this function smarter. For example, if the latest
-    // attempt (POST-request) to create the transfer has been
-    // performed some time (like 1 hour) before the latest successful
-    // update, and still there is no corresponding transfer record, it
-    // is probably safe to delete.
-    const { startedAt, result } = action.execution ?? {}
-    return (
-      !startedAt ||
-      result?.ok === false ||
-      (!result && hasTimedOut(startedAt))
-    )
+  /* Updates the state of the given create transfer action. May
+   * perform a network request. Note that the passed `action` object
+   * will be modified according to the changes that have occurred in
+   * the state of the action record.*/
+  async checkCreateTransferAction(action: CreateTransferActionWithId): Promise<void> {
+    // TODO
   }
 
   /* Deletes the given create transfer action. The caller must be
