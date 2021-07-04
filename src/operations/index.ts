@@ -34,6 +34,14 @@ export type {
   TransferRecord,
 }
 
+export type CreateTransferActionStatus =
+  | 'Draft'
+  | 'Not sent'
+  | 'Not confirmed'
+  | 'Sent'
+  | 'Failed'
+  | 'Timed out'
+
 export class TransferCreationTimeout extends Error {
   name = 'TransferCreationTimeout'
 }
@@ -147,6 +155,21 @@ class UserContext {
    * (re)executed. */
   canExecuteCreateTransferAction(action: CreateTransferActionWithId): boolean {
     return action.execution?.result?.ok !== false
+  }
+
+  getCreateTransferActionStatus(action: CreateTransferActionWithId): CreateTransferActionStatus {
+    if (!action.execution) return 'Draft'
+    const { startedAt, unresolvedRequestAt, result } = action.execution
+    switch (result?.ok) {
+      case undefined:
+        if (hasTimedOut(startedAt)) return 'Timed out'
+        if (unresolvedRequestAt) return 'Not confirmed'
+        return 'Not sent'
+      case true:
+        return 'Sent'
+      case false:
+        return 'Failed'
+    }
   }
 
   /* Tries to (re)execute the given create transfer action. If the
