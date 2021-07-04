@@ -183,16 +183,16 @@ class UserContext {
    * changes occurring in the state of the action record. */
   async executeCreateTransferAction(action: CreateTransferActionWithId): Promise<TransferRecord> {
     let transferRecord
-    const { result, unresolvedRequestAt: previousUnresolvedRequestAt } = action.execution ?? {}
-    switch (result?.ok) {
-      case undefined:
-        const t = Date.now()
-        const startedAt = action.execution?.startedAt ?? new Date(t)
-        if (hasTimedOut(startedAt)) {
-          throw new TransferCreationTimeout()
-        }
+
+    switch (this.getCreateTransferActionStatus(action)) {
+      case 'Draft':
+      case 'Not confirmed':
+      case 'Not sent':
+        const now = Date.now()
+        const { startedAt = new Date(now), unresolvedRequestAt } = action.execution ?? {}
         const safetyMargin = 2 * appConfig.serverApiTimeout
-        await updateExecutionState(action, { startedAt, unresolvedRequestAt: new Date(t + safetyMargin) })
+        const t = Math.max(now + safetyMargin, unresolvedRequestAt?.getTime() ?? 0)
+        await updateExecutionState(action, { startedAt, unresolvedRequestAt: new Date(t) })
         try {
           const response = await server.post(
             this.createTransferUri,
@@ -209,7 +209,7 @@ class UserContext {
               await updateExecutionState(action, { startedAt, result: { ...webApiError, ok: false as const } })
               throw new WrongTransferData()
             } else {
-              await updateExecutionState(action, { startedAt, unresolvedRequestAt: previousUnresolvedRequestAt })
+              await updateExecutionState(action, { startedAt, unresolvedRequestAt })
               if (e.status === 403) throw new ForbiddenOperation()
               throw new ServerSessionError(`unexpected status code (${e.status})`)
             }
@@ -217,14 +217,18 @@ class UserContext {
         }
         break
 
-      case true:
-        transferRecord = await db.transfers.get(result.transferUri)
+      case 'Sent':
+        const transferUri: string = (action.execution?.result as any).transferUri
+        transferRecord = await db.transfers.get(transferUri)
         if (!transferRecord) throw new Error('missing transfer record')
         db.actions.delete(action.actionId)
         break
 
-      case false:
+      case 'Failed':
         throw new WrongTransferData()
+
+      case 'Timed out':
+        throw new TransferCreationTimeout()
     }
 
     if (!transferRecord.result && transferRecord.checkupAt) {
