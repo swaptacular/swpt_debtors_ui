@@ -1,5 +1,5 @@
 // ../public/config.js makes this globally available.
-declare var appConfig = {
+declare var appConfig: {
   serverApiEntrypoint: string,
   serverApiTimeout: number,
   oauth2: {

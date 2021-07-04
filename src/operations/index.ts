@@ -14,6 +14,7 @@ import {
   CreateTransferActionWithId,
   TransferRecord,
   RecordDoesNotExist,
+  ExecutionState,
   TRANSFER_DELETION_MIN_DELAY_SECONDS,
 } from './db'
 import { parsePaymentRequest, IvalidPaymentRequest, generatePayment0TransferNote } from './payment-requests'
@@ -159,17 +160,16 @@ class UserContext {
    * changes occurring in the state of the action record. */
   async executeCreateTransferAction(action: CreateTransferActionWithId): Promise<TransferRecord> {
     let transferRecord
-    let { startedAt, result } = action.execution ?? {}
+    const { result, unresolvedRequestAt: previousUnresolvedRequestAt } = action.execution ?? {}
     switch (result?.ok) {
       case undefined:
-        if (startedAt) {
-          if (hasTimedOut(startedAt)) throw new TransferCreationTimeout()
-        } else {
-          startedAt = new Date()
-          const execution = { startedAt }
-          await db.replaceActionRecord(action, { ...action, execution })
-          action.execution = execution
+        const t = Date.now()
+        const startedAt = action.execution?.startedAt ?? new Date(t)
+        if (hasTimedOut(startedAt)) {
+          throw new TransferCreationTimeout()
         }
+        const safetyMargin = 2 * appConfig.serverApiTimeout
+        await updateExecutionState(action, { startedAt, unresolvedRequestAt: new Date(t + safetyMargin) })
         try {
           const response = await server.post(
             this.createTransferUri,
@@ -181,17 +181,14 @@ class UserContext {
           transferRecord = await db.createTransferRecord(action, transfer)
         } catch (e: unknown) {
           if (e instanceof HttpError) {
-            switch (e.status) {
-              case 403:
-                throw new ForbiddenOperation()
-              case 422:
-                const error: WebApiError = (typeof e.data === 'object' ? e.data : null) ?? {}
-                const execution = { startedAt, result: { ...error, ok: false as const } }
-                await db.replaceActionRecord(action, { ...action, execution })
-                action.execution = execution
-                throw new WrongTransferData()
-              default:
-                throw new ServerSessionError(`unexpected status code (${e.status})`)
+            if (e.status === 422) {
+              const webApiError: WebApiError = (typeof e.data === 'object' ? e.data : null) ?? {}
+              await updateExecutionState(action, { startedAt, result: { ...webApiError, ok: false as const } })
+              throw new WrongTransferData()
+            } else {
+              await updateExecutionState(action, { startedAt, unresolvedRequestAt: previousUnresolvedRequestAt })
+              if (e.status === 403) throw new ForbiddenOperation()
+              throw new ServerSessionError(`unexpected status code (${e.status})`)
             }
           } else throw e
         }
@@ -241,6 +238,11 @@ class UserContext {
 }
 
 function hasTimedOut(startedAt: Date): boolean {
-  const safeMarginSeconds = 3600
-  return Date.now() - startedAt.getTime() > 1000 * (TRANSFER_DELETION_MIN_DELAY_SECONDS - safeMarginSeconds)
+  const safetyMargin = 3_600_000  // 1 hour
+  return Date.now() + safetyMargin > startedAt.getTime() + 1000 * TRANSFER_DELETION_MIN_DELAY_SECONDS
+}
+
+async function updateExecutionState(action: CreateTransferActionWithId, execution: ExecutionState): Promise<void> {
+  await db.replaceActionRecord(action, { ...action, execution })
+  action.execution = execution
 }

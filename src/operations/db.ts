@@ -85,6 +85,12 @@ export type UpdateConfigAction =
   & ConfigData
   & { actionType: 'UpdateConfig' }
 
+export type ExecutionState = {
+  startedAt: Date,
+  unresolvedRequestAt?: Date,
+  result?: { ok: true, transferUri: string } | { ok: false } & WebApiError,
+}
+
 export type CreateTransferAction =
   & ActionData
   & {
@@ -93,10 +99,7 @@ export type CreateTransferAction =
     paymentInfo: PaymentInfo,
     requestedAmount: bigint,
     requestedDeadline?: Date,
-    execution?: {
-      startedAt: Date,
-      result?: { ok: true, transferUri: string } | { ok: false } & WebApiError,
-    },
+    execution?: ExecutionState,
   }
 
 export type CreateTransferActionWithId =
