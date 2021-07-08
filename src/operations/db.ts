@@ -277,15 +277,9 @@ class DebtorsDb extends Dexie {
       if (!equal(existing, action)) {
         throw new RecordDoesNotExist()
       }
-      if (await this.putTransferRecord(userId, transfer, paymentInfo)) {
-        console.error(
-          `Instead of creating a new transfer record, an existing record has ` +
-          `been overwritten (uri="${transfer.uri}"). This can happen when a ` +
-          `non-unique UUID has been used.`
-        )
-      }
+      const transferRecord = await this.putTransferRecord(userId, transfer, paymentInfo)
       this.actions.delete(actionId)
-      return await this.transfers.get(transfer.uri) as TransferRecord
+      return transferRecord
     })
   }
 
@@ -478,40 +472,41 @@ class DebtorsDb extends Dexie {
     })
   }
 
-  private async putTransferRecord(userId: number, transfer: Transfer, paymentInfo: PaymentInfo): Promise<boolean> {
+  private async putTransferRecord(userId: number, transfer: Transfer, paymentInfo: PaymentInfo): Promise<TransferRecord> {
     return await this.transaction('rw', [this.transfers, this.actions, this.tasks], async () => {
-      const existingTransferRecord = await this.transfers.get(transfer.uri)
+      let transferRecord
 
+      const existingTransferRecord = await this.transfers.get(transfer.uri)
       if (existingTransferRecord) {
         if (userId !== existingTransferRecord.userId) {
           throw new Error('Can not alter the userId of an existing transfer record.')
         }
-        await this.transfers.put({
+        transferRecord = {
           ...transfer,
           userId,
           time: existingTransferRecord.time,
           paymentInfo: existingTransferRecord.paymentInfo,
           originatesHere: existingTransferRecord.originatesHere,
           aborted: existingTransferRecord.aborted,
-        })
+        }
+        await this.transfers.put(transferRecord)
 
       } else {
         let time = new Date(transfer.initiatedAt).getTime() || Date.now()
-        let originatesHere
-        if (await this.actions
-          .where({ 'creationRequest.transferUuid': transfer.transferUuid })
-          .modify((action: CreateTransferAction) => {
-            action.execution = {
-              startedAt: action.execution?.startedAt ?? new Date(time),
-              result: { ok: true, transferUri: transfer.uri },
-            }
-          })
-        ) {
-          originatesHere = true as const
-        }
+        const originatesHere = (
+          await this.actions
+            .where({ 'creationRequest.transferUuid': transfer.transferUuid })
+            .modify((action: CreateTransferAction) => {
+              action.execution = {
+                startedAt: action.execution?.startedAt ?? new Date(time),
+                result: { ok: true, transferUri: transfer.uri },
+              }
+            })
+        ) > 0 ? true as const : undefined
         while (true) {
           try {
-            await this.transfers.put({ ...transfer, userId, time, paymentInfo, originatesHere })
+            transferRecord = { ...transfer, userId, time, paymentInfo, originatesHere }
+            await this.transfers.put(transferRecord)
             break
           } catch (e: unknown) {
             if (!(e instanceof Dexie.ConstraintError)) throw e
@@ -530,7 +525,7 @@ class DebtorsDb extends Dexie {
         })
       }
 
-      return Boolean(existingTransferRecord)
+      return transferRecord
     })
   }
 
