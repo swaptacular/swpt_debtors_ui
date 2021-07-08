@@ -452,7 +452,7 @@ class DebtorsDb extends Dexie {
         const transferUri = transfer.uri
         const tranfserState = getTransferState(transfer)
         if (tranfserState !== 'waiting' && !await this.isConcludedTransfer(transferUri)) {
-          await this.putTransferRecord(userId, transfer, parseTransferNote(transfer))
+          await this.putTransferRecord(userId, transfer)
           const abortTransferQuery = this.actions
             .where({ transferUri })
             .filter(action => action.userId === userId && action.actionType === 'AbortTransfer')
@@ -472,7 +472,7 @@ class DebtorsDb extends Dexie {
     })
   }
 
-  async putTransferRecord(userId: number, transfer: Transfer, paymentInfo: PaymentInfo): Promise<TransferRecord> {
+  async putTransferRecord(userId: number, transfer: Transfer, paymentInfo?: PaymentInfo): Promise<TransferRecord> {
     return await this.transaction('rw', [this.transfers, this.actions, this.tasks], async () => {
       let transferRecord
 
@@ -492,6 +492,7 @@ class DebtorsDb extends Dexie {
         await this.transfers.put(transferRecord)
 
       } else {
+        paymentInfo ??= parseTransferNote(transfer)
         let time = new Date(transfer.initiatedAt).getTime() || Date.now()
         const originatesHere = (
           await this.actions

@@ -20,7 +20,6 @@ import {
 } from './db'
 import {
   parsePaymentRequest,
-  parseTransferNote,
   IvalidPaymentRequest,
   generatePayment0TransferNote,
 } from './payment-requests'
@@ -295,7 +294,7 @@ class UserContext {
       if (e instanceof HttpError && (e.status === 403 || e.status === 404)) return false
       throw e
     }
-    db.putTransferRecord(action.userId, transfer, parseTransferNote(transfer))
+    db.putTransferRecord(action.userId, transfer)
     return true
   }
 
