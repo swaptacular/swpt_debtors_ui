@@ -249,12 +249,16 @@ class UserContext {
 
   /* Deletes the given abort transfer action and marks the
    * corresponding transfer as aborted.*/
-  async abortTransfer(action: AbortTransferActionWithId): Promise<void> {
+  async abortTransfer(action: AbortTransferActionWithId): Promise<TransferRecord> {
     try {
-      await db.abortTransfer(action.actionId)
+      return await db.abortTransfer(action.actionId)
     } catch (e: unknown) {
-      // Ignore `RecordDoesNotExist` errors.
-      if (!(e instanceof RecordDoesNotExist)) throw e
+      if (e instanceof RecordDoesNotExist) {
+        // Ignore the error because it can be expected.
+        const transferRecord = await db.getTransferRecord(action.transferUri)
+        if (!transferRecord) throw new Error('missing transfer record')
+        return transferRecord
+      } else throw e
     }
   }
 
