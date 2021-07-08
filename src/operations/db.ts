@@ -456,15 +456,15 @@ class DebtorsDb extends Dexie {
           const abortTransferActionQuery = this.actions
             .where({ transferUri })
             .filter(action => action.userId === userId && action.actionType === 'AbortTransfer')
-          if (tranfserState === 'successful') {
-            abortTransferActionQuery.delete()
-          } else if (!await abortTransferActionQuery.first()) {
-            await this.actions.add({
+          if (tranfserState !== 'successful') {
+            await abortTransferActionQuery.first() || await this.actions.add({
               userId,
               transferUri,
               actionType: 'AbortTransfer',
               createdAt: new Date(),
             })
+          } else {
+            abortTransferActionQuery.delete()
           }
         }
       }
