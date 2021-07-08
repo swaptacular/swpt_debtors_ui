@@ -247,14 +247,27 @@ class UserContext {
     await db.replaceActionRecord(action)
   }
 
-  /* Deletes the given abort transfer action and marks the
-   * corresponding transfer as aborted.*/
-  async abortTransfer(action: AbortTransferActionWithId): Promise<TransferRecord> {
+  /* Retries an unsuccessful transfer.*/
+  async retryTransfer(action: AbortTransferActionWithId): Promise<CreateTransferActionWithId> {
+    try {
+      return await db.retryTransfer(action.actionId)
+    } catch (e: unknown) {
+      if (e instanceof RecordDoesNotExist) {
+        // Try to ignore this error because it can be expected.
+        const transferRecord = await db.getTransferRecord(action.transferUri)
+        if (!transferRecord) throw new Error('missing transfer record')
+        return await db.retryTransfer(transferRecord)
+      } else throw e
+    }
+  }
+
+  /* Dismisses an unsuccessful or delayed transfer.*/
+  async dismissTransfer(action: AbortTransferActionWithId): Promise<TransferRecord> {
     try {
       return await db.abortTransfer(action.actionId)
     } catch (e: unknown) {
       if (e instanceof RecordDoesNotExist) {
-        // Ignore the error because it can be expected.
+        // Try to ignore this error because it can be expected.
         const transferRecord = await db.getTransferRecord(action.transferUri)
         if (!transferRecord) throw new Error('missing transfer record')
         return transferRecord
@@ -262,10 +275,10 @@ class UserContext {
     }
   }
 
-  /* Tries to cancel the transfer corresponding to the given abort
-   * transfer action. For delayed transfers, this method should be
-   * called before calling `abortTransfer`. The caller must be
-   * prepared this method to throw `ServerSessionError`.*/
+  /* Tries to cancel a delayed transfer. For delayed transfers, this
+   * method should be called before calling `dismissTransfer`. The
+   * caller must be prepared this method to throw
+   * `ServerSessionError`.*/
   async cancelTransfer(action: AbortTransferActionWithId): Promise<void> {
     try {
       const requestBody = { type: 'TransferCancelationRequest' }
