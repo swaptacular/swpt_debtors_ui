@@ -453,18 +453,18 @@ class DebtorsDb extends Dexie {
         const tranfserState = getTransferState(transfer)
         if (tranfserState !== 'waiting' && !await this.isConcludedTransfer(transferUri)) {
           await this.putTransferRecord(userId, transfer, parseTransferNote(transfer))
-          const abortTransferActionQuery = this.actions
+          const abortTransferQuery = this.actions
             .where({ transferUri })
             .filter(action => action.userId === userId && action.actionType === 'AbortTransfer')
           if (tranfserState !== 'successful') {
-            await abortTransferActionQuery.first() || await this.actions.add({
+            await abortTransferQuery.first() || await this.actions.add({
               userId,
               transferUri,
               actionType: 'AbortTransfer',
               createdAt: new Date(),
             })
           } else {
-            abortTransferActionQuery.delete()
+            abortTransferQuery.delete()
           }
         }
       }
