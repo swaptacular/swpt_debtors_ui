@@ -63,6 +63,7 @@ export type TransferRecord =
   & {
     time: number,
     aborted?: true,
+    originatesHere?: true,
     paymentInfo: PaymentInfo,
   }
 
@@ -276,7 +277,7 @@ class DebtorsDb extends Dexie {
         throw new RecordDoesNotExist()
       }
       this.actions.delete(actionId)
-      if (await this.putTransferRecord(userId, transfer, paymentInfo)) {
+      if (await this.putTransferRecord(userId, transfer, paymentInfo, { originatesHere: true })) {
         console.error(
           `Instead of creating a new transfer record, an existing record has ` +
           `been overwritten (uri="${transfer.uri}"). This can happen when a ` +
@@ -463,7 +464,13 @@ class DebtorsDb extends Dexie {
     })
   }
 
-  private async putTransferRecord(userId: number, transfer: Transfer, paymentInfo: PaymentInfo): Promise<boolean> {
+  private async putTransferRecord(
+    userId: number,
+    transfer: Transfer,
+    paymentInfo: PaymentInfo,
+    options: { originatesHere?: true } = {},
+  ): Promise<boolean> {
+    const { originatesHere } = options
     return await this.transaction('rw', [this.transfers, this.actions, this.tasks], async () => {
       const existingTransferRecord = await this.transfers.get(transfer.uri)
 
@@ -476,6 +483,7 @@ class DebtorsDb extends Dexie {
           userId,
           time: existingTransferRecord.time,
           paymentInfo: existingTransferRecord.paymentInfo,
+          originatesHere: originatesHere ?? existingTransferRecord.originatesHere,
           aborted: existingTransferRecord.aborted,
         })
 
@@ -483,7 +491,7 @@ class DebtorsDb extends Dexie {
         let time = new Date(transfer.initiatedAt).getTime() || Date.now()
         while (true) {
           try {
-            await this.transfers.put({ ...transfer, userId, time, paymentInfo })
+            await this.transfers.put({ ...transfer, userId, time, paymentInfo, originatesHere })
             break
           } catch (e: unknown) {
             if (!(e instanceof Dexie.ConstraintError)) throw e
