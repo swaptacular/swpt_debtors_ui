@@ -447,7 +447,7 @@ class DebtorsDb extends Dexie {
       // that are not still in "waiting" state. Also, create abort
       // transfer actions for unsuccessful and delayed transfers. Note
       // that if a delayed transfer turned out to be succcessful, its
-      // corresponding abort transfer action should be deleted.
+      // corresponding abort transfer action gets deleted.
       for (const transfer of transfers) {
         const transferUri = transfer.uri
         const tranfserState = getTransferState(transfer)
