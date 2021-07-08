@@ -450,27 +450,27 @@ class DebtorsDb extends Dexie {
         }
       }
 
-      // Create transfer records for the transfers that are not still
-      // in "waiting" state. Also, create abort transfer actions for
-      // unsuccessful and delayed transfers.
+      // Create/update transfer records for the unconcluded transfers
+      // that are not still in "waiting" state. Also, create abort
+      // transfer actions for unsuccessful and delayed transfers.
       for (const transfer of transfers) {
         const transferUri = transfer.uri
-        if (!await this.isConcludedTransfer(transferUri)) {
-          switch (getTransferState(transfer)) {
-            case 'successful':
-              await this.putTransferRecord(userId, transfer, parseTransferNote(transfer))
-              break
-            case 'unsuccessful':
-            case 'delayed':
-              await this.putTransferRecord(userId, transfer, parseTransferNote(transfer))
-              const existingAbortTransferAction = await this.actions
-                .where({ transferUri })
-                .filter(action => action.actionType === 'AbortTransfer' && action.userId === userId)
-                .first()
-              if (!existingAbortTransferAction) {
-                await this.actions.add({ userId, transferUri, actionType: 'AbortTransfer', createdAt: new Date() })
-              }
-              break
+        const tranfserState = getTransferState(transfer)
+        if (tranfserState !== 'waiting' && !await this.isConcludedTransfer(transferUri)) {
+          await this.putTransferRecord(userId, transfer, parseTransferNote(transfer))
+          if (tranfserState !== 'successful') {
+            const existingAbortTransferAction = await this.actions
+              .where({ transferUri })
+              .filter(action => action.userId === userId && action.actionType === 'AbortTransfer')
+              .first()
+            if (!existingAbortTransferAction) {
+              await this.actions.add({
+                userId,
+                transferUri,
+                actionType: 'AbortTransfer',
+                createdAt: new Date(),
+              })
+            }
           }
         }
       }
