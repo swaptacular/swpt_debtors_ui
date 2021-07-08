@@ -275,18 +275,19 @@ class UserContext {
     }
   }
 
-  /* Tries to cancel a delayed transfer. For delayed transfers, this
-   * method should be called before calling `dismissTransfer`. The
-   * caller must be prepared this method to throw
-   * `ServerSessionError`.*/
-  async cancelTransfer(action: AbortTransferActionWithId): Promise<void> {
+  /* Tries to cancel a delayed transfer. Returns whether the transfer
+   * was canceled. For delayed transfers, this method should be called
+   * before calling `dismissTransfer`. The caller must be prepared
+   * this method to throw `ServerSessionError`.*/
+  async cancelTransfer(action: AbortTransferActionWithId): Promise<boolean> {
     try {
       const requestBody = { type: 'TransferCancelationRequest' }
       await server.post(action.transferUri, requestBody, { attemptLogin: true })
     } catch (e: unknown) {
-      // Ignore 403 and 404 HTTP errors.
-      if (!(e instanceof HttpError && (e.status === 403 || e.status === 404))) throw e
+      if (e instanceof HttpError && (e.status === 403 || e.status === 404)) return false
+      throw e
     }
+    return true
   }
 
 }
