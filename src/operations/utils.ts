@@ -35,28 +35,26 @@ export async function getUserData(getTransfers = true): Promise<UserData> {
   const debtor = { ...debtorResponse.data }
   debtor.uri = debtorResponse.buildUri(debtor.uri)
 
+  const transfersListUri = debtorResponse.buildUri(debtor.transfersList.uri)
+  const transfersListResponse = await server.get(transfersListUri) as HttpResponse<TransfersList>
+  const transferUris = transfersListResponse.data.items.map(item => transfersListResponse.buildUri(item.uri))
   let transfers: Transfer[] = []
   if (getTransfers) {
-    const transfersListUri = debtorResponse.buildUri(debtor.transfersList.uri)
-    const transfersListResponse = await server.get(transfersListUri) as HttpResponse<TransfersList>
-    const transfersListItems = transfersListResponse.data.items
-    const transferUris = (
-      await Promise.all(transfersListItems
-        .map(item => transfersListResponse.buildUri(item.uri))
-        .map(async uri => {
-          const t = await db.getTransferRecord(uri)
-          return t && isConcludedTransfer(t) ? undefined : uri
-        })
-      )
+    const unconcludedTransferUris = (
+      await Promise.all(transferUris.map(async uri => {
+        const t = await db.getTransferRecord(uri)
+        return t && isConcludedTransfer(t) ? undefined : uri
+      }))
     ).filter(uri => uri !== undefined) as string[]
-    const timeout = calcParallelTimeout(transferUris.length)
+    const timeout = calcParallelTimeout(unconcludedTransferUris.length)
     transfers = (
-      await Promise.all(transferUris.map(uri => server.get(uri, { timeout }))) as HttpResponse<Transfer>[]
+      await Promise.all(unconcludedTransferUris.map(uri => server.get(uri, { timeout }))) as HttpResponse<Transfer>[]
     ).map(response => ({ ...response.data, uri: response.url } as Transfer))
   }
 
   return {
     debtor,
+    transferUris,
     transfers,
     document: await getDebtorInfoDocument(debtor),
   }

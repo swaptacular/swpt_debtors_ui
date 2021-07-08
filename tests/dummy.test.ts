@@ -167,12 +167,13 @@ test("Install and uninstall user", async () => {
       },
     },
   }]
+  const transferUris = ['https://example.com/1/transfers/xxxxxxxxx', 'https://example.com/1/transfers/yyyyyyyyy']
   const document = {
     uri: 'https://example.com/1/documents/123',
     content: '' as any as Blob,  // It seems that "fake-indexeddb" has a problem with Blobs.
   }
-  await db.storeUserData({ debtor, transfers, document })
-  const userId = await db.storeUserData({ debtor, transfers, document })
+  await db.storeUserData({ debtor, transferUris, transfers, document })
+  const userId = await db.storeUserData({ debtor, transferUris, transfers, document })
   const debtorRecord = await db.getDebtorRecord(userId) as DebtorRecord
   expect(debtorRecord.userId).toEqual(userId)
   expect(debtorRecord.config.uri).toBe('config')
@@ -228,12 +229,14 @@ test("Install and uninstall user", async () => {
   await expect(db.getActionRecords(userId)).resolves.toEqual([{ ...actionRecord, actionId: x }])
   await expect(db.replaceActionRecord(
     { ...actionRecord, actionId: x },
-    { ...actionRecord, actionId: x, uri: 'https://example.com/1/transfers/updated' },
+    { ...actionRecord, actionId: x, transferUri: 'https://example.com/1/transfers/updated' },
   )).resolves.toBeDefined()
-  await expect(db.getActionRecords(userId)).resolves.toEqual([{ ...actionRecord, actionId: x, uri: 'https://example.com/1/transfers/updated' }])
+  await expect(db.getActionRecords(userId)).resolves.toEqual([
+    { ...actionRecord, actionId: x, transferUri: 'https://example.com/1/transfers/updated' }
+  ])
   await expect(db.replaceActionRecord(
-    { ...actionRecord, actionId: -1, uri: 'https://example.com/1/transfers/updated' },
-    { ...actionRecord, actionId: -1, uri: 'https://example.com/1/transfers/updated-again' },
+    { ...actionRecord, actionId: -1, transferUri: 'https://example.com/1/transfers/updated' },
+    { ...actionRecord, actionId: -1, transferUri: 'https://example.com/1/transfers/updated-again' },
   )).rejects.toBeInstanceOf(RecordDoesNotExist)
 
   const theCreatedTransfer = {
@@ -264,6 +267,7 @@ test("Install and uninstall user", async () => {
         content: '',
       }
     },
+    requestedAmount: 0n,
   }
   await expect(db.createTransferRecord({ ...createTransferAction, actionId: -1 }, theCreatedTransfer))
     .rejects.toBeInstanceOf(RecordDoesNotExist)

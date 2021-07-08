@@ -40,6 +40,7 @@ type ActionData =
 
 export type UserData = {
   debtor: Debtor,
+  transferUris: string[],
   transfers: Transfer[],
   document?: ResourceReference & { content: Blob },
 }
@@ -414,19 +415,15 @@ class DebtorsDb extends Dexie {
     return await this.documents.get(uri)
   }
 
-  async storeUserData({ debtor, document, transfers }: UserData): Promise<number> {
-    // Note that the `uri` property in `debtor` and `transfers` objects
-    // must contain absolute URIs. The server may return relative URIs
-    // in the responses, which must be transformed to absolute ones,
-    // before passed to this method.
-
+  async storeUserData({ debtor, document, transferUris, transfers }: UserData): Promise<number> {
     return await this.transaction('rw', this.allTables, async () => {
+      // Update (or create) the debtor record and the config record,
+      // if necessary.
       const config = debtor.config
       let userId = await this.getUserId(debtor.uri)
       if (userId === undefined) {
         userId = await this.debtors.add({ ...debtor, config: { uri: config.uri } })
       }
-
       const configRecord = await this.configs.where({ userId }).first()
       if (!(configRecord && configRecord.latestUpdateId > config.latestUpdateId)) {
         await this.debtors.put({ ...debtor, userId, config: { uri: config.uri } })
@@ -439,6 +436,23 @@ class DebtorsDb extends Dexie {
         }
       }
 
+      // Delete abort transfer actions which have been
+      // resolved. (Their corresponding transfers will not be on the
+      // server anymore.)
+      const transferUriSet = new Set(transferUris)
+      const abortActionRecords = await this.actions
+        .where({ userId })
+        .filter(r => r.actionType === 'AbortTransfer')
+        .toArray() as AbortTransferActionWithId[]
+      for (const a of abortActionRecords) {
+        if (!transferUriSet.has(a.transferUri)) {
+          await this.actions.delete(a.actionId)
+        }
+      }
+
+      // Create transfer records for the transfers that are not still
+      // in "waiting" state. Also, create abort transfer actions for
+      // unsuccessful and delayed transfers.
       for (const transfer of transfers) {
         const transferUri = transfer.uri
         if (!await this.isConcludedTransfer(transferUri)) {
