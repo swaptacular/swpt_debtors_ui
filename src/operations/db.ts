@@ -63,9 +63,9 @@ export type TransferRecord =
   & Transfer
   & {
     time: number,
+    paymentInfo: PaymentInfo,
     aborted?: true,
     originatesHere?: true,
-    paymentInfo: PaymentInfo,
   }
 
 export type DocumentRecord =
