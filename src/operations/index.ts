@@ -12,6 +12,7 @@ import {
   DebtorRecordWithId,
   CreateTransferAction,
   CreateTransferActionWithId,
+  AbortTransferActionWithId,
   TransferRecord,
   RecordDoesNotExist,
   ExecutionState,
@@ -244,6 +245,30 @@ class UserContext {
    * failure due to concurrent execution/deletion of the action.*/
   async deleteCreateTransferAction(action: CreateTransferActionWithId): Promise<void> {
     await db.replaceActionRecord(action)
+  }
+
+  /* Deletes the given abort transfer action and marks the
+   * corresponding transfer as aborted.*/
+  async abortTransfer(action: AbortTransferActionWithId): Promise<void> {
+    try {
+      await db.abortTransfer(action.actionId)
+    } catch (e: unknown) {
+      // Ignore `RecordDoesNotExist` errors.
+      if (!(e instanceof RecordDoesNotExist)) throw e
+    }
+  }
+
+  /* Tries to cancel the transfer corresponding to the given abort
+   * transfer action. For delayed transfers, this method should be
+   * called before calling `abortTransfer`.*/
+  async cancelTransfer(action: AbortTransferActionWithId): Promise<void> {
+    try {
+      const requestBody = { type: 'TransferCancelationRequest' }
+      await server.post(action.transferUri, requestBody, { attemptLogin: true })
+    } catch (e: unknown) {
+      // Ignore 403 and 404 HTTP errors.
+      if (!(e instanceof HttpError && (e.status === 403 || e.status === 404))) throw e
+    }
   }
 
 }
