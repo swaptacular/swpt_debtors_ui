@@ -277,14 +277,14 @@ class DebtorsDb extends Dexie {
       if (!equal(existing, action)) {
         throw new RecordDoesNotExist()
       }
-      this.actions.delete(actionId)
-      if (await this.putTransferRecord(userId, transfer, paymentInfo, { originatesHere: true })) {
+      if (await this.putTransferRecord(userId, transfer, paymentInfo)) {
         console.error(
           `Instead of creating a new transfer record, an existing record has ` +
           `been overwritten (uri="${transfer.uri}"). This can happen when a ` +
           `non-unique UUID has been used.`
         )
       }
+      this.actions.delete(actionId)
       return await this.transfers.get(transfer.uri) as TransferRecord
     })
   }
@@ -478,13 +478,7 @@ class DebtorsDb extends Dexie {
     })
   }
 
-  private async putTransferRecord(
-    userId: number,
-    transfer: Transfer,
-    paymentInfo: PaymentInfo,
-    options: { originatesHere?: true } = {},
-  ): Promise<boolean> {
-    const { originatesHere } = options
+  private async putTransferRecord(userId: number, transfer: Transfer, paymentInfo: PaymentInfo): Promise<boolean> {
     return await this.transaction('rw', [this.transfers, this.actions, this.tasks], async () => {
       const existingTransferRecord = await this.transfers.get(transfer.uri)
 
@@ -497,12 +491,24 @@ class DebtorsDb extends Dexie {
           userId,
           time: existingTransferRecord.time,
           paymentInfo: existingTransferRecord.paymentInfo,
-          originatesHere: originatesHere ?? existingTransferRecord.originatesHere,
+          originatesHere: existingTransferRecord.originatesHere,
           aborted: existingTransferRecord.aborted,
         })
 
       } else {
         let time = new Date(transfer.initiatedAt).getTime() || Date.now()
+        let originatesHere
+        if (await this.actions
+          .where({ 'creationRequest.transferUuid': transfer.transferUuid })
+          .modify((action: CreateTransferAction) => {
+            action.execution = {
+              startedAt: action.execution?.startedAt ?? new Date(time),
+              result: { ok: true, transferUri: transfer.uri },
+            }
+          })
+        ) {
+          originatesHere = true as const
+        }
         while (true) {
           try {
             await this.transfers.put({ ...transfer, userId, time, paymentInfo, originatesHere })
@@ -512,14 +518,6 @@ class DebtorsDb extends Dexie {
             time *= (1 + Number.EPSILON)
           }
         }
-        await this.actions
-          .where({ 'creationRequest.transferUuid': transfer.transferUuid })
-          .modify((action: CreateTransferAction) => {
-            action.execution = {
-              startedAt: action.execution?.startedAt ?? new Date(time),
-              result: { ok: true, transferUri: transfer.uri },
-            }
-          })
       }
 
       if (transfer.result?.committedAmount) {
