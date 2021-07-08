@@ -457,6 +457,9 @@ class DebtorsDb extends Dexie {
         const transferUri = transfer.uri
         if (!await this.isConcludedTransfer(transferUri)) {
           switch (getTransferState(transfer)) {
+            case 'successful':
+              await this.putTransferRecord(userId, transfer, parseTransferNote(transfer))
+              break
             case 'unsuccessful':
             case 'delayed':
               await this.putTransferRecord(userId, transfer, parseTransferNote(transfer))
@@ -467,9 +470,6 @@ class DebtorsDb extends Dexie {
               if (!existingAbortTransferAction) {
                 await this.actions.add({ userId, transferUri, actionType: 'AbortTransfer', createdAt: new Date() })
               }
-              break
-            case 'successful':
-              await this.putTransferRecord(userId, transfer, parseTransferNote(transfer))
               break
           }
         }
