@@ -260,7 +260,8 @@ class UserContext {
 
   /* Tries to cancel the transfer corresponding to the given abort
    * transfer action. For delayed transfers, this method should be
-   * called before calling `abortTransfer`.*/
+   * called before calling `abortTransfer`. The caller must be
+   * prepared this method to throw `ServerSessionError`.*/
   async cancelTransfer(action: AbortTransferActionWithId): Promise<void> {
     try {
       const requestBody = { type: 'TransferCancelationRequest' }
