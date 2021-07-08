@@ -297,9 +297,9 @@ class DebtorsDb extends Dexie {
         throw new Error('missing transfer record')
       }
 
-      // Unless the transfer was delayed, but turned out successful,
-      // mark the transfer as aborted, and schedule its deletion as
-      // soon as possible.
+      // Unless the transfer turned out to be successful, mark the
+      // transfer as aborted, and schedule its deletion as soon as
+      // possible.
       if (!transferRecord.result?.committedAmount) {
         transferRecord.aborted = true
         await this.transfers.put(transferRecord)
@@ -430,9 +430,8 @@ class DebtorsDb extends Dexie {
         }
       }
 
-      // Delete abort transfer actions which have been
-      // resolved. (Their corresponding transfers will not be on the
-      // server anymore.)
+      // Delete abort transfer actions which have their corresponding
+      // transfers deleted from the server.
       const transferUriSet = new Set(transferUris)
       const abortActionRecords = await this.actions
         .where({ userId })
@@ -446,25 +445,26 @@ class DebtorsDb extends Dexie {
 
       // Create/update transfer records for the unconcluded transfers
       // that are not still in "waiting" state. Also, create abort
-      // transfer actions for unsuccessful and delayed transfers.
+      // transfer actions for unsuccessful and delayed transfers. Note
+      // that if a delayed transfer turned out to be succcessful, its
+      // corresponding abort transfer action should be deleted.
       for (const transfer of transfers) {
         const transferUri = transfer.uri
         const tranfserState = getTransferState(transfer)
         if (tranfserState !== 'waiting' && !await this.isConcludedTransfer(transferUri)) {
           await this.putTransferRecord(userId, transfer, parseTransferNote(transfer))
-          if (tranfserState !== 'successful') {
-            const existingAbortTransferAction = await this.actions
-              .where({ transferUri })
-              .filter(action => action.userId === userId && action.actionType === 'AbortTransfer')
-              .first()
-            if (!existingAbortTransferAction) {
-              await this.actions.add({
-                userId,
-                transferUri,
-                actionType: 'AbortTransfer',
-                createdAt: new Date(),
-              })
-            }
+          const abortTransferActionQuery = this.actions
+            .where({ transferUri })
+            .filter(action => action.userId === userId && action.actionType === 'AbortTransfer')
+          if (tranfserState === 'successful') {
+            abortTransferActionQuery.delete()
+          } else if (!await abortTransferActionQuery.first()) {
+            await this.actions.add({
+              userId,
+              transferUri,
+              actionType: 'AbortTransfer',
+              createdAt: new Date(),
+            })
           }
         }
       }
