@@ -214,9 +214,9 @@ class UserContext {
 
       case 'Sent':
         const transferUri: string = (action.execution?.result as any).transferUri
-        transferRecord = await db.transfers.get(transferUri)
+        transferRecord = await db.getTransferRecord(transferUri)
         if (!transferRecord) throw new Error('missing transfer record')
-        db.actions.delete(action.actionId)
+        db.replaceActionRecord(action)
         break
 
       case 'Failed':
