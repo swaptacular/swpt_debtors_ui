@@ -472,7 +472,7 @@ class DebtorsDb extends Dexie {
     })
   }
 
-  private async putTransferRecord(userId: number, transfer: Transfer, paymentInfo: PaymentInfo): Promise<TransferRecord> {
+  async putTransferRecord(userId: number, transfer: Transfer, paymentInfo: PaymentInfo): Promise<TransferRecord> {
     return await this.transaction('rw', [this.transfers, this.actions, this.tasks], async () => {
       let transferRecord
 

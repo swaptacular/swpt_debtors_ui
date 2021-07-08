@@ -18,7 +18,12 @@ import {
   ExecutionState,
   TRANSFER_DELETION_MIN_DELAY_SECONDS,
 } from './db'
-import { parsePaymentRequest, IvalidPaymentRequest, generatePayment0TransferNote } from './payment-requests'
+import {
+  parsePaymentRequest,
+  parseTransferNote,
+  IvalidPaymentRequest,
+  generatePayment0TransferNote,
+} from './payment-requests'
 import { UpdateScheduler } from './scheduler'
 import { getUserData } from './utils'
 
@@ -280,13 +285,16 @@ class UserContext {
    * before calling `dismissTransfer`. The caller must be prepared
    * this method to throw `ServerSessionError`.*/
   async cancelTransfer(action: AbortTransferActionWithId): Promise<boolean> {
+    let transfer
     try {
       const requestBody = { type: 'TransferCancelationRequest' }
-      await server.post(action.transferUri, requestBody, { attemptLogin: true })
+      const response = await server.post(action.transferUri, requestBody, { attemptLogin: true }) as HttpResponse<Transfer>
+      transfer = response.data
     } catch (e: unknown) {
       if (e instanceof HttpError && (e.status === 403 || e.status === 404)) return false
       throw e
     }
+    db.putTransferRecord(action.userId, transfer, parseTransferNote(transfer))
     return true
   }
 
