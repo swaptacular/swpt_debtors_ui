@@ -240,6 +240,8 @@ class UserContext {
    * will be modified according to the changes that have occurred in
    * the state of the action record.*/
   async checkCreateTransferAction(action: CreateTransferActionWithId): Promise<void> {
+    // TODO: This approach is wrong. Kill this function, and move this
+    // logic in `saveUserData` for example.
     if (this.getCreateTransferActionStatus(action) === 'Not confirmed') {
       const startedAt = action.execution?.startedAt as Date
       const transferUuid = action.creationRequest.transferUuid
