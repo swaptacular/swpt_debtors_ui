@@ -39,6 +39,7 @@ type ActionData =
   }
 
 export type UserData = {
+  collectedAfter: Date,
   debtor: Debtor,
   transferUris: string[],
   transfers: Transfer[],

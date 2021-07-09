@@ -31,12 +31,15 @@ function calcParallelTimeout(numberOfParallelRequests: number): number {
 }
 
 export async function getUserData(getTransfers = true): Promise<UserData> {
+  const collectedAfter = new Date()
+
   const debtorResponse = await server.getEntrypointResponse() as HttpResponse<Debtor>
   const debtor = { ...debtorResponse.data }
 
   const transfersListUri = debtorResponse.buildUri(debtor.transfersList.uri)
   const transfersListResponse = await server.get(transfersListUri) as HttpResponse<TransfersList>
   const transferUris = transfersListResponse.data.items.map(item => transfersListResponse.buildUri(item.uri))
+
   let transfers: Transfer[] = []
   if (getTransfers) {
     const unconcludedTransferUris = (
@@ -52,6 +55,7 @@ export async function getUserData(getTransfers = true): Promise<UserData> {
   }
 
   return {
+    collectedAfter,
     debtor,
     transferUris,
     transfers,
