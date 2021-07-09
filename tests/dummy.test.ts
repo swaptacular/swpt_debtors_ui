@@ -319,37 +319,45 @@ test("Install and uninstall user", async () => {
   await expect(db.getActionRecords(userId)).resolves.toEqual([])
   await expect(db.getDocumentRecord('https://example.com/1/documents/123')).resolves.toEqual(undefined)
 
+  const paymentInfo = {
+    payeeName: '',
+    payeeReference: '',
+    description: {
+      content: '',
+      contentFormat: '',
+    }
+  }
   const t = transfers[0]
   const time = new Date(t.initiatedAt).getTime()
-  await expect((db as any).putTransferRecord(userId, t, {})).resolves.toEqual({
+  await expect((db as any).putTransferRecord(userId, t)).resolves.toEqual({
     ...t,
     userId,
     time: time,
-    paymentInfo: {},
+    paymentInfo,
   })
-  await expect(db.getTransferRecord(t.uri)).resolves.toEqual({ ...t, userId, time, paymentInfo: {} })
-  await expect((db as any).putTransferRecord(userId, t, {})).resolves.toEqual({
+  await expect(db.getTransferRecord(t.uri)).resolves.toEqual({ ...t, userId, time, paymentInfo })
+  await expect((db as any).putTransferRecord(userId, t)).resolves.toEqual({
     ...t,
     userId,
     time: time,
-    paymentInfo: {},
+    paymentInfo,
   })
-  await expect(db.getTransferRecord(t.uri)).resolves.toEqual({ ...t, userId, time, paymentInfo: {} })
-  await expect((db as any).putTransferRecord(userId + 1, t, {})).rejects.toBeInstanceOf(Error)
+  await expect(db.getTransferRecord(t.uri)).resolves.toEqual({ ...t, userId, time, paymentInfo })
+  await expect((db as any).putTransferRecord(userId + 1, t)).rejects.toBeInstanceOf(Error)
   const alteredUri = t.uri + '/something'
-  await expect((db as any).putTransferRecord(userId, { ...t, uri: alteredUri }, {})).resolves.toEqual({
+  await expect((db as any).putTransferRecord(userId, { ...t, uri: alteredUri })).resolves.toEqual({
     ...t,
     userId,
     uri: alteredUri,
     time: time * (1 + Number.EPSILON),
-    paymentInfo: {},
+    paymentInfo,
   })
   await expect(db.getTransferRecord(t.uri + '/something')).resolves.toEqual({
     ...t,
     userId,
     uri: alteredUri,
     time: time * (1 + Number.EPSILON),
-    paymentInfo: {},
+    paymentInfo,
   })
 })
 

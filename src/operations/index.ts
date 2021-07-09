@@ -250,8 +250,7 @@ class UserContext {
         if (transfer.uri !== transferUri || transfer.transferUuid !== transferUuid) {
           throw new Error('unexpected transfer data')
         }
-        const { userId, paymentInfo } = action
-        await db.putTransferRecord(userId, transfer, paymentInfo)
+        await db.putTransferRecord(action.userId, transfer)
         action.execution = { startedAt, result: { transferUri, ok: true } }
       } catch (e: unknown) {
         if (e instanceof HttpError) {

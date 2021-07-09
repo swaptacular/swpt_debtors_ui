@@ -277,12 +277,12 @@ class DebtorsDb extends Dexie {
     deleteAction = true,
   ): Promise<TransferRecord> {
     return await this.transaction('rw', [this.transfers, this.actions, this.tasks], async () => {
-      const { actionId, userId, paymentInfo } = action
+      const { actionId, userId } = action
       const existing = await this.actions.get(actionId)
       if (!equal(existing, action)) {
         throw new RecordDoesNotExist()
       }
-      const transferRecord = await this.putTransferRecord(userId, transfer, paymentInfo)
+      const transferRecord = await this.putTransferRecord(userId, transfer)
       if (deleteAction) {
         await this.actions.delete(actionId)
       }
@@ -479,7 +479,7 @@ class DebtorsDb extends Dexie {
     })
   }
 
-  async putTransferRecord(userId: number, transfer: Transfer, paymentInfo?: PaymentInfo): Promise<TransferRecord> {
+  async putTransferRecord(userId: number, transfer: Transfer): Promise<TransferRecord> {
     return await this.transaction('rw', [this.transfers, this.actions, this.tasks], async () => {
       let transferRecord
 
@@ -499,8 +499,8 @@ class DebtorsDb extends Dexie {
         await this.transfers.put(transferRecord)
 
       } else {
-        paymentInfo ??= parseTransferNote(transfer)
         let time = new Date(transfer.initiatedAt).getTime() || Date.now()
+        const paymentInfo = parseTransferNote(transfer)
         const originatesHere = (
           await this.actions
             .where({ 'creationRequest.transferUuid': transfer.transferUuid })
