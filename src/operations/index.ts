@@ -240,7 +240,33 @@ class UserContext {
    * will be modified according to the changes that have occurred in
    * the state of the action record.*/
   async checkCreateTransferAction(action: CreateTransferActionWithId): Promise<void> {
-    // TODO
+    if (this.getCreateTransferActionStatus(action) === 'Not confirmed') {
+      const startedAt = action.execution?.startedAt as Date
+      const transferUri = this.generateTransferUri(action.creationRequest.transferUuid)
+      try {
+        const response = await server.get(transferUri, { attemptLogin: true }) as HttpResponse<Transfer>
+        const transfer = response.data
+        const { userId, paymentInfo } = action
+        if (transfer.uri !== transferUri) throw new Error('wrong tranfer URI')
+        await db.putTransferRecord(userId, transfer, paymentInfo)
+        action.execution = { startedAt, result: { transferUri, ok: true } }
+      } catch (e: unknown) {
+        if (e instanceof HttpError) {
+          if (e.status === 404) {
+            await updateExecutionState(action, { startedAt })
+          } else throw new ServerSessionError(`unexpected status code (${e.status})`)
+        } else throw e
+      }
+    }
+    // TODO:
+    // try {
+    //   await this.executeCreateTransferAction(action, false)
+    // } catch (e: unknown) {
+    //   // `ServerSessionError`,`ForbiddenOperation`,
+    //   // `WrongTransferData`, `TranferCreationTimeout`,
+    //   // `RecordDoesNotExist`
+    //   throw e
+    // }
   }
 
   /* Deletes the given create transfer action. The caller must be
@@ -297,6 +323,10 @@ class UserContext {
     }
     await db.putTransferRecord(action.userId, transfer)
     return true
+  }
+
+  private generateTransferUri(transferUuid: string): string {
+    return new URL(transferUuid, this.createTransferUri).href
   }
 
 }
