@@ -176,7 +176,7 @@ class UserContext {
    * a `TransferRecord` instance is returned. The caller must be
    * prepared this method to throw `ServerSessionError`,
    * `ForbiddenOperation`, `WrongTransferData`,
-   * `TranferCreationTimeout`, or `RecordDoesNotExist` in case of a
+   * `TransferCreationTimeout`, or `RecordDoesNotExist` in case of a
    * failure due to concurrent execution/deletion of the action. Note
    * that the passed `action` object will be modified according to the
    * changes occurring in the state of the action record. */
@@ -242,12 +242,15 @@ class UserContext {
   async checkCreateTransferAction(action: CreateTransferActionWithId): Promise<void> {
     if (this.getCreateTransferActionStatus(action) === 'Not confirmed') {
       const startedAt = action.execution?.startedAt as Date
-      const transferUri = this.generateTransferUri(action.creationRequest.transferUuid)
+      const transferUuid = action.creationRequest.transferUuid
+      const transferUri = this.generateTransferUriFromUuid(transferUuid)
       try {
         const response = await server.get(transferUri, { attemptLogin: true }) as HttpResponse<Transfer>
         const transfer = response.data
+        if (transfer.uri !== transferUri || transfer.transferUuid !== transferUuid) {
+          throw new Error('unexpected transfer data')
+        }
         const { userId, paymentInfo } = action
-        if (transfer.uri !== transferUri) throw new Error('wrong tranfer URI')
         await db.putTransferRecord(userId, transfer, paymentInfo)
         action.execution = { startedAt, result: { transferUri, ok: true } }
       } catch (e: unknown) {
@@ -258,15 +261,6 @@ class UserContext {
         } else throw e
       }
     }
-    // TODO:
-    // try {
-    //   await this.executeCreateTransferAction(action, false)
-    // } catch (e: unknown) {
-    //   // `ServerSessionError`,`ForbiddenOperation`,
-    //   // `WrongTransferData`, `TranferCreationTimeout`,
-    //   // `RecordDoesNotExist`
-    //   throw e
-    // }
   }
 
   /* Deletes the given create transfer action. The caller must be
@@ -325,7 +319,7 @@ class UserContext {
     return true
   }
 
-  private generateTransferUri(transferUuid: string): string {
+  private generateTransferUriFromUuid(transferUuid: string): string {
     return new URL(transferUuid, this.createTransferUri).href
   }
 
