@@ -240,7 +240,7 @@ class DebtorsDb extends Dexie {
       if (!(actionRecord && actionRecord.actionType === 'UpdateConfig')) {
         throw new RecordDoesNotExist(`ActionRecord(actionId=${actionId}, actionType="UpdateConfig")`)
       }
-      this.actions.delete(actionId)
+      await this.actions.delete(actionId)
       const userId = actionRecord.userId
       let configRecord = await this.getConfigRecord(userId)
       if (configRecord.uri !== debtorConfig.uri) {
@@ -270,7 +270,11 @@ class DebtorsDb extends Dexie {
     return await this.transfers.get(uri)
   }
 
-  async createTransferRecord(action: CreateTransferActionWithId, transfer: Transfer): Promise<TransferRecord> {
+  async createTransferRecord(
+    action: CreateTransferActionWithId,
+    transfer: Transfer,
+    deleteAction = true,
+  ): Promise<TransferRecord> {
     return await this.transaction('rw', [this.transfers, this.actions, this.tasks], async () => {
       const { actionId, userId, paymentInfo } = action
       const existing = await this.actions.get(actionId)
@@ -278,7 +282,9 @@ class DebtorsDb extends Dexie {
         throw new RecordDoesNotExist()
       }
       const transferRecord = await this.putTransferRecord(userId, transfer, paymentInfo)
-      this.actions.delete(actionId)
+      if (deleteAction) {
+        await this.actions.delete(actionId)
+      }
       return transferRecord
     })
   }
@@ -290,7 +296,7 @@ class DebtorsDb extends Dexie {
         throw new RecordDoesNotExist()
       }
       const { userId, transferUri } = actionRecord
-      this.actions.delete(actionId)
+      await this.actions.delete(actionId)
 
       let transferRecord = await this.transfers.get(transferUri)
       if (!(transferRecord && transferRecord.userId === userId)) {
@@ -464,7 +470,7 @@ class DebtorsDb extends Dexie {
               createdAt: new Date(),
             })
           } else {
-            abortTransferQuery.delete()
+            await abortTransferQuery.delete()
           }
         }
       }

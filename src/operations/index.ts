@@ -180,7 +180,7 @@ class UserContext {
    * failure due to concurrent execution/deletion of the action. Note
    * that the passed `action` object will be modified according to the
    * changes occurring in the state of the action record. */
-  async executeCreateTransferAction(action: CreateTransferActionWithId): Promise<TransferRecord> {
+  async executeCreateTransferAction(action: CreateTransferActionWithId, deleteAction = true): Promise<TransferRecord> {
     let transferRecord
 
     switch (this.getCreateTransferActionStatus(action)) {
@@ -199,7 +199,7 @@ class UserContext {
             { attemptLogin: true },
           ) as HttpResponse<Transfer>
           const transfer = response.data
-          transferRecord = await db.createTransferRecord(action, transfer)
+          transferRecord = await db.createTransferRecord(action, transfer, deleteAction)
         } catch (e: unknown) {
           if (e instanceof HttpError) {
             if (e.status === 422) {
@@ -285,14 +285,17 @@ class UserContext {
   async cancelTransfer(action: AbortTransferActionWithId): Promise<boolean> {
     let transfer
     try {
-      const requestBody = { type: 'TransferCancelationRequest' }
-      const response = await server.post(action.transferUri, requestBody, { attemptLogin: true }) as HttpResponse<Transfer>
+      const response = await server.post(
+        action.transferUri,
+        { type: 'TransferCancelationRequest' },
+        { attemptLogin: true },
+      ) as HttpResponse<Transfer>
       transfer = response.data
     } catch (e: unknown) {
       if (e instanceof HttpError && (e.status === 403 || e.status === 404)) return false
       throw e
     }
-    db.putTransferRecord(action.userId, transfer)
+    await db.putTransferRecord(action.userId, transfer)
     return true
   }
 
