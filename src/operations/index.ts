@@ -199,7 +199,6 @@ class UserContext {
             { attemptLogin: true },
           ) as HttpResponse<Transfer>
           const transfer = response.data
-          transfer.uri = response.buildUri(transfer.uri)
           transferRecord = await db.createTransferRecord(action, transfer)
         } catch (e: unknown) {
           if (e instanceof HttpError) {
@@ -289,7 +288,6 @@ class UserContext {
       const requestBody = { type: 'TransferCancelationRequest' }
       const response = await server.post(action.transferUri, requestBody, { attemptLogin: true }) as HttpResponse<Transfer>
       transfer = response.data
-      transfer.uri = response.buildUri(transfer.uri)
     } catch (e: unknown) {
       if (e instanceof HttpError && (e.status === 403 || e.status === 404)) return false
       throw e

@@ -64,6 +64,10 @@ export class HttpResponse<T = unknown> {
     this.headers = r.headers
     this.data = r.data
     this.time = new Date()
+    const data = this.data as any
+    if (Object.getPrototypeOf(data) === null && typeof data.uri === 'string') {
+      data.uri = this.buildUri(data.uri)
+    }
   }
 
   buildUri(uriReference: string): string {

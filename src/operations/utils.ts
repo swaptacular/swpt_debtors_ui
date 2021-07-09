@@ -33,7 +33,6 @@ function calcParallelTimeout(numberOfParallelRequests: number): number {
 export async function getUserData(getTransfers = true): Promise<UserData> {
   const debtorResponse = await server.getEntrypointResponse() as HttpResponse<Debtor>
   const debtor = { ...debtorResponse.data }
-  debtor.uri = debtorResponse.buildUri(debtor.uri)
 
   const transfersListUri = debtorResponse.buildUri(debtor.transfersList.uri)
   const transfersListResponse = await server.get(transfersListUri) as HttpResponse<TransfersList>
