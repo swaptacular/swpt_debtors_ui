@@ -23,7 +23,7 @@ import {
   IvalidPaymentRequest,
   generatePayment0TransferNote,
 } from '../payment-requests'
-import { UpdateScheduler } from './scheduler'
+import { UpdateScheduler } from '../update-scheduler'
 import { getUserData } from './utils'
 
 export {
