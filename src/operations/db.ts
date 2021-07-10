@@ -192,7 +192,7 @@ class DebtorsDb extends Dexie {
       // the same way as they are normally queried. The problem is
       // that it seems "fake-indexeddb", which we use for testing,
       // does not support compound primary keys.
-      transfers: 'uri,&[userId+time],transferUuid',
+      transfers: 'uri,&[userId+time]',
 
       documents: 'uri,userId',
       actions: '++actionId,&[userId+actionId],creationRequest.transferUuid,transferUri',
