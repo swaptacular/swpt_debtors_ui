@@ -450,28 +450,33 @@ class DebtorsDb extends Dexie {
         }
       }
 
-      // Create/update transfer records for the unconcluded transfers
-      // that are not still in "waiting" state. Also, create abort
-      // transfer actions for unsuccessful and delayed transfers. Note
-      // that if a delayed transfer turned out to be succcessful, its
-      // corresponding abort transfer action gets deleted.
+      // Create/update the transfer records. Note that we can safely
+      // ignore all concluded transfers.
       for (const transfer of transfers) {
         const transferUri = transfer.uri
-        const tranfserState = getTransferState(transfer)
-        if (tranfserState !== 'waiting' && !await this.isConcludedTransfer(transferUri)) {
+        if (!await this.isConcludedTransfer(transferUri)) {
           await this.putTransferRecord(userId, transfer)
-          const abortTransferQuery = this.actions
+          const abortTransferRecordQuery = this.actions
             .where({ transferUri })
             .filter(action => action.userId === userId && action.actionType === 'AbortTransfer')
-          if (tranfserState !== 'successful') {
-            await abortTransferQuery.first() || await this.actions.add({
-              userId,
-              transferUri,
-              actionType: 'AbortTransfer',
-              createdAt: new Date(),
-            })
-          } else {
-            await abortTransferQuery.delete()
+          switch (getTransferState(transfer)) {
+            case 'successful':
+              // If a delayed transfer turned out to be succcessful,
+              // its corresponding abort transfer action must be
+              // deleted.
+              await abortTransferRecordQuery.delete()
+              break
+            case 'delayed':
+            case 'unsuccessful':
+              // For troubled transfers, make sure a corresponding
+              // abort transfer action does exist.
+              await abortTransferRecordQuery.first() || await this.actions.add({
+                userId,
+                transferUri,
+                actionType: 'AbortTransfer',
+                createdAt: new Date(),
+              })
+              break
           }
         }
       }
