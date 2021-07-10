@@ -154,12 +154,11 @@ export class RecordDoesNotExist extends Error {
   name = 'RecordDoesNotExist'
 }
 
-export const TRANSFER_DELETION_MIN_DELAY_SECONDS = 5 * 86400  // 5 days
-export const TRANSFER_DELETION_DELAY_SECONDS = Math.max(
-  appConfig.TransferDeletionDelaySeconds, TRANSFER_DELETION_MIN_DELAY_SECONDS)
-
 const MAX_NETWORK_PACKET_DELAY_MILLISECONDS = 3_600_000  // 1 hour, to be on the safe side
 const TRANSFER_WAIT_SECONDS = 86400  // 24 hours before the transfer is considered delayed.
+const TRANSFER_DELETION_MIN_DELAY_SECONDS = 5 * 86400  // 5 days
+const TRANSFER_DELETION_DELAY_SECONDS = Math.max(
+  appConfig.TransferDeletionDelaySeconds, TRANSFER_DELETION_MIN_DELAY_SECONDS)
 
 function getTransferState(transfer: Transfer): 'waiting' | 'delayed' | 'successful' | 'unsuccessful' {
   const result = transfer.result
