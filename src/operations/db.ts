@@ -504,11 +504,11 @@ class DebtorsDb extends Dexie {
         const originatesHere = (
           await this.actions
             .where({ 'creationRequest.transferUuid': transferUuid })
+            .filter(action => action.actionType === 'CreateTransfer')
             .modify((action: CreateTransferAction) => {
-              action.execution = {
-                startedAt: action.execution?.startedAt ?? new Date(time),
-                result: { ok: true, transferUri },
-              }
+              const startedAt = action.execution?.startedAt ?? new Date(time)
+              const result = { ok: true, transferUri }
+              action.execution = { startedAt, result }
             })
         ) > 0 ? true as const : undefined
         while (true) {
