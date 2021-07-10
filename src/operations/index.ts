@@ -235,35 +235,6 @@ class UserContext {
     return transferRecord
   }
 
-  /* Updates the state of the given create transfer action. May
-   * perform a network request. Note that the passed `action` object
-   * will be modified according to the changes that have occurred in
-   * the state of the action record.*/
-  async checkCreateTransferAction(action: CreateTransferActionWithId): Promise<void> {
-    // TODO: This approach is wrong. Kill this function, and move this
-    // logic in `saveUserData` for example.
-    if (this.getCreateTransferActionStatus(action) === 'Not confirmed') {
-      const startedAt = action.execution?.startedAt as Date
-      const transferUuid = action.creationRequest.transferUuid
-      const transferUri = this.generateTransferUriFromUuid(transferUuid)
-      try {
-        const response = await server.get(transferUri, { attemptLogin: true }) as HttpResponse<Transfer>
-        const transfer = response.data
-        if (transfer.uri !== transferUri || transfer.transferUuid !== transferUuid) {
-          throw new Error('unexpected transfer data')
-        }
-        await db.putTransferRecord(action.userId, transfer)
-        action.execution = { startedAt, result: { transferUri, ok: true } }
-      } catch (e: unknown) {
-        if (e instanceof HttpError) {
-          if (e.status === 404) {
-            await updateExecutionState(action, { startedAt })
-          } else throw new ServerSessionError(`unexpected status code (${e.status})`)
-        } else throw e
-      }
-    }
-  }
-
   /* Deletes the given create transfer action. The caller must be
    * prepared this method to throw `RecordDoesNotExist` in case of a
    * failure due to concurrent execution/deletion of the action.*/
@@ -318,10 +289,6 @@ class UserContext {
     }
     await db.putTransferRecord(action.userId, transfer)
     return true
-  }
-
-  private generateTransferUriFromUuid(transferUuid: string): string {
-    return new URL(transferUuid, this.createTransferUri).href
   }
 
 }

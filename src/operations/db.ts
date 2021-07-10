@@ -42,7 +42,7 @@ export type UserData = {
   collectedAfter: Date,
   debtor: Debtor,
   transferUris: string[],
-  transfers: Transfer[],
+  transfers?: Transfer[],
   document?: ResourceReference & { content: Blob },
 }
 
@@ -192,7 +192,7 @@ class DebtorsDb extends Dexie {
       // the same way as they are normally queried. The problem is
       // that it seems "fake-indexeddb", which we use for testing,
       // does not support compound primary keys.
-      transfers: 'uri,&[userId+time]',
+      transfers: 'uri,&[userId+time],transferUuid',
 
       documents: 'uri,userId',
       actions: '++actionId,&[userId+actionId],creationRequest.transferUuid,transferUri',
@@ -416,70 +416,11 @@ class DebtorsDb extends Dexie {
     return await this.documents.get(uri)
   }
 
-  async storeUserData({ debtor, document, transferUris, transfers }: UserData): Promise<number> {
+  async storeUserData(data: UserData): Promise<number> {
     return await this.transaction('rw', this.allTables, async () => {
-      // Update (or create) the debtor record and the config record,
-      // if necessary.
-      const config = debtor.config
-      let userId = await this.getUserId(debtor.uri)
-      if (userId === undefined) {
-        userId = await this.debtors.add({ ...debtor, config: { uri: config.uri } })
-      }
-      const configRecord = await this.configs.where({ userId }).first()
-      if (!(configRecord && configRecord.latestUpdateId > config.latestUpdateId)) {
-        await this.debtors.put({ ...debtor, userId, config: { uri: config.uri } })
-      }
-      if (!(configRecord && configRecord.latestUpdateId >= config.latestUpdateId)) {
-        const uri = new URL(config.uri, debtor.uri).href
-        await this.configs.put({ ...config, userId, uri })
-        if (document) {
-          await this.documents.put({ ...document, userId })
-        }
-      }
-
-      // Delete abort transfer actions which have their corresponding
-      // transfers deleted from the server.
-      const transferUriSet = new Set(transferUris)
-      const abortActionRecords = await this.actions
-        .where({ userId })
-        .filter(r => r.actionType === 'AbortTransfer')
-        .toArray() as AbortTransferActionWithId[]
-      for (const a of abortActionRecords) {
-        if (!transferUriSet.has(a.transferUri)) {
-          await this.actions.delete(a.actionId)
-        }
-      }
-
-      // Create/update the transfer records. Note that we can safely
-      // ignore all concluded transfers.
-      for (const transfer of transfers) {
-        const transferUri = transfer.uri
-        if (!await this.isConcludedTransfer(transferUri)) {
-          await this.putTransferRecord(userId, transfer)
-          const abortTransferRecordQuery = this.actions
-            .where({ transferUri })
-            .filter(action => action.userId === userId && action.actionType === 'AbortTransfer')
-          switch (getTransferState(transfer)) {
-            case 'successful':
-              // If a delayed transfer turned out to be succcessful,
-              // its corresponding abort transfer action must be
-              // deleted.
-              await abortTransferRecordQuery.delete()
-              break
-            case 'delayed':
-            case 'unsuccessful':
-              // For troubled transfers, make sure a corresponding
-              // abort transfer action does exist.
-              await abortTransferRecordQuery.first() || await this.actions.add({
-                userId,
-                transferUri,
-                actionType: 'AbortTransfer',
-                createdAt: new Date(),
-              })
-              break
-          }
-        }
-      }
+      const userId = await this.storeDebtorAndConfigRecords(data)
+      await this.deleteIrrelevantAbortTransferActions(userId, data)
+      await this.storeTransferRecords(userId, data)
       return userId
     })
   }
@@ -549,6 +490,97 @@ class DebtorsDb extends Dexie {
   private get allTables() {
     return [this.debtors, this.configs, this.transfers, this.documents, this.actions, this.tasks]
   }
+
+  private async storeDebtorAndConfigRecords(data: UserData): Promise<number> {
+    const { debtor, document } = data
+    const config = debtor.config
+    let userId = await this.getUserId(debtor.uri)
+    if (userId === undefined) {
+      userId = await this.debtors.add({ ...debtor, config: { uri: config.uri } })
+    }
+    const existingConfigRecord = await this.configs.where({ userId }).first()
+    if (!(existingConfigRecord && existingConfigRecord.latestUpdateId > config.latestUpdateId)) {
+      await this.debtors.put({ ...debtor, userId, config: { uri: config.uri } })
+    }
+    if (!(existingConfigRecord && existingConfigRecord.latestUpdateId >= config.latestUpdateId)) {
+      const uri = new URL(config.uri, debtor.uri).href
+      await this.configs.put({ ...config, userId, uri })
+      if (document) {
+        await this.documents.put({ ...document, userId })
+      }
+    }
+    return userId
+  }
+
+  private async deleteIrrelevantAbortTransferActions(userId: number, data: UserData): Promise<void> {
+    const uris = new Set(data.transferUris)
+    await this.actions
+      .where({ userId })
+      .filter(action => action.actionType === 'AbortTransfer' && !uris.has(action.transferUri))
+      .delete()
+  }
+
+  private async storeTransferRecords(userId: number, data: UserData): Promise<void> {
+    if (data.transfers) {
+      for (const transfer of data.transfers) {
+        const transferUri = transfer.uri
+        if (!await this.isConcludedTransfer(transferUri)) {
+          await this.putTransferRecord(userId, transfer)
+          const abortTransferRecordQuery = this.actions
+            .where({ transferUri })
+            .filter(action => action.userId === userId && action.actionType === 'AbortTransfer')
+          switch (getTransferState(transfer)) {
+            case 'successful':
+              // If a delayed transfer turned out to be succcessful,
+              // its corresponding abort transfer action must be
+              // deleted.
+              await abortTransferRecordQuery.delete()
+              break
+            case 'delayed':
+            case 'unsuccessful':
+              // For troubled transfers, make sure a corresponding
+              // abort transfer action does exist.
+              await abortTransferRecordQuery.first() || await this.actions.add({
+                userId,
+                transferUri,
+                actionType: 'AbortTransfer',
+                createdAt: new Date(),
+              })
+              break
+          }
+        }
+      }
+      this.checkForUnresolvedCreateTransferRequests(userId, data)
+    }
+  }
+
+  private async checkForUnresolvedCreateTransferRequests(userId: number, data: UserData): Promise<void> {
+    const cutoffTime = data.collectedAfter.getTime() - 3_600_000  // one hour before
+    const resolvableCreateTransferActions = await this.actions
+      .where('[userId+actionId]')
+      .between([userId, Dexie.minKey], [userId, Dexie.maxKey])
+      .filter(action => (
+        action.actionType === 'CreateTransfer' &&
+        action.execution !== undefined &&
+        action.execution.result === undefined &&
+        (action.execution.unresolvedRequestAt?.getTime() ?? Infinity) < cutoffTime
+      ))
+      .toArray() as CreateTransferActionWithId[]
+    let resolvedActionIds = []
+    for (const action of resolvableCreateTransferActions) {
+      const transferUuid = action.creationRequest.transferUuid
+      if (await this.transfers.where({ transferUuid }).count() === 0) {
+        resolvedActionIds.push(action.actionId)
+      }
+    }
+    await this.actions
+      .where('actionId')
+      .anyOf(resolvedActionIds)
+      .modify((action: CreateTransferAction) => {
+        action.execution &&= { startedAt: action.execution.startedAt }
+      })
+  }
+
 }
 
 export const db = new DebtorsDb()

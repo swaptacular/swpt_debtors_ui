@@ -172,8 +172,9 @@ test("Install and uninstall user", async () => {
     uri: 'https://example.com/1/documents/123',
     content: '' as any as Blob,  // It seems that "fake-indexeddb" has a problem with Blobs.
   }
-  await db.storeUserData({ debtor, transferUris, transfers, document })
-  const userId = await db.storeUserData({ debtor, transferUris, transfers, document })
+  const collectedAfter = new Date()
+  await db.storeUserData({ collectedAfter, debtor, transferUris, transfers, document })
+  const userId = await db.storeUserData({ collectedAfter, debtor, transferUris, transfers, document })
   const debtorRecord = await db.getDebtorRecord(userId) as DebtorRecord
   expect(debtorRecord.userId).toEqual(userId)
   expect(debtorRecord.config.uri).toBe('config')

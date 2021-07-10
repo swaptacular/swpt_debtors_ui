@@ -40,7 +40,7 @@ export async function getUserData(getTransfers = true): Promise<UserData> {
   const transfersListResponse = await server.get(transfersListUri) as HttpResponse<TransfersList>
   const transferUris = transfersListResponse.data.items.map(item => transfersListResponse.buildUri(item.uri))
 
-  let transfers: Transfer[] = []
+  let transfers
   if (getTransfers) {
     const unconcludedTransferUris = (
       await Promise.all(transferUris.map(async uri => {
