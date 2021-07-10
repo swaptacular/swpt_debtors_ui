@@ -550,13 +550,13 @@ class DebtorsDb extends Dexie {
           }
         }
       }
-      this.checkForUnresolvedCreateTransferRequests(userId, data)
+      this.resolveOldCreateTransferRequests(userId, data)
     }
   }
 
-  private async checkForUnresolvedCreateTransferRequests(userId: number, data: UserData): Promise<void> {
-    const cutoffTime = data.collectedAfter.getTime() - 3_600_000  // one hour before
-    const resolvableCreateTransferActions = await this.actions
+  private async resolveOldCreateTransferRequests(userId: number, data: UserData): Promise<void> {
+    const cutoffTime = data.collectedAfter.getTime() - 3_600_000  // at least one hour old
+    await this.actions
       .where('[userId+actionId]')
       .between([userId, Dexie.minKey], [userId, Dexie.maxKey])
       .filter(action => (
@@ -565,19 +565,8 @@ class DebtorsDb extends Dexie {
         action.execution.result === undefined &&
         (action.execution.unresolvedRequestAt?.getTime() ?? Infinity) < cutoffTime
       ))
-      .toArray() as CreateTransferActionWithId[]
-    let resolvedActionIds = []
-    for (const action of resolvableCreateTransferActions) {
-      const transferUuid = action.creationRequest.transferUuid
-      if (await this.transfers.where({ transferUuid }).count() === 0) {
-        resolvedActionIds.push(action.actionId)
-      }
-    }
-    await this.actions
-      .where('actionId')
-      .anyOf(resolvedActionIds)
-      .modify((action: CreateTransferAction) => {
-        action.execution &&= { startedAt: action.execution.startedAt }
+      .modify((action: { execution: ExecutionState }) => {
+        delete action.execution.unresolvedRequestAt
       })
   }
 
