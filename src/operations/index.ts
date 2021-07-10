@@ -167,8 +167,7 @@ class UserContext {
       case 'Not sent':
         const now = Date.now()
         const { startedAt = new Date(now), unresolvedRequestAt } = action.execution ?? {}
-        const safetyMargin = 2 * appConfig.serverApiTimeout
-        const t = Math.max(now + safetyMargin, (unresolvedRequestAt?.getTime() ?? 0) + 1)
+        const t = Math.max(now, (unresolvedRequestAt?.getTime() ?? -Infinity) + 1)
         await updateExecutionState(action, { startedAt, unresolvedRequestAt: new Date(t) })
         try {
           const response = await server.post(

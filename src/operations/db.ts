@@ -154,7 +154,7 @@ export class RecordDoesNotExist extends Error {
   name = 'RecordDoesNotExist'
 }
 
-const MAX_PROCESSING_DELAY_MILLISECONDS = 3_600_000  // 1 hour, to be on the safe side
+const MAX_PROCESSING_DELAY_MILLISECONDS = 2 * appConfig.serverApiTimeout + 3_600_000  // to be on the safe side
 const TRANSFER_WAIT_SECONDS = 86400  // 24 hours before the transfer is considered delayed.
 const TRANSFER_DELETION_MIN_DELAY_SECONDS = 5 * 86400  // 5 days
 const TRANSFER_DELETION_DELAY_SECONDS = Math.max(
@@ -177,8 +177,8 @@ function getTransferState(transfer: Transfer): 'waiting' | 'delayed' | 'successf
 }
 
 function hasTimedOut(startedAt: Date, currentTime: number = Date.now()): boolean {
-  const safetyMargin = 2 * appConfig.serverApiTimeout + MAX_PROCESSING_DELAY_MILLISECONDS
-  return currentTime + safetyMargin > startedAt.getTime() + 1000 * TRANSFER_DELETION_MIN_DELAY_SECONDS
+  const deadline = startedAt.getTime() + 1000 * TRANSFER_DELETION_MIN_DELAY_SECONDS
+  return currentTime + MAX_PROCESSING_DELAY_MILLISECONDS > deadline
 }
 
 export function isConcludedTransfer(transferRecord: TransferRecord): boolean {
