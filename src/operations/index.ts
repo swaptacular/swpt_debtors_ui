@@ -167,8 +167,8 @@ class UserContext {
       case 'Not sent':
         const now = Date.now()
         const { startedAt = new Date(now), unresolvedRequestAt } = action.execution ?? {}
-        const t = Math.max(now, (unresolvedRequestAt?.getTime() ?? -Infinity) + 1)
-        await updateExecutionState(action, { startedAt, unresolvedRequestAt: new Date(t) })
+        const requestTime = Math.max(now, (unresolvedRequestAt?.getTime() ?? -Infinity) + 1)
+        await updateExecutionState(action, { startedAt, unresolvedRequestAt: new Date(requestTime) })
         try {
           const response = await server.post(
             this.createTransferUri,
