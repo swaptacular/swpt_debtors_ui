@@ -12,7 +12,7 @@ import {
   IvalidPaymentData,
   PaymentDescription,
   MIME_TYPE_PR0,
-} from '../src/operations/payment-requests'
+} from '../src/payment-requests'
 import { UpdateScheduler } from '../src/operations/scheduler'
 
 const authToken = '3x-KAxNWrYPJUWNKTbpnTWxoR0Arr0gG_uEqeWUNDkk.B-Iqy02FM7rK1rKSb4I7D9gaqGFXc2vdyJQ6Uuv3EF4'

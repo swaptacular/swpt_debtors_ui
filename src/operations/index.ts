@@ -22,7 +22,7 @@ import {
   parsePaymentRequest,
   IvalidPaymentRequest,
   generatePayment0TransferNote,
-} from './payment-requests'
+} from '../payment-requests'
 import { UpdateScheduler } from './scheduler'
 import { getUserData } from './utils'
 

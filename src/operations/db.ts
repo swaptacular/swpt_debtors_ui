@@ -9,7 +9,7 @@ import type {
   TransferCreationRequest,
   Error as WebApiError,
 } from '../web-api-schemas'
-import { PaymentInfo, parseTransferNote } from './payment-requests'
+import { PaymentInfo, parseTransferNote } from '../payment-requests'
 
 type ListQueryOptions = {
   before?: number,
