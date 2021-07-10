@@ -154,12 +154,12 @@ export class RecordDoesNotExist extends Error {
   name = 'RecordDoesNotExist'
 }
 
-export const MAX_NETWORK_PACKET_DELAY_MILLISECONDS = 3_600_000  // 1 hour, to be on the safe side
 export const TRANSFER_DELETION_MIN_DELAY_SECONDS = 5 * 86400  // 5 days
 export const TRANSFER_DELETION_DELAY_SECONDS = Math.max(
   appConfig.TransferDeletionDelaySeconds, TRANSFER_DELETION_MIN_DELAY_SECONDS)
 
-const TRANSFER_WAIT_SECONDS = 86400  // 24 hours
+const MAX_NETWORK_PACKET_DELAY_MILLISECONDS = 3_600_000  // 1 hour, to be on the safe side
+const TRANSFER_WAIT_SECONDS = 86400  // 24 hours before the transfer is considered delayed.
 
 function getTransferState(transfer: Transfer): 'waiting' | 'delayed' | 'successful' | 'unsuccessful' {
   const result = transfer.result
@@ -177,13 +177,13 @@ function getTransferState(transfer: Transfer): 'waiting' | 'delayed' | 'successf
   }
 }
 
-export function isConcludedTransfer(transferRecord: TransferRecord): boolean {
-  return transferRecord.result !== undefined || transferRecord.aborted === true
-}
-
-export function hasTimedOut(startedAt: Date, currentTime: number = Date.now()): boolean {
+function hasTimedOut(startedAt: Date, currentTime: number = Date.now()): boolean {
   const safetyMargin = 2 * appConfig.serverApiTimeout + MAX_NETWORK_PACKET_DELAY_MILLISECONDS
   return currentTime + safetyMargin > startedAt.getTime() + 1000 * TRANSFER_DELETION_MIN_DELAY_SECONDS
+}
+
+export function isConcludedTransfer(transferRecord: TransferRecord): boolean {
+  return transferRecord.result !== undefined || transferRecord.aborted === true
 }
 
 export function getCreateTransferActionStatus(
