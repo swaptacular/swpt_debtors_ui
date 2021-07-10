@@ -482,32 +482,27 @@ class DebtorsDb extends Dexie {
   async putTransferRecord(userId: number, transfer: Transfer): Promise<TransferRecord> {
     return await this.transaction('rw', [this.transfers, this.actions, this.tasks], async () => {
       let transferRecord
+      const { uri: transferUri, transferUuid, initiatedAt, result } = transfer
+      const existingTransferRecord = await this.transfers.get(transferUri)
 
-      const existingTransferRecord = await this.transfers.get(transfer.uri)
       if (existingTransferRecord) {
         if (userId !== existingTransferRecord.userId) {
           throw new Error('Can not alter the userId of an existing transfer record.')
         }
-        transferRecord = {
-          ...transfer,
-          userId,
-          time: existingTransferRecord.time,
-          paymentInfo: existingTransferRecord.paymentInfo,
-          originatesHere: existingTransferRecord.originatesHere,
-          aborted: existingTransferRecord.aborted,
-        }
+        const { time, paymentInfo, originatesHere, aborted } = existingTransferRecord
+        transferRecord = { ...transfer, userId, time, paymentInfo, originatesHere, aborted }
         await this.transfers.put(transferRecord)
 
       } else {
-        let time = new Date(transfer.initiatedAt).getTime() || Date.now()
+        let time = new Date(initiatedAt).getTime() || Date.now()
         const paymentInfo = parseTransferNote(transfer)
         const originatesHere = (
           await this.actions
-            .where({ 'creationRequest.transferUuid': transfer.transferUuid })
+            .where({ 'creationRequest.transferUuid': transferUuid })
             .modify((action: CreateTransferAction) => {
               action.execution = {
                 startedAt: action.execution?.startedAt ?? new Date(time),
-                result: { ok: true, transferUri: transfer.uri },
+                result: { ok: true, transferUri },
               }
             })
         ) > 0 ? true as const : undefined
@@ -523,13 +518,13 @@ class DebtorsDb extends Dexie {
         }
       }
 
-      if (transfer.result?.committedAmount) {
-        const finalizationTime = new Date(transfer.result.finalizedAt).getTime() || Date.now()
+      if (result?.committedAmount) {
+        const finalizationTime = new Date(result.finalizedAt).getTime() || Date.now()
         await this.tasks.put({
           userId,
           taskType: 'DeleteTransfer',
           scheduledFor: new Date(finalizationTime + 1000 * TRANSFER_DELETION_DELAY_SECONDS),
-          transferUri: transfer.uri,
+          transferUri,
         })
       }
 
