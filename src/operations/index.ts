@@ -16,7 +16,7 @@ import {
   TransferRecord,
   RecordDoesNotExist,
   ExecutionState,
-  TRANSFER_DELETION_MIN_DELAY_SECONDS,
+  getCreateTransferActionStatus,
 } from './db'
 import {
   parsePaymentRequest,
@@ -38,14 +38,6 @@ export type {
   CreateTransferActionWithId,
   TransferRecord,
 }
-
-export type CreateTransferActionStatus =
-  | 'Draft'
-  | 'Not sent'
-  | 'Not confirmed'
-  | 'Sent'
-  | 'Failed'
-  | 'Timed out'
 
 export class TransferCreationTimeout extends Error {
   name = 'TransferCreationTimeout'
@@ -112,6 +104,7 @@ class UserContext {
 
   readonly userId: number
   readonly scheduleUpdate = this.updateScheduler.schedule.bind(this.updateScheduler)
+  readonly getCreateTransferActionStatus = getCreateTransferActionStatus
 
   constructor(debtroRecord: DebtorRecordWithId) {
     this.userId = debtroRecord.userId
@@ -154,21 +147,6 @@ class UserContext {
     }
     await db.createActionRecord(actionRecord)  // adds the `actionId` field
     return actionRecord as CreateTransferActionWithId
-  }
-
-  getCreateTransferActionStatus(action: CreateTransferActionWithId): CreateTransferActionStatus {
-    if (!action.execution) return 'Draft'
-    const { startedAt, unresolvedRequestAt, result } = action.execution
-    switch (result?.ok) {
-      case undefined:
-        if (hasTimedOut(startedAt)) return 'Timed out'
-        if (unresolvedRequestAt) return 'Not confirmed'
-        return 'Not sent'
-      case true:
-        return 'Sent'
-      case false:
-        return 'Failed'
-    }
   }
 
   /* Tries to (re)execute the given create transfer action. If the
@@ -291,11 +269,6 @@ class UserContext {
     return true
   }
 
-}
-
-function hasTimedOut(startedAt: Date): boolean {
-  const safetyMargin = 2 * appConfig.serverApiTimeout + 3_600_000  // at least 1 hour
-  return Date.now() + safetyMargin > startedAt.getTime() + 1000 * TRANSFER_DELETION_MIN_DELAY_SECONDS
 }
 
 async function updateExecutionState(action: CreateTransferActionWithId, execution: ExecutionState): Promise<void> {

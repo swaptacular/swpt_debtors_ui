@@ -109,6 +109,14 @@ export type CreateTransferActionWithId =
   & ActionRecordWithId
   & CreateTransferAction
 
+export type CreateTransferActionStatus =
+  | 'Draft'
+  | 'Not sent'
+  | 'Not confirmed'
+  | 'Sent'
+  | 'Failed'
+  | 'Timed out'
+
 export type AbortTransferAction =
   & ActionData
   & {
@@ -146,6 +154,7 @@ export class RecordDoesNotExist extends Error {
   name = 'RecordDoesNotExist'
 }
 
+export const MAX_NETWORK_PACKET_DELAY_MILLISECONDS = 3_600_000  // 1 hour, to be on the safe side
 export const TRANSFER_DELETION_MIN_DELAY_SECONDS = 5 * 86400  // 5 days
 export const TRANSFER_DELETION_DELAY_SECONDS = Math.max(
   appConfig.TransferDeletionDelaySeconds, TRANSFER_DELETION_MIN_DELAY_SECONDS)
@@ -170,6 +179,29 @@ function getTransferState(transfer: Transfer): 'waiting' | 'delayed' | 'successf
 
 export function isConcludedTransfer(transferRecord: TransferRecord): boolean {
   return transferRecord.result !== undefined || transferRecord.aborted === true
+}
+
+export function hasTimedOut(startedAt: Date, currentTime: number = Date.now()): boolean {
+  const safetyMargin = 2 * appConfig.serverApiTimeout + MAX_NETWORK_PACKET_DELAY_MILLISECONDS
+  return currentTime + safetyMargin > startedAt.getTime() + 1000 * TRANSFER_DELETION_MIN_DELAY_SECONDS
+}
+
+export function getCreateTransferActionStatus(
+  action: CreateTransferAction,
+  currentTime: number = Date.now()
+): CreateTransferActionStatus {
+  if (action.execution === undefined) return 'Draft'
+  const { startedAt, unresolvedRequestAt, result } = action.execution
+  switch (result?.ok) {
+    case undefined:
+      if (hasTimedOut(startedAt, currentTime)) return 'Timed out'
+      if (unresolvedRequestAt) return 'Not confirmed'
+      return 'Not sent'
+    case true:
+      return 'Sent'
+    case false:
+      return 'Failed'
+  }
 }
 
 class DebtorsDb extends Dexie {
@@ -550,20 +582,20 @@ class DebtorsDb extends Dexie {
           }
         }
       }
-      this.resolveOldCreateTransferRequests(userId, data)
+      this.resolveOldNotConfirmedCreateTransferRequests(userId, data)
     }
   }
 
-  private async resolveOldCreateTransferRequests(userId: number, data: UserData): Promise<void> {
-    const cutoffTime = data.collectedAfter.getTime() - 3_600_000  // at least one hour old
+  private async resolveOldNotConfirmedCreateTransferRequests(userId: number, data: UserData): Promise<void> {
+    const currentTime = Date.now()
+    const cutoffTime = data.collectedAfter.getTime() - MAX_NETWORK_PACKET_DELAY_MILLISECONDS
     await this.actions
       .where('[userId+actionId]')
       .between([userId, Dexie.minKey], [userId, Dexie.maxKey])
       .filter(action => (
         action.actionType === 'CreateTransfer' &&
-        action.execution !== undefined &&
-        action.execution.result === undefined &&
-        (action.execution.unresolvedRequestAt?.getTime() ?? Infinity) < cutoffTime
+        getCreateTransferActionStatus(action, currentTime) === 'Not confirmed' &&
+        action.execution!.unresolvedRequestAt!.getTime() < cutoffTime
       ))
       .modify((action: { execution: ExecutionState }) => {
         delete action.execution.unresolvedRequestAt
