@@ -155,26 +155,10 @@ export class RecordDoesNotExist extends Error {
 }
 
 const MAX_PROCESSING_DELAY_MILLISECONDS = 2 * appConfig.serverApiTimeout + 3_600_000  // to be on the safe side
-const TRANSFER_WAIT_SECONDS = 86400  // 24 hours before the transfer is considered delayed.
+const TRANSFER_NORMAL_WAIT_SECONDS = 86400  // 24 hours before the transfer is considered delayed.
 const TRANSFER_DELETION_MIN_DELAY_SECONDS = 5 * 86400  // 5 days
 const TRANSFER_DELETION_DELAY_SECONDS = Math.max(
   appConfig.TransferDeletionDelaySeconds, TRANSFER_DELETION_MIN_DELAY_SECONDS)
-
-function getTransferState(transfer: Transfer): 'waiting' | 'delayed' | 'successful' | 'unsuccessful' {
-  const result = transfer.result
-  if (result === undefined) {
-    const initiatedAt = new Date(transfer.initiatedAt)
-    const deadline = new Date(initiatedAt.getTime() + 1000 * TRANSFER_WAIT_SECONDS)
-    const now = new Date()
-    return now <= deadline ? 'waiting' : 'delayed'
-
-  } else if (result.committedAmount === 0n) {
-    return 'unsuccessful'
-
-  } else {
-    return 'successful'
-  }
-}
 
 function hasTimedOut(startedAt: Date, currentTime: number = Date.now()): boolean {
   const deadline = startedAt.getTime() + 1000 * TRANSFER_DELETION_MIN_DELAY_SECONDS
@@ -457,75 +441,96 @@ class DebtorsDb extends Dexie {
   }
 
   async storeTransfer(userId: number, transfer: Transfer): Promise<TransferRecord> {
-    return await this.transaction('rw', [this.transfers, this.actions, this.tasks], async () => {
-      let transferRecord
-      const { uri: transferUri, transferUuid, initiatedAt, result } = transfer
-      const existingTransferRecord = await this.transfers.get(transferUri)
+    const { uri: transferUri, transferUuid, initiatedAt, result } = transfer
 
+    const getAbortTransferActionQuery = () => this.actions
+      .where({ transferUri })
+      .filter(action => action.actionType === 'AbortTransfer' && action.userId === userId)
+
+    const matchCreateTransferAction = async (): Promise<boolean> => {
+      const matched = await this.actions
+        .where({ 'creationRequest.transferUuid': transferUuid })
+        .filter(action => action.actionType === 'CreateTransfer')
+        .modify((action: CreateTransferAction) => {
+          action.execution = {
+            startedAt: action.execution?.startedAt ?? new Date(),
+            result: { ok: true, transferUri },
+          }
+        })
+      return matched !== 0
+    }
+
+    const putTransferRecord = async (): Promise<TransferRecord> => {
+      let transferRecord
+      const existingTransferRecord = await this.transfers.get(transferUri)
       if (existingTransferRecord) {
-        if (userId !== existingTransferRecord.userId) {
-          throw new Error('Can not alter the userId of an existing transfer record.')
-        }
+        if (existingTransferRecord.userId != userId) throw new Error('wrong userId')
         const { time, paymentInfo, originatesHere, aborted } = existingTransferRecord
         transferRecord = { ...transfer, userId, time, paymentInfo, originatesHere, aborted }
-        await this.transfers.put(transferRecord)
-
       } else {
-        let time = new Date(initiatedAt).getTime() || Date.now()
+        const time = new Date(initiatedAt).getTime() || Date.now()
         const paymentInfo = parseTransferNote(transfer)
-        const originatesHere = (
-          await this.actions
-            .where({ 'creationRequest.transferUuid': transferUuid })
-            .filter(action => action.actionType === 'CreateTransfer')
-            .modify((action: CreateTransferAction) => {
-              const startedAt = action.execution?.startedAt ?? new Date(time)
-              const result = { ok: true, transferUri }
-              action.execution = { startedAt, result }
-            })
-        ) > 0 ? true as const : undefined
-        while (true) {
-          try {
-            transferRecord = { ...transfer, userId, time, paymentInfo, originatesHere }
-            await this.transfers.put(transferRecord)
-            break
-          } catch (e: unknown) {
-            if (!(e instanceof Dexie.ConstraintError)) throw e
-            time *= (1 + Number.EPSILON)
-          }
+        const originatesHere = await matchCreateTransferAction() || undefined
+        transferRecord = { ...transfer, userId, time, paymentInfo, originatesHere }
+      }
+      let attemptsLeft = 100
+      while (true) {
+        try {
+          await this.transfers.put(transferRecord)
+          break
+        } catch (e: unknown) {
+          if (!(e instanceof Dexie.ConstraintError && attemptsLeft--)) throw e
+          transferRecord.time *= (1 + Number.EPSILON)
         }
       }
+      return transferRecord
+    }
 
-      const abortTransferRecordQuery = this.actions
-        .where({ transferUri })
-        .filter(action => action.userId === userId && action.actionType === 'AbortTransfer')
-      switch (getTransferState(transfer)) {
+    const getTransferState = (): 'waiting' | 'delayed' | 'successful' | 'unsuccessful' => {
+      switch (result?.committedAmount) {
+        case undefined:
+          const initiatedAt = new Date(transfer.initiatedAt)
+          const delayThreshold = new Date(initiatedAt.getTime() + 1000 * TRANSFER_NORMAL_WAIT_SECONDS)
+          const now = new Date()
+          return now <= delayThreshold ? 'waiting' : 'delayed'
+        case 0n:
+          return 'unsuccessful'
+        default:
+          return 'successful'
+      }
+    }
+
+    const scheduleTransferDeletion = async (): Promise<void> => {
+      const finalizationTime = result && new Date(result.finalizedAt).getTime() || Date.now()
+      await this.tasks.put({
+        userId,
+        taskType: 'DeleteTransfer',
+        scheduledFor: new Date(finalizationTime + 1000 * TRANSFER_DELETION_DELAY_SECONDS),
+        transferUri,
+      })
+    }
+
+    const ensureAbortTransferActionExists = async (): Promise<void> => {
+      await getAbortTransferActionQuery().first() ?? await this.actions.add({
+        userId,
+        transferUri,
+        actionType: 'AbortTransfer',
+        createdAt: new Date(),
+      })
+    }
+
+    return await this.transaction('rw', [this.transfers, this.actions, this.tasks], async () => {
+      const transferRecord = await putTransferRecord()
+      switch (getTransferState()) {
         case 'successful':
-          const finalizationTime = new Date(result!.finalizedAt).getTime() || Date.now()
-          await this.tasks.put({
-            userId,
-            taskType: 'DeleteTransfer',
-            scheduledFor: new Date(finalizationTime + 1000 * TRANSFER_DELETION_DELAY_SECONDS),
-            transferUri,
-          })
-
-          // If a delayed transfer turned out to be succcessful,
-          // its corresponding abort transfer action must be
-          // deleted.
-          await abortTransferRecordQuery.delete()
+          await scheduleTransferDeletion()
+          await getAbortTransferActionQuery().delete()
           break
         case 'delayed':
         case 'unsuccessful':
-          // For troubled transfers, make sure a corresponding
-          // abort transfer action does exist.
-          await abortTransferRecordQuery.first() || await this.actions.add({
-            userId,
-            transferUri,
-            actionType: 'AbortTransfer',
-            createdAt: new Date(),
-          })
+          await ensureAbortTransferActionExists()
           break
       }
-
       return transferRecord
     })
   }
