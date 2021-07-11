@@ -196,7 +196,7 @@ class UserContext {
         const transferUri: string = (action.execution?.result as any).transferUri
         transferRecord = await db.getTransferRecord(transferUri)
         if (!transferRecord) throw new Error('missing transfer record')
-        db.replaceActionRecord(action)
+        db.deleteActionRecord(action)
         break
 
       case 'Failed':
@@ -216,7 +216,7 @@ class UserContext {
    * prepared this method to throw `RecordDoesNotExist` in case of a
    * failure due to concurrent execution/deletion of the action.*/
   async deleteCreateTransferAction(action: CreateTransferActionWithId): Promise<void> {
-    await db.replaceActionRecord(action)
+    await db.deleteActionRecord(action)
   }
 
   /* Retries an unsuccessful transfer.*/

@@ -199,7 +199,7 @@ test("Install and uninstall user", async () => {
   const actions = await db.getActionRecords(userId)
   expect(actions.length).toBe(1)
   expect(actions[0].actionType).toBe('AbortTransfer')
-  await db.replaceActionRecord(actions[0])
+  await db.deleteActionRecord(actions[0])
   await expect(db.getActionRecords(userId)).resolves.toEqual([])
 
   const actionRecord = {
@@ -224,7 +224,7 @@ test("Install and uninstall user", async () => {
   const ar3 = { ...actionRecord, actionId: undefined }
   await expect(db.replaceActionRecord({ ...actionRecord, actionId }, ar3)).rejects.toBeInstanceOf(RecordDoesNotExist)
   await expect(db.getActionRecords(userId)).resolves.toEqual([ar2])
-  await expect(db.replaceActionRecord(ar2 as any as ActionRecordWithId)).resolves.toBeUndefined()
+  await expect(db.deleteActionRecord(ar2 as any as ActionRecordWithId)).resolves.toBeUndefined()
   await expect(db.getActionRecords(userId)).resolves.toEqual([])
   const x = await db.createActionRecord({ ...actionRecord, actionId: undefined })
   await expect(db.getActionRecords(userId)).resolves.toEqual([{ ...actionRecord, actionId: x }])

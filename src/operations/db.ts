@@ -280,6 +280,10 @@ class DebtorsDb extends Dexie {
     })
   }
 
+  async getDocumentRecord(uri: string): Promise<DocumentRecord | undefined> {
+    return await this.documents.get(uri)
+  }
+
   async getTransferRecords(userId: number, options: ListQueryOptions = {}): Promise<TransferRecord[]> {
     const { before = Dexie.maxKey, after = Dexie.minKey, limit = 1e9, latestFirst = true } = options
     let collection = this.transfers
@@ -427,8 +431,8 @@ class DebtorsDb extends Dexie {
     })
   }
 
-  async getDocumentRecord(uri: string): Promise<DocumentRecord | undefined> {
-    return await this.documents.get(uri)
+  async deleteActionRecord(original: ActionRecordWithId): Promise<void> {
+    await this.replaceActionRecord(original)
   }
 
   async storeUserData(data: UserData): Promise<number> {
