@@ -158,7 +158,7 @@ class UserContext {
    * failure due to concurrent execution/deletion of the action. Note
    * that the passed `action` object will be modified according to the
    * changes occurring in the state of the action record. */
-  async executeCreateTransferAction(action: CreateTransferActionWithId, deleteAction = true): Promise<TransferRecord> {
+  async executeCreateTransferAction(action: CreateTransferActionWithId): Promise<TransferRecord> {
     let transferRecord
 
     switch (this.getCreateTransferActionStatus(action)) {
@@ -176,7 +176,7 @@ class UserContext {
             { attemptLogin: true },
           ) as HttpResponse<Transfer>
           const transfer = response.data
-          transferRecord = await db.createTransferRecord(action, transfer, deleteAction)
+          transferRecord = await db.createTransferRecord(action, transfer)
         } catch (e: unknown) {
           if (e instanceof HttpError) {
             if (e.status === 422) {
