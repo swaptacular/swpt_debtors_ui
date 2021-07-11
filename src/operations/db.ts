@@ -313,7 +313,7 @@ class DebtorsDb extends Dexie {
       if (!equal(existing, action)) {
         throw new RecordDoesNotExist()
       }
-      const transferRecord = await this.putTransferRecord(userId, transfer)
+      const transferRecord = await this.storeTransfer(userId, transfer)
       if (deleteAction) {
         await this.actions.delete(actionId)
       }
@@ -456,7 +456,7 @@ class DebtorsDb extends Dexie {
     })
   }
 
-  async putTransferRecord(userId: number, transfer: Transfer): Promise<TransferRecord> {
+  async storeTransfer(userId: number, transfer: Transfer): Promise<TransferRecord> {
     return await this.transaction('rw', [this.transfers, this.actions, this.tasks], async () => {
       let transferRecord
       const { uri: transferUri, transferUuid, initiatedAt, result } = transfer
@@ -495,14 +495,35 @@ class DebtorsDb extends Dexie {
         }
       }
 
-      if (result?.committedAmount) {
-        const finalizationTime = new Date(result.finalizedAt).getTime() || Date.now()
-        await this.tasks.put({
-          userId,
-          taskType: 'DeleteTransfer',
-          scheduledFor: new Date(finalizationTime + 1000 * TRANSFER_DELETION_DELAY_SECONDS),
-          transferUri,
-        })
+      const abortTransferRecordQuery = this.actions
+        .where({ transferUri })
+        .filter(action => action.userId === userId && action.actionType === 'AbortTransfer')
+      switch (getTransferState(transfer)) {
+        case 'successful':
+          const finalizationTime = new Date(result!.finalizedAt).getTime() || Date.now()
+          await this.tasks.put({
+            userId,
+            taskType: 'DeleteTransfer',
+            scheduledFor: new Date(finalizationTime + 1000 * TRANSFER_DELETION_DELAY_SECONDS),
+            transferUri,
+          })
+
+          // If a delayed transfer turned out to be succcessful,
+          // its corresponding abort transfer action must be
+          // deleted.
+          await abortTransferRecordQuery.delete()
+          break
+        case 'delayed':
+        case 'unsuccessful':
+          // For troubled transfers, make sure a corresponding
+          // abort transfer action does exist.
+          await abortTransferRecordQuery.first() || await this.actions.add({
+            userId,
+            transferUri,
+            actionType: 'AbortTransfer',
+            createdAt: new Date(),
+          })
+          break
       }
 
       return transferRecord
@@ -554,31 +575,8 @@ class DebtorsDb extends Dexie {
   private async storeTransferRecords(userId: number, data: UserData): Promise<void> {
     if (data.transfers) {
       for (const transfer of data.transfers) {
-        const transferUri = transfer.uri
-        if (!await this.isConcludedTransfer(transferUri)) {
-          await this.putTransferRecord(userId, transfer)
-          const abortTransferRecordQuery = this.actions
-            .where({ transferUri })
-            .filter(action => action.userId === userId && action.actionType === 'AbortTransfer')
-          switch (getTransferState(transfer)) {
-            case 'successful':
-              // If a delayed transfer turned out to be succcessful,
-              // its corresponding abort transfer action must be
-              // deleted.
-              await abortTransferRecordQuery.delete()
-              break
-            case 'delayed':
-            case 'unsuccessful':
-              // For troubled transfers, make sure a corresponding
-              // abort transfer action does exist.
-              await abortTransferRecordQuery.first() || await this.actions.add({
-                userId,
-                transferUri,
-                actionType: 'AbortTransfer',
-                createdAt: new Date(),
-              })
-              break
-          }
+        if (!await this.isConcludedTransfer(transfer.uri)) {
+          await this.storeTransfer(userId, transfer)
         }
       }
       this.resolveOldNotConfirmedCreateTransferRequests(userId, data)

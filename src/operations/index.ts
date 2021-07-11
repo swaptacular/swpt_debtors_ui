@@ -264,7 +264,7 @@ class UserContext {
       if (e instanceof HttpError && (e.status === 403 || e.status === 404)) return false
       throw e
     }
-    await db.putTransferRecord(action.userId, transfer)
+    await db.storeTransfer(action.userId, transfer)
     return true
   }
 

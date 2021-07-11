@@ -330,23 +330,23 @@ test("Install and uninstall user", async () => {
   }
   const t = transfers[0]
   const time = new Date(t.initiatedAt).getTime()
-  await expect((db as any).putTransferRecord(userId, t)).resolves.toEqual({
+  await expect((db as any).storeTransfer(userId, t)).resolves.toEqual({
     ...t,
     userId,
     time: time,
     paymentInfo,
   })
   await expect(db.getTransferRecord(t.uri)).resolves.toEqual({ ...t, userId, time, paymentInfo })
-  await expect((db as any).putTransferRecord(userId, t)).resolves.toEqual({
+  await expect((db as any).storeTransfer(userId, t)).resolves.toEqual({
     ...t,
     userId,
     time: time,
     paymentInfo,
   })
   await expect(db.getTransferRecord(t.uri)).resolves.toEqual({ ...t, userId, time, paymentInfo })
-  await expect((db as any).putTransferRecord(userId + 1, t)).rejects.toBeInstanceOf(Error)
+  await expect((db as any).storeTransfer(userId + 1, t)).rejects.toBeInstanceOf(Error)
   const alteredUri = t.uri + '/something'
-  await expect((db as any).putTransferRecord(userId, { ...t, uri: alteredUri })).resolves.toEqual({
+  await expect((db as any).storeTransfer(userId, { ...t, uri: alteredUri })).resolves.toEqual({
     ...t,
     userId,
     uri: alteredUri,
