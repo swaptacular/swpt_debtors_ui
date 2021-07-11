@@ -313,8 +313,8 @@ class DebtorsDb extends Dexie {
     })
   }
 
-  /* Deletes the given abort transfer action, and if necessary, marks the
-   * corresponding transfer as aborted. Will throw `RecordDoesNotExist`
+  /* Deletes the given abort transfer action, and if not successful, marks
+   * the corresponding transfer as aborted. Will throw `RecordDoesNotExist`
    * if the abort transfer action does not exist, or has been changed. */
   async deleteAbortTransferAction(action: AbortTransferActionWithId): Promise<TransferRecord> {
     return await this.transaction('rw', [this.transfers, this.actions, this.tasks], async () => {
