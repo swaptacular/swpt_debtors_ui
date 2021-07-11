@@ -404,10 +404,11 @@ class DebtorsDb extends Dexie {
     })
   }
 
-  /* Depending on the passed `replacement` value -- replaces, updates,
-   * or deletes the original action record. Returns the actionId of
-   * the replacement. Note that an `actionId` field will be added to
-   * the passed `replacement` object if it does not have one. */
+  /* Replaces, updates, or deletes the passed action record. Returns
+   * the actionId of the replacement. Will throw `RecordDoesNotExist`
+   * if the original record does not exist, or has been changed. Note
+   * that an `actionId` field will be added to the passed
+   * `replacement` object when it does not have one. */
   async replaceActionRecord(original: ActionRecordWithId, replacement: ActionRecord | null): Promise<number | undefined> {
     return await this.transaction('rw', this.actions, async () => {
       const { actionId, userId } = original
@@ -431,6 +432,8 @@ class DebtorsDb extends Dexie {
     })
   }
 
+  /* Deletes the passed action record. Will throw `RecordDoesNotExist`
+   * if the passed record does not exist, or has been changed. */
   async deleteActionRecord(action: ActionRecordWithId): Promise<void> {
     await this.replaceActionRecord(action, null)
   }
