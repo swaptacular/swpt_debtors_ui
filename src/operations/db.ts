@@ -307,6 +307,10 @@ class DebtorsDb extends Dexie {
         throw new RecordDoesNotExist()
       }
       const transferRecord = await this.storeTransfer(userId, transfer)
+
+      // The create transfer action record must be deleted after the
+      // `storeTransfer` call has finished, otherwise the `originatesHere`
+      // field in the transfer record will not be set correctly.
       await this.actions.delete(actionId)
       return transferRecord
     })
