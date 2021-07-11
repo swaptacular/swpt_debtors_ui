@@ -321,32 +321,6 @@ class DebtorsDb extends Dexie {
     })
   }
 
-  /* Deletes the given abort transfer action, and if not successful, marks
-   * the corresponding transfer as aborted. Will throw `RecordDoesNotExist`
-   * if the abort transfer action does not exist, or has been changed. */
-  async deleteAbortTransferAction(action: AbortTransferActionWithId): Promise<TransferRecord> {
-    return await this.transaction('rw', [this.transfers, this.actions, this.tasks], async () => {
-      await this.deleteActionRecord(action)
-      const { userId, transferUri } = action
-      let transferRecord = await this.transfers.get(transferUri)
-      if (!(transferRecord && transferRecord.userId === userId)) {
-        throw new Error('missing transfer record')
-      }
-      if (getTransferState(transferRecord) !== 'successful') {
-        transferRecord.aborted = true
-        await this.transfers.put(transferRecord)
-        const initiationTime = new Date(transferRecord.initiatedAt).getTime() || Date.now()
-        await this.tasks.put({
-          userId,
-          taskType: 'DeleteTransfer',
-          scheduledFor: new Date(initiationTime + 1000 * TRANSFER_DELETION_MIN_DELAY_SECONDS),
-          transferUri,
-        })
-      }
-      return transferRecord
-    })
-  }
-
   async getActionRecords(userId: number, options: ListQueryOptions = {}): Promise<ActionRecordWithId[]> {
     const { before = Dexie.maxKey, after = Dexie.minKey, limit = 1e9, latestFirst = true } = options
     let collection = this.actions
@@ -381,23 +355,51 @@ class DebtorsDb extends Dexie {
    * or has been changed. Note that an `actionId` field will be added
    * to the passed `replacement` object when it does not have one. */
   async replaceActionRecord(original: ActionRecordWithId, replacement: ActionRecord | null): Promise<void> {
-    await this.transaction('rw', this.actions, async () => {
-      const { actionId, userId } = original
+    const { actionId, userId } = original
+
+    const abortTransfer = async (transferUri: string): Promise<void> => {
+      let transferRecord = await this.transfers.get(transferUri)
+      if (transferRecord && transferRecord.userId === userId) {
+        if (getTransferState(transferRecord) !== 'successful') {
+          const initiationTime = new Date(transferRecord.initiatedAt).getTime() || Date.now()
+          transferRecord.aborted = true
+          await this.transfers.put(transferRecord)
+          await this.tasks.put({
+            userId,
+            taskType: 'DeleteTransfer',
+            scheduledFor: new Date(initiationTime + 1000 * TRANSFER_DELETION_MIN_DELAY_SECONDS),
+            transferUri,
+          })
+        }
+      }
+    }
+
+    await this.transaction('rw', [this.transfers, this.actions, this.tasks], async () => {
       const existing = await this.actions.get(actionId)
       if (!equal(existing, original)) {
         throw new RecordDoesNotExist()
       }
-      if (replacement === null) {
-        await this.actions.delete(actionId)
-      } else if (replacement.userId !== userId) {
+      if (replacement && replacement.userId !== userId) {
         throw new Error('can not alter userId')
-      } else if (replacement.actionId === undefined) {
-        await this.actions.delete(actionId)
-        await this.actions.add(replacement)
-      } else if (replacement.actionId !== actionId) {
-        throw new Error('can not alter actionId')
-      } else {
+      }
+      if (replacement && !(replacement.actionId === undefined || replacement.actionId === actionId)) {
+        throw new Error('can not choose actionId')
+      }
+
+      if (replacement && replacement.actionId === actionId) {
+        // Update the action record "in place".
         await this.actions.put(replacement)
+
+      } else {
+        // Delete the original record.
+        await this.actions.delete(actionId)
+        if (original.actionType === 'AbortTransfer') {
+          await abortTransfer(original.transferUri)
+        }
+        // Put a replacement, if available.
+        if (replacement) {
+          await this.actions.add(replacement)
+        }
       }
     })
   }

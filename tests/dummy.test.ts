@@ -307,7 +307,7 @@ test("Install and uninstall user", async () => {
   expect(configRecord.configData).toBeDefined()
   await expect(db.getActionRecord(updateConifgActionId)).resolves.toBe(undefined)
 
-  await expect(db.deleteAbortTransferAction(
+  await expect(db.deleteActionRecord(
     { userId, createdAt: new Date(), actionId: -1, actionType: 'AbortTransfer', transferUri: 'xxx' }
   )).rejects.toBeInstanceOf(RecordDoesNotExist)
   const abortTransferAction = {
@@ -318,7 +318,7 @@ test("Install and uninstall user", async () => {
   }
   const abortTransferActionId = await db.createActionRecord(abortTransferAction)
   expect(abortTransferActionId).toBeDefined()
-  await db.deleteAbortTransferAction(abortTransferAction as AbortTransferActionWithId)
+  await db.deleteActionRecord(abortTransferAction as AbortTransferActionWithId)
   await expect(db.getActionRecord(abortTransferActionId)).resolves.toBe(undefined)
   await expect(db.getTransferRecord(transfers[1].uri)).resolves.toHaveProperty('aborted')
 

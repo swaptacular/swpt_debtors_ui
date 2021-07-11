@@ -219,60 +219,59 @@ class UserContext {
     await db.deleteActionRecord(action)
   }
 
-  /* Retries an unsuccessful transfer.*/
+  /* Retries an unsuccessful transfer. When passing an abort transfer
+   * action, the caller must be prepared this method to throw
+   * `RecordDoesNotExist` in case of a failure due to concurrent
+   * execution/deletion of the action. */
   async retryTransfer(transferRecord: TransferRecord): Promise<CreateTransferActionWithId>
-  async retryTransfer(action: AbortTransferActionWithId): Promise<CreateTransferActionWithId>
+  async retryTransfer(abortTransferAction: AbortTransferActionWithId): Promise<CreateTransferActionWithId>
   async retryTransfer(param: TransferRecord | AbortTransferActionWithId): Promise<CreateTransferActionWithId> {
-    if ('actionId' in param) {
-      const action: AbortTransferActionWithId = param
-      let transferRecord
-      try {
-        transferRecord = await db.deleteAbortTransferAction(action)
-      } catch (e: unknown) {
-        if (e instanceof RecordDoesNotExist) {
-          // Try to ignore this error because it can be expected.
-          transferRecord = await db.getTransferRecord(action.transferUri)
-          if (!transferRecord) throw new Error('missing transfer record')
-        } else throw e
-      }
-      return await this.retryTransfer(transferRecord)
+    const [transferRecord, abortTransferAction] = 'actionId' in param ?
+      [await db.getTransferRecord(param.transferUri), param] :
+      [param, undefined]
+    if (!transferRecord) throw new Error('missing transfer record')
 
-    } else {
-      const transferRecord: TransferRecord = param
-      const createTransferAction = {
-        userId: transferRecord.userId,
-        actionType: 'CreateTransfer' as const,
-        createdAt: new Date(),
-        creationRequest: {
-          type: 'TransferCreationRequest',
-          recipient: transferRecord.recipient,
-          amount: transferRecord.amount,
-          transferUuid: uuidv4(),
-          noteFormat: transferRecord.noteFormat,
-          note: transferRecord.note,
-        },
-        paymentInfo: transferRecord.paymentInfo,
-        requestedAmount: transferRecord.noteFormat === 'PAYMENT0' ? transferRecord.amount : 0n,
-        // TODO: When working with the "Payments Web API", the
-        // `requestedDeadline` field must be restored too.
-      }
-      await db.createActionRecord(createTransferAction)  // adds the `actionId` field
-      return createTransferAction as CreateTransferActionWithId
+    const createTransferAction = {
+      userId: transferRecord.userId,
+      actionType: 'CreateTransfer' as const,
+      createdAt: new Date(),
+      creationRequest: {
+        type: 'TransferCreationRequest',
+        recipient: transferRecord.recipient,
+        amount: transferRecord.amount,
+        transferUuid: uuidv4(),
+        noteFormat: transferRecord.noteFormat,
+        note: transferRecord.note,
+      },
+      paymentInfo: transferRecord.paymentInfo,
+      requestedAmount: transferRecord.noteFormat === 'PAYMENT0' ? transferRecord.amount : 0n,
+      // TODO: When working with the "Payments Web API", the
+      // `requestedDeadline` field must be restored too.
     }
+
+    if (abortTransferAction) {
+      await db.replaceActionRecord(abortTransferAction, createTransferAction)
+    } else {
+      await db.createActionRecord(createTransferAction)
+    }
+    return createTransferAction as CreateTransferActionWithId  // The `actionId` field has beens added.
   }
 
   /* Dismisses an unsuccessful or delayed transfer.*/
   async dismissTransfer(action: AbortTransferActionWithId): Promise<TransferRecord> {
     try {
-      return await db.deleteAbortTransferAction(action)
+      await db.deleteActionRecord(action)
     } catch (e: unknown) {
       if (e instanceof RecordDoesNotExist) {
-        // Try to ignore this error because it can be expected.
-        const transferRecord = await db.getTransferRecord(action.transferUri)
-        if (!transferRecord) throw new Error('missing transfer record')
-        return transferRecord
+        // Try to ignore concurrent execution errors, because they are
+        // harmless and can be expected during normal use.
+        const actionRecord = await db.getActionRecord(action.actionId)
+        if (actionRecord) throw e
       } else throw e
     }
+    const transferRecord = await db.getTransferRecord(action.transferUri)
+    if (!transferRecord) throw new Error('missing transfer record')
+    return transferRecord
   }
 
   /* Tries to cancel a delayed transfer. Returns whether the transfer
