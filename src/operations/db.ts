@@ -302,16 +302,21 @@ class DebtorsDb extends Dexie {
   async createTransferRecord(action: CreateTransferActionWithId, transfer: Transfer): Promise<TransferRecord> {
     return await this.transaction('rw', [this.transfers, this.actions, this.tasks], async () => {
       const { actionId, userId } = action
+
+      // The validation of the action record must be done before the
+      // call to `storeTransfer`, because the call will change the
+      // action record.
       const existing = await this.actions.get(actionId)
       if (!equal(existing, action)) {
         throw new RecordDoesNotExist()
       }
       const transferRecord = await this.storeTransfer(userId, transfer)
 
-      // The create transfer action record must be deleted after the
-      // `storeTransfer` call has finished, otherwise the `originatesHere`
-      // field in the transfer record will not be set correctly.
+      // The action record must be deleted after the `storeTransfer`
+      // call, otherwise the `originatesHere` field in the transfer
+      // record will not be set correctly.
       await this.actions.delete(actionId)
+
       return transferRecord
     })
   }
