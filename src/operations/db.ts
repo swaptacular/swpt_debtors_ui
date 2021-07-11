@@ -313,15 +313,13 @@ class DebtorsDb extends Dexie {
     })
   }
 
-  async abortTransfer(actionId: number): Promise<TransferRecord> {
+  /* Deletes the given abort transfer action, and if necessary, marks the
+   * corresponding transfer as aborted. Will throw `RecordDoesNotExist`
+   * if the abort transfer action does not exist, or has been changed. */
+  async deleteAbortTransferAction(action: AbortTransferActionWithId): Promise<TransferRecord> {
     return await this.transaction('rw', [this.transfers, this.actions, this.tasks], async () => {
-      const actionRecord = await this.actions.get(actionId)
-      if (!(actionRecord && actionRecord.actionType === 'AbortTransfer')) {
-        throw new RecordDoesNotExist()
-      }
-      const { userId, transferUri } = actionRecord
-      await this.actions.delete(actionId)
-
+      await this.deleteActionRecord(action)
+      const { userId, transferUri } = action
       let transferRecord = await this.transfers.get(transferUri)
       if (!(transferRecord && transferRecord.userId === userId)) {
         throw new Error('missing transfer record')
@@ -341,38 +339,33 @@ class DebtorsDb extends Dexie {
     })
   }
 
-  async retryTransfer(actionId: number): Promise<CreateTransferActionWithId>
-  async retryTransfer(transferRecord: TransferRecord): Promise<CreateTransferActionWithId>
-  async retryTransfer(param: number | TransferRecord): Promise<CreateTransferActionWithId> {
-    if (typeof param === 'number') {
-      const actionId = param
-      return await this.transaction('rw', [this.transfers, this.actions, this.tasks], async () => {
-        const transferRecord = await this.abortTransfer(actionId)
-        return await this.retryTransfer(transferRecord)
-      })
+  async retryAbortTransferAction(action: AbortTransferActionWithId): Promise<CreateTransferActionWithId> {
+    return await this.transaction('rw', [this.transfers, this.actions, this.tasks], async () => {
+      const transferRecord = await this.deleteAbortTransferAction(action)
+      return await this.retryTransfer(transferRecord)
+    })
+  }
 
-    } else {
-      const transferRecord = param
-      const createTransferAction = {
-        userId: transferRecord.userId,
-        actionType: 'CreateTransfer' as const,
-        createdAt: new Date(),
-        creationRequest: {
-          type: 'TransferCreationRequest',
-          recipient: transferRecord.recipient,
-          amount: transferRecord.amount,
-          transferUuid: uuidv4(),
-          noteFormat: transferRecord.noteFormat,
-          note: transferRecord.note,
-        },
-        paymentInfo: transferRecord.paymentInfo,
-        requestedAmount: transferRecord.noteFormat === 'PAYMENT0' ? transferRecord.amount : 0n,
-        // TODO: When working with the "Payments Web API", the
-        // `requestedDeadline` field must be restored too.
-      }
-      await db.createActionRecord(createTransferAction)  // adds the `actionId` field
-      return createTransferAction as CreateTransferActionWithId
+  async retryTransfer(transferRecord: TransferRecord): Promise<CreateTransferActionWithId> {
+    const createTransferAction = {
+      userId: transferRecord.userId,
+      actionType: 'CreateTransfer' as const,
+      createdAt: new Date(),
+      creationRequest: {
+        type: 'TransferCreationRequest',
+        recipient: transferRecord.recipient,
+        amount: transferRecord.amount,
+        transferUuid: uuidv4(),
+        noteFormat: transferRecord.noteFormat,
+        note: transferRecord.note,
+      },
+      paymentInfo: transferRecord.paymentInfo,
+      requestedAmount: transferRecord.noteFormat === 'PAYMENT0' ? transferRecord.amount : 0n,
+      // TODO: When working with the "Payments Web API", the
+      // `requestedDeadline` field must be restored too.
     }
+    await db.createActionRecord(createTransferAction)  // adds the `actionId` field
+    return createTransferAction as CreateTransferActionWithId
   }
 
   async getActionRecords(userId: number, options: ListQueryOptions = {}): Promise<ActionRecordWithId[]> {

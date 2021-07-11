@@ -3,7 +3,14 @@ import App from '../src/App.svelte'
 import { stringify, parse } from '../src/web-api/json-bigint'
 import type { AuthTokenSource } from '../src/web-api/oauth2-token-source'
 import { ServerSession, HttpError } from '../src/web-api'
-import { db, DebtorRecord, RecordDoesNotExist, ActionRecordWithId, CreateTransferActionWithId } from '../src/operations/db'
+import {
+  db,
+  DebtorRecord,
+  RecordDoesNotExist,
+  ActionRecordWithId,
+  CreateTransferActionWithId,
+  AbortTransferActionWithId,
+} from '../src/operations/db'
 import {
   parsePaymentRequest,
   parseTransferNote,
@@ -300,15 +307,18 @@ test("Install and uninstall user", async () => {
   expect(configRecord.configData).toBeDefined()
   await expect(db.getActionRecord(updateConifgActionId)).resolves.toBe(undefined)
 
-  await expect(db.abortTransfer(-1)).rejects.toBeInstanceOf(RecordDoesNotExist)
-  const abortTransferActionId = await db.createActionRecord({
+  await expect(db.deleteAbortTransferAction(
+    { userId, createdAt: new Date(), actionId: -1, actionType: 'AbortTransfer', transferUri: 'xxx' }
+  )).rejects.toBeInstanceOf(RecordDoesNotExist)
+  const abortTransferAction = {
     userId,
-    actionType: 'AbortTransfer',
+    actionType: 'AbortTransfer' as const,
     createdAt: new Date(),
     transferUri: transfers[1].uri,
-  })
+  }
+  const abortTransferActionId = await db.createActionRecord(abortTransferAction)
   expect(abortTransferActionId).toBeDefined()
-  await db.abortTransfer(abortTransferActionId)
+  await db.deleteAbortTransferAction(abortTransferAction as AbortTransferActionWithId)
   await expect(db.getActionRecord(abortTransferActionId)).resolves.toBe(undefined)
   await expect(db.getTransferRecord(transfers[1].uri)).resolves.toHaveProperty('aborted')
 

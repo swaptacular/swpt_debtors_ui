@@ -222,7 +222,7 @@ class UserContext {
   /* Retries an unsuccessful transfer.*/
   async retryTransfer(action: AbortTransferActionWithId): Promise<CreateTransferActionWithId> {
     try {
-      return await db.retryTransfer(action.actionId)
+      return await db.retryAbortTransferAction(action)
     } catch (e: unknown) {
       if (e instanceof RecordDoesNotExist) {
         // Try to ignore this error because it can be expected.
@@ -236,7 +236,7 @@ class UserContext {
   /* Dismisses an unsuccessful or delayed transfer.*/
   async dismissTransfer(action: AbortTransferActionWithId): Promise<TransferRecord> {
     try {
-      return await db.abortTransfer(action.actionId)
+      return await db.deleteAbortTransferAction(action)
     } catch (e: unknown) {
       if (e instanceof RecordDoesNotExist) {
         // Try to ignore this error because it can be expected.
