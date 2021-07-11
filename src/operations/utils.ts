@@ -1,4 +1,4 @@
-import { db, UserData, isConcludedTransfer } from './db'
+import { db, UserData } from './db'
 import { server, Debtor, Transfer, HttpResponse, TransfersList, RootConfigData } from './server'
 
 function extractDocumentInfoUri(configData: string): string | undefined {
@@ -43,10 +43,7 @@ export async function getUserData(getTransfers = true): Promise<UserData> {
   let transfers
   if (getTransfers) {
     const unconcludedTransferUris = (
-      await Promise.all(transferUris.map(async uri => {
-        const t = await db.getTransferRecord(uri)
-        return t && isConcludedTransfer(t) ? undefined : uri
-      }))
+      await Promise.all(transferUris.map(async uri => await db.isConcludedTransfer(uri) ? undefined : uri))
     ).filter(uri => uri !== undefined) as string[]
     const timeout = calcParallelTimeout(unconcludedTransferUris.length)
     transfers = (

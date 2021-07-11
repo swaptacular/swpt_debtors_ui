@@ -165,10 +165,6 @@ function hasTimedOut(startedAt: Date, currentTime: number = Date.now()): boolean
   return currentTime + MAX_PROCESSING_DELAY_MILLISECONDS > deadline
 }
 
-export function isConcludedTransfer(transferRecord: TransferRecord): boolean {
-  return transferRecord.result !== undefined || transferRecord.aborted === true
-}
-
 export function getCreateTransferActionStatus(
   action: CreateTransferAction,
   currentTime: number = Date.now()
@@ -531,13 +527,13 @@ class DebtorsDb extends Dexie {
     })
   }
 
-  private async isInstalledUser(userId: number): Promise<boolean> {
-    return await this.debtors.where({ userId }).count() === 1
+  async isConcludedTransfer(transferUri: string): Promise<boolean> {
+    const transferRecord = await this.transfers.get(transferUri)
+    return transferRecord !== undefined && (transferRecord.result !== undefined || transferRecord.aborted === true)
   }
 
-  private async isConcludedTransfer(uri: string): Promise<boolean> {
-    const transferRecord = await this.transfers.get(uri)
-    return Boolean(transferRecord && isConcludedTransfer(transferRecord))
+  private async isInstalledUser(userId: number): Promise<boolean> {
+    return await this.debtors.where({ userId }).count() === 1
   }
 
   private get allTables() {
