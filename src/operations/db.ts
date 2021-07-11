@@ -528,7 +528,9 @@ class DebtorsDb extends Dexie {
           break
         case 'delayed':
         case 'unsuccessful':
-          await ensureAbortTransferActionExists()
+          if (!transferRecord.aborted) {
+            await ensureAbortTransferActionExists()
+          }
           break
       }
       return transferRecord
