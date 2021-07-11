@@ -217,7 +217,7 @@ test("Install and uninstall user", async () => {
   expect(actionRecord.actionId).toEqual(actionId)
   await expect(db.getActionRecord(actionId)).resolves.toBeDefined()
   const ar2 = { ...actionRecord, actionId: undefined }
-  await expect(db.replaceActionRecord({ ...actionRecord, actionId }, ar2)).resolves.toBeGreaterThan(actionId)
+  await expect(db.replaceActionRecord({ ...actionRecord, actionId }, ar2)).resolves.toBeUndefined()
   expect(ar2.actionId).toBeDefined()
   expect(ar2.actionId).toBeGreaterThan(actionId)
   await expect(db.getActionRecord(actionId)).resolves.toBeUndefined()
@@ -231,7 +231,7 @@ test("Install and uninstall user", async () => {
   await expect(db.replaceActionRecord(
     { ...actionRecord, actionId: x },
     { ...actionRecord, actionId: x, transferUri: 'https://example.com/1/transfers/updated' },
-  )).resolves.toBeDefined()
+  )).resolves.toBeUndefined()
   await expect(db.getActionRecords(userId)).resolves.toEqual([
     { ...actionRecord, actionId: x, transferUri: 'https://example.com/1/transfers/updated' }
   ])
