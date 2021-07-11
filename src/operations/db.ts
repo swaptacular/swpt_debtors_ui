@@ -355,7 +355,7 @@ class DebtorsDb extends Dexie {
    * or has been changed. Note that an `actionId` field will be added
    * to the passed `replacement` object when it does not have one. */
   async replaceActionRecord(original: ActionRecordWithId, replacement: ActionRecord | null): Promise<void> {
-    const { actionId, userId } = original
+    const { actionId, actionType, userId } = original
 
     const abortTransfer = async (transferUri: string): Promise<void> => {
       let transferRecord = await this.transfers.get(transferUri)
@@ -388,6 +388,9 @@ class DebtorsDb extends Dexie {
 
       if (replacement && replacement.actionId === actionId) {
         // Update the action record "in place".
+        if (replacement.actionType !== actionType) {
+          throw new Error('can not update actionType')
+        }
         await this.actions.put(replacement)
 
       } else {
