@@ -165,6 +165,20 @@ function hasTimedOut(startedAt: Date, currentTime: number = Date.now()): boolean
   return currentTime + MAX_PROCESSING_DELAY_MILLISECONDS > deadline
 }
 
+function getTransferState(transfer: Transfer): 'waiting' | 'delayed' | 'successful' | 'unsuccessful' {
+  switch (transfer.result?.committedAmount) {
+    case undefined:
+      const initiatedAt = new Date(transfer.initiatedAt)
+      const delayThreshold = new Date(initiatedAt.getTime() + 1000 * TRANSFER_NORMAL_WAIT_SECONDS)
+      const now = new Date()
+      return now <= delayThreshold ? 'waiting' : 'delayed'
+    case 0n:
+      return 'unsuccessful'
+    default:
+      return 'successful'
+  }
+}
+
 export function getCreateTransferActionStatus(
   action: CreateTransferAction,
   currentTime: number = Date.now()
@@ -308,11 +322,7 @@ class DebtorsDb extends Dexie {
       if (!(transferRecord && transferRecord.userId === userId)) {
         throw new Error('missing transfer record')
       }
-
-      // Unless the transfer turned out to be successful, mark the
-      // transfer as aborted, and schedule its deletion as soon as
-      // possible.
-      if (!transferRecord.result?.committedAmount) {
+      if (getTransferState(transferRecord) !== 'successful') {
         transferRecord.aborted = true
         await this.transfers.put(transferRecord)
         const initiationTime = new Date(transferRecord.initiatedAt).getTime() || Date.now()
@@ -476,20 +486,6 @@ class DebtorsDb extends Dexie {
       return transferRecord
     }
 
-    const getTransferState = (): 'waiting' | 'delayed' | 'successful' | 'unsuccessful' => {
-      switch (result?.committedAmount) {
-        case undefined:
-          const initiatedAt = new Date(transfer.initiatedAt)
-          const delayThreshold = new Date(initiatedAt.getTime() + 1000 * TRANSFER_NORMAL_WAIT_SECONDS)
-          const now = new Date()
-          return now <= delayThreshold ? 'waiting' : 'delayed'
-        case 0n:
-          return 'unsuccessful'
-        default:
-          return 'successful'
-      }
-    }
-
     const scheduleTransferDeletion = async (): Promise<void> => {
       const finalizationTime = result && new Date(result.finalizedAt).getTime() || Date.now()
       await this.tasks.put({
@@ -511,7 +507,7 @@ class DebtorsDb extends Dexie {
 
     return await this.transaction('rw', [this.transfers, this.actions, this.tasks], async () => {
       const transferRecord = await putTransferRecord()
-      switch (getTransferState()) {
+      switch (getTransferState(transfer)) {
         case 'successful':
           await scheduleTransferDeletion()
           await getAbortTransferActionQuery().delete()
