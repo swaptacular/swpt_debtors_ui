@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from 'uuid';
 import equal from 'fast-deep-equal'
 import Dexie from 'dexie'
 import type {
@@ -337,35 +336,6 @@ class DebtorsDb extends Dexie {
       }
       return transferRecord
     })
-  }
-
-  async retryAbortTransferAction(action: AbortTransferActionWithId): Promise<CreateTransferActionWithId> {
-    return await this.transaction('rw', [this.transfers, this.actions, this.tasks], async () => {
-      const transferRecord = await this.deleteAbortTransferAction(action)
-      return await this.retryTransfer(transferRecord)
-    })
-  }
-
-  async retryTransfer(transferRecord: TransferRecord): Promise<CreateTransferActionWithId> {
-    const createTransferAction = {
-      userId: transferRecord.userId,
-      actionType: 'CreateTransfer' as const,
-      createdAt: new Date(),
-      creationRequest: {
-        type: 'TransferCreationRequest',
-        recipient: transferRecord.recipient,
-        amount: transferRecord.amount,
-        transferUuid: uuidv4(),
-        noteFormat: transferRecord.noteFormat,
-        note: transferRecord.note,
-      },
-      paymentInfo: transferRecord.paymentInfo,
-      requestedAmount: transferRecord.noteFormat === 'PAYMENT0' ? transferRecord.amount : 0n,
-      // TODO: When working with the "Payments Web API", the
-      // `requestedDeadline` field must be restored too.
-    }
-    await db.createActionRecord(createTransferAction)  // adds the `actionId` field
-    return createTransferAction as CreateTransferActionWithId
   }
 
   async getActionRecords(userId: number, options: ListQueryOptions = {}): Promise<ActionRecordWithId[]> {

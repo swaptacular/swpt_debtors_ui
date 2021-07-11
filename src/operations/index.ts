@@ -220,16 +220,44 @@ class UserContext {
   }
 
   /* Retries an unsuccessful transfer.*/
-  async retryTransfer(action: AbortTransferActionWithId): Promise<CreateTransferActionWithId> {
-    try {
-      return await db.retryAbortTransferAction(action)
-    } catch (e: unknown) {
-      if (e instanceof RecordDoesNotExist) {
-        // Try to ignore this error because it can be expected.
-        const transferRecord = await db.getTransferRecord(action.transferUri)
-        if (!transferRecord) throw new Error('missing transfer record')
-        return await db.retryTransfer(transferRecord)
-      } else throw e
+  async retryTransfer(transferRecord: TransferRecord): Promise<CreateTransferActionWithId>
+  async retryTransfer(action: AbortTransferActionWithId): Promise<CreateTransferActionWithId>
+  async retryTransfer(param: TransferRecord | AbortTransferActionWithId): Promise<CreateTransferActionWithId> {
+    if ('actionId' in param) {
+      const action: AbortTransferActionWithId = param
+      let transferRecord
+      try {
+        transferRecord = await db.deleteAbortTransferAction(action)
+      } catch (e: unknown) {
+        if (e instanceof RecordDoesNotExist) {
+          // Try to ignore this error because it can be expected.
+          transferRecord = await db.getTransferRecord(action.transferUri)
+          if (!transferRecord) throw new Error('missing transfer record')
+        } else throw e
+      }
+      return await this.retryTransfer(transferRecord)
+
+    } else {
+      const transferRecord: TransferRecord = param
+      const createTransferAction = {
+        userId: transferRecord.userId,
+        actionType: 'CreateTransfer' as const,
+        createdAt: new Date(),
+        creationRequest: {
+          type: 'TransferCreationRequest',
+          recipient: transferRecord.recipient,
+          amount: transferRecord.amount,
+          transferUuid: uuidv4(),
+          noteFormat: transferRecord.noteFormat,
+          note: transferRecord.note,
+        },
+        paymentInfo: transferRecord.paymentInfo,
+        requestedAmount: transferRecord.noteFormat === 'PAYMENT0' ? transferRecord.amount : 0n,
+        // TODO: When working with the "Payments Web API", the
+        // `requestedDeadline` field must be restored too.
+      }
+      await db.createActionRecord(createTransferAction)  // adds the `actionId` field
+      return createTransferAction as CreateTransferActionWithId
     }
   }
 
