@@ -10,6 +10,14 @@ window.appConfig = {
   TransferDeletionDelaySeconds: 15 * 86400,
 }
 
+function assert(condition, msg) {
+  if (!condition) {
+    let e = new Error(msg)
+    e.name = 'AssertionError'
+    throw e
+  }
+}
+
 // if('serviceWorker' in navigator) {
 //   navigator.serviceWorker.register('./sw.js')
 // }

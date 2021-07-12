@@ -10,3 +10,6 @@ declare var appConfig: {
   },
   TransferDeletionDelaySeconds: number,
 }
+
+declare function assert(condition: any, msg?: string): asserts condition
+

@@ -195,7 +195,7 @@ class UserContext {
       case 'Sent':
         const transferUri: string = (action.execution?.result as any).transferUri
         transferRecord = await db.getTransferRecord(transferUri)
-        if (!transferRecord) throw new Error('missing transfer record')
+        assert(transferRecord, 'missing transfer record')
         db.deleteActionRecord(action)
         break
 
@@ -229,7 +229,7 @@ class UserContext {
     const [transferRecord, abortTransferAction] = 'actionId' in param ?
       [await db.getTransferRecord(param.transferUri), param] :
       [param, undefined]
-    if (!transferRecord) throw new Error('missing transfer record')
+    assert(transferRecord, 'missing transfer record')
 
     const createTransferAction = {
       userId: transferRecord.userId,
@@ -270,7 +270,7 @@ class UserContext {
       } else throw e
     }
     const transferRecord = await db.getTransferRecord(action.transferUri)
-    if (!transferRecord) throw new Error('missing transfer record')
+    assert(transferRecord, 'missing transfer record')
     return transferRecord
   }
 
