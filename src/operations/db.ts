@@ -250,7 +250,7 @@ class DebtorsDb extends Dexie {
   async getDebtorRecord(userId: number): Promise<DebtorRecordWithId> {
     const debtorRecord = await this.debtors.get(userId)
     if (!debtorRecord) {
-      throw new RecordDoesNotExist()
+      throw new UserDoesNotExist()
     }
     return debtorRecord as DebtorRecordWithId
   }
@@ -258,12 +258,13 @@ class DebtorsDb extends Dexie {
   async getConfigRecord(userId: number): Promise<ConfigRecord> {
     const configRecord = await this.configs.where({ userId }).first()
     if (!configRecord) {
-      throw new RecordDoesNotExist()
+      throw new UserDoesNotExist()
     }
     return configRecord
   }
 
   async updateConfig(actionId: number, debtorConfig: DebtorConfig): Promise<ConfigRecord> {
+    // TODO: this should be improved.
     return await this.transaction('rw', [this.configs, this.actions], async () => {
       const actionRecord = await this.actions.get(actionId)
       if (!(actionRecord && actionRecord.actionType === 'UpdateConfig')) {

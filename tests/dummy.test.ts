@@ -366,8 +366,8 @@ test("Install and uninstall user", async () => {
 
   await db.uninstallUser(userId)
   await expect(db.getUserId(debtor.uri)).resolves.toBeUndefined()
-  await expect(db.getDebtorRecord(userId)).rejects.toBeInstanceOf(RecordDoesNotExist)
-  await expect(db.getConfigRecord(userId)).rejects.toBeInstanceOf(RecordDoesNotExist)
+  await expect(db.getDebtorRecord(userId)).rejects.toBeInstanceOf(UserDoesNotExist)
+  await expect(db.getConfigRecord(userId)).rejects.toBeInstanceOf(UserDoesNotExist)
   await expect(db.getTransferRecords(userId)).resolves.toEqual([])
   await expect(db.getActionRecords(userId)).resolves.toEqual([])
   await expect(db.getDocumentRecord('https://example.com/1/documents/123')).resolves.toEqual(undefined)
