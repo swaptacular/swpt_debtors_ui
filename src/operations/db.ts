@@ -268,9 +268,7 @@ class DebtorsDb extends Dexie {
       await this.actions.delete(actionId)
       const userId = actionRecord.userId
       let configRecord = await this.getConfigRecord(userId)
-      if (configRecord.uri !== debtorConfig.uri) {
-        throw new Error('Can not alter the URI of an existing config record.')
-      }
+      assert(configRecord.uri === debtorConfig.uri, 'wrong config record URI')
       if (configRecord.latestUpdateId < debtorConfig.latestUpdateId) {
         configRecord = { ...debtorConfig, userId }
         await this.configs.put(configRecord)
@@ -379,18 +377,11 @@ class DebtorsDb extends Dexie {
       if (!equal(existing, original)) {
         throw new RecordDoesNotExist()
       }
-      if (replacement && replacement.userId !== userId) {
-        throw new Error('can not alter userId')
-      }
-      if (replacement && !(replacement.actionId === undefined || replacement.actionId === actionId)) {
-        throw new Error('can not choose actionId')
-      }
-
+      assert(!replacement || replacement.userId === userId, 'wrong userId')
+      assert(!replacement || replacement.actionId === undefined || replacement.actionId === actionId, 'wrong actionId')
       if (replacement && replacement.actionId === actionId) {
         // Update the action record "in place".
-        if (replacement.actionType !== actionType) {
-          throw new Error('can not update actionType')
-        }
+        assert(replacement.actionType === actionType, 'wrong actionType')
         await this.actions.put(replacement)
 
       } else {
@@ -446,7 +437,7 @@ class DebtorsDb extends Dexie {
       let transferRecord
       const existingTransferRecord = await this.transfers.get(transferUri)
       if (existingTransferRecord) {
-        if (existingTransferRecord.userId != userId) throw new Error('wrong userId')
+        assert(existingTransferRecord.userId === userId, 'wrong userId')
         const { time, paymentInfo, originatesHere, aborted } = existingTransferRecord
         transferRecord = { ...transfer, userId, time, paymentInfo, originatesHere, aborted }
       } else {

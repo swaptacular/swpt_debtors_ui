@@ -263,10 +263,9 @@ class UserContext {
       await db.deleteActionRecord(action)
     } catch (e: unknown) {
       if (e instanceof RecordDoesNotExist) {
-        // Try to ignore concurrent execution errors, because they are
-        // harmless and can be expected during normal use.
-        const actionRecord = await db.getActionRecord(action.actionId)
-        if (actionRecord) throw e
+        // Ignore concurrent execution errors, because they can be
+        // expected during normal use, and are harmless.
+        assert(!await db.getActionRecord(action.actionId))
       } else throw e
     }
     const transferRecord = await db.getTransferRecord(action.transferUri)
