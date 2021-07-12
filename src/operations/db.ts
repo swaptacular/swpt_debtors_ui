@@ -286,48 +286,6 @@ class DebtorsDb extends Dexie {
     return await this.documents.get(uri)
   }
 
-  async getTransferRecords(userId: number, options: ListQueryOptions = {}): Promise<TransferRecord[]> {
-    const { before = Dexie.maxKey, after = Dexie.minKey, limit = 1e9, latestFirst = true } = options
-    let collection = this.transfers
-      .where('[userId+time]')
-      .between([userId, after], [userId, before], false, false)
-      .limit(limit)
-    if (latestFirst) {
-      collection = collection.reverse()
-    }
-    return await collection.toArray()
-  }
-
-  async getTransferRecord(uri: string): Promise<TransferRecord | undefined> {
-    return await this.transfers.get(uri)
-  }
-
-  /* Deletes the passed create transfer action record, and ensures
-   * that a corresponding transfer record does exist.  Will throw
-   * `RecordDoesNotExist` if the passed action record does not exist,
-   * or has been changed. */
-  async createTransferRecord(action: CreateTransferActionWithId, transfer: Transfer): Promise<TransferRecord> {
-    return await this.transaction('rw', this.allTables, async () => {
-      const { actionId, userId } = action
-
-      // The validation of the action record must be done before the
-      // call to `storeTransfer`, because the call will change the
-      // action record.
-      const existing = await this.actions.get(actionId)
-      if (!equal(existing, action)) {
-        throw new RecordDoesNotExist()
-      }
-      const transferRecord = await this.storeTransfer(userId, transfer)
-
-      // The action record must be deleted after the `storeTransfer`
-      // call, otherwise the `originatesHere` field in the transfer
-      // record will not be set correctly.
-      await this.actions.delete(actionId)
-
-      return transferRecord
-    })
-  }
-
   async getActionRecords(userId: number, options: ListQueryOptions = {}): Promise<ActionRecordWithId[]> {
     const { before = Dexie.maxKey, after = Dexie.minKey, limit = 1e9, latestFirst = true } = options
     let collection = this.actions
@@ -403,6 +361,48 @@ class DebtorsDb extends Dexie {
           await this.actions.add(replacement)
         }
       }
+    })
+  }
+
+  async getTransferRecords(userId: number, options: ListQueryOptions = {}): Promise<TransferRecord[]> {
+    const { before = Dexie.maxKey, after = Dexie.minKey, limit = 1e9, latestFirst = true } = options
+    let collection = this.transfers
+      .where('[userId+time]')
+      .between([userId, after], [userId, before], false, false)
+      .limit(limit)
+    if (latestFirst) {
+      collection = collection.reverse()
+    }
+    return await collection.toArray()
+  }
+
+  async getTransferRecord(uri: string): Promise<TransferRecord | undefined> {
+    return await this.transfers.get(uri)
+  }
+
+  /* Deletes the passed create transfer action record, and ensures
+   * that a corresponding transfer record does exist.  Will throw
+   * `RecordDoesNotExist` if the passed action record does not exist,
+   * or has been changed. */
+  async createTransferRecord(action: CreateTransferActionWithId, transfer: Transfer): Promise<TransferRecord> {
+    return await this.transaction('rw', this.allTables, async () => {
+      const { actionId, userId } = action
+
+      // The validation of the action record must be done before the
+      // call to `storeTransfer`, because the call will change the
+      // action record.
+      const existing = await this.actions.get(actionId)
+      if (!equal(existing, action)) {
+        throw new RecordDoesNotExist()
+      }
+      const transferRecord = await this.storeTransfer(userId, transfer)
+
+      // The action record must be deleted after the `storeTransfer`
+      // call, otherwise the `originatesHere` field in the transfer
+      // record will not be set correctly.
+      await this.actions.delete(actionId)
+
+      return transferRecord
     })
   }
 
