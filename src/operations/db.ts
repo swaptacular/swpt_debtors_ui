@@ -302,6 +302,10 @@ class DebtorsDb extends Dexie {
     return await this.transfers.get(uri)
   }
 
+  /* Deletes the passed create transfer action, and ensures that a
+   * corresponding transfer record does exist.  Will throw
+   * `RecordDoesNotExist` if the original action record does not
+   * exist, or has been changed. */
   async createTransferRecord(action: CreateTransferActionWithId, transfer: Transfer): Promise<TransferRecord> {
     return await this.transaction('rw', this.allTables, async () => {
       const { actionId, userId } = action
@@ -353,9 +357,10 @@ class DebtorsDb extends Dexie {
   }
 
   /* Replaces, updates, or deletes the passed action record. Will
-   * throw `RecordDoesNotExist` if the original record does not exist,
-   * or has been changed. Note that an `actionId` field will be added
-   * to the passed `replacement` object when it does not have one. */
+   * throw `RecordDoesNotExist` if the original action record does not
+   * exist, or has been changed. Note that an `actionId` field will be
+   * added to the passed `replacement` object if it does not have
+   * one. */
   async replaceActionRecord(original: ActionRecordWithId, replacement: ActionRecord | null): Promise<void> {
     const { actionId, userId } = original
 
