@@ -323,14 +323,6 @@ test("Install and uninstall user", async () => {
   await expect(db.getActionRecord(abortTransferActionId)).resolves.toBe(undefined)
   await expect(db.getTransferRecord(transfers[1].uri)).resolves.toHaveProperty('aborted')
 
-  await db.uninstallUser(userId)
-  await expect(db.getUserId(debtor.uri)).resolves.toBeUndefined()
-  await expect(db.getDebtorRecord(userId)).rejects.toBeInstanceOf(RecordDoesNotExist)
-  await expect(db.getConfigRecord(userId)).rejects.toBeInstanceOf(RecordDoesNotExist)
-  await expect(db.getTransferRecords(userId)).resolves.toEqual([])
-  await expect(db.getActionRecords(userId)).resolves.toEqual([])
-  await expect(db.getDocumentRecord('https://example.com/1/documents/123')).resolves.toEqual(undefined)
-
   const paymentInfo = {
     payeeName: '',
     payeeReference: '',
@@ -355,22 +347,30 @@ test("Install and uninstall user", async () => {
     paymentInfo,
   })
   await expect(db.getTransferRecord(t.uri)).resolves.toEqual({ ...t, userId, time, paymentInfo })
-  await expect((db as any).storeTransfer(userId + 1, t)).rejects.toBeInstanceOf(Error)
+  await expect((db as any).storeTransfer(userId + 1, t)).rejects.toBeInstanceOf(UserDoesNotExist)
   const alteredUri = t.uri + '/something'
   await expect((db as any).storeTransfer(userId, { ...t, uri: alteredUri })).resolves.toEqual({
     ...t,
     userId,
     uri: alteredUri,
-    time: time * (1 + Number.EPSILON),
+    time: time * (1 + Number.EPSILON) * (1 + Number.EPSILON),
     paymentInfo,
   })
   await expect(db.getTransferRecord(t.uri + '/something')).resolves.toEqual({
     ...t,
     userId,
     uri: alteredUri,
-    time: time * (1 + Number.EPSILON),
+    time: time * (1 + Number.EPSILON) * (1 + Number.EPSILON),
     paymentInfo,
   })
+
+  await db.uninstallUser(userId)
+  await expect(db.getUserId(debtor.uri)).resolves.toBeUndefined()
+  await expect(db.getDebtorRecord(userId)).rejects.toBeInstanceOf(RecordDoesNotExist)
+  await expect(db.getConfigRecord(userId)).rejects.toBeInstanceOf(RecordDoesNotExist)
+  await expect(db.getTransferRecords(userId)).resolves.toEqual([])
+  await expect(db.getActionRecords(userId)).resolves.toEqual([])
+  await expect(db.getDocumentRecord('https://example.com/1/documents/123')).resolves.toEqual(undefined)
 })
 
 test("Generate payment request", async () => {
