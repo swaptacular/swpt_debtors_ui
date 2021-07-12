@@ -232,6 +232,7 @@ class UserContext {
     assert(transferRecord, 'missing transfer record')
 
     const createTransferAction = {
+      // Note that the `actionId` field will be added automatically.
       userId: transferRecord.userId,
       actionType: 'CreateTransfer' as const,
       createdAt: new Date(),
@@ -250,11 +251,16 @@ class UserContext {
     }
 
     if (abortTransferAction) {
-      await db.replaceActionRecord(abortTransferAction, createTransferAction)
-    } else {
-      await db.createActionRecord(createTransferAction)
+      try {
+        await db.replaceActionRecord(abortTransferAction, createTransferAction)
+        return createTransferAction as CreateTransferActionWithId
+      } catch (e: unknown) {
+        if (e instanceof RecordDoesNotExist) assert(!await db.getActionRecord(abortTransferAction.actionId))
+        else throw e
+      }
     }
-    return createTransferAction as CreateTransferActionWithId  // The `actionId` field has beens added.
+    await db.createActionRecord(createTransferAction)
+    return createTransferAction as CreateTransferActionWithId
   }
 
   /* Dismisses an unsuccessful or delayed transfer.*/
@@ -262,11 +268,8 @@ class UserContext {
     try {
       await db.deleteActionRecord(action)
     } catch (e: unknown) {
-      if (e instanceof RecordDoesNotExist) {
-        // Ignore concurrent execution errors, because they can be
-        // expected during normal use, and are harmless.
-        assert(!await db.getActionRecord(action.actionId))
-      } else throw e
+      if (e instanceof RecordDoesNotExist) assert(!await db.getActionRecord(action.actionId))
+      else throw e
     }
     const transferRecord = await db.getTransferRecord(action.transferUri)
     assert(transferRecord, 'missing transfer record')
