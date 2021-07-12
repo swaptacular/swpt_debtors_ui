@@ -406,72 +406,6 @@ class DebtorsDb extends Dexie {
     })
   }
 
-  async storeUserData(data: UserData): Promise<number> {
-    const { collectedAfter, debtor, document, transferUris, transfers } = data
-
-    const storeDebtorAndConfigRecords = async (): Promise<number> => {
-      const config = debtor.config
-      let userId = await this.getUserId(debtor.uri)
-      if (userId === undefined) {
-        userId = await this.debtors.add({ ...debtor, config: { uri: config.uri } })
-      }
-      const existingConfigRecord = await this.configs.where({ userId }).first()
-      if (!(existingConfigRecord && existingConfigRecord.latestUpdateId > config.latestUpdateId)) {
-        await this.debtors.put({ ...debtor, userId, config: { uri: config.uri } })
-      }
-      if (!(existingConfigRecord && existingConfigRecord.latestUpdateId >= config.latestUpdateId)) {
-        const uri = new URL(config.uri, debtor.uri).href
-        await this.configs.put({ ...config, userId, uri })
-        if (document) {
-          await this.documents.put({ ...document, userId })
-        }
-      }
-      return userId
-    }
-
-    const deleteIrrelevantAbortTransferActions = async (userId: number): Promise<void> => {
-      const uris = new Set(transferUris)
-      await this.actions
-        .where({ userId })
-        .filter(action => action.actionType === 'AbortTransfer' && !uris.has(action.transferUri))
-        .delete()
-    }
-
-    const resolveOldNotConfirmedCreateTransferRequests = async (userId: number): Promise<void> => {
-      const currentTime = Date.now()
-      const cutoffTime = collectedAfter.getTime() - MAX_PROCESSING_DELAY_MILLISECONDS
-      await this.actions
-        .where('[userId+actionId]')
-        .between([userId, Dexie.minKey], [userId, Dexie.maxKey])
-        .filter(action => (
-          action.actionType === 'CreateTransfer' &&
-          getCreateTransferActionStatus(action, currentTime) === 'Not confirmed' &&
-          action.execution!.unresolvedRequestAt!.getTime() < cutoffTime
-        ))
-        .modify((action: { execution: ExecutionState }) => {
-          delete action.execution.unresolvedRequestAt
-        })
-    }
-
-    const storeTransferRecords = async (userId: number): Promise<void> => {
-      if (transfers) {
-        for (const transfer of transfers) {
-          if (!await this.isConcludedTransfer(transfer.uri)) {
-            await this.storeTransfer(userId, transfer)
-          }
-        }
-        resolveOldNotConfirmedCreateTransferRequests(userId)
-      }
-    }
-
-    return await this.transaction('rw', this.allTables, async () => {
-      const userId = await storeDebtorAndConfigRecords()
-      await deleteIrrelevantAbortTransferActions(userId)
-      await storeTransferRecords(userId)
-      return userId
-    })
-  }
-
   async storeTransfer(userId: number, transfer: Transfer): Promise<TransferRecord> {
     const { uri: transferUri, transferUuid, initiatedAt, result } = transfer
 
@@ -555,6 +489,72 @@ class DebtorsDb extends Dexie {
           break
       }
       return transferRecord
+    })
+  }
+
+  async storeUserData(data: UserData): Promise<number> {
+    const { collectedAfter, debtor, document, transferUris, transfers } = data
+
+    const storeDebtorAndConfigRecords = async (): Promise<number> => {
+      const config = debtor.config
+      let userId = await this.getUserId(debtor.uri)
+      if (userId === undefined) {
+        userId = await this.debtors.add({ ...debtor, config: { uri: config.uri } })
+      }
+      const existingConfigRecord = await this.configs.where({ userId }).first()
+      if (!(existingConfigRecord && existingConfigRecord.latestUpdateId > config.latestUpdateId)) {
+        await this.debtors.put({ ...debtor, userId, config: { uri: config.uri } })
+      }
+      if (!(existingConfigRecord && existingConfigRecord.latestUpdateId >= config.latestUpdateId)) {
+        const uri = new URL(config.uri, debtor.uri).href
+        await this.configs.put({ ...config, userId, uri })
+        if (document) {
+          await this.documents.put({ ...document, userId })
+        }
+      }
+      return userId
+    }
+
+    const deleteIrrelevantAbortTransferActions = async (userId: number): Promise<void> => {
+      const uris = new Set(transferUris)
+      await this.actions
+        .where({ userId })
+        .filter(action => action.actionType === 'AbortTransfer' && !uris.has(action.transferUri))
+        .delete()
+    }
+
+    const resolveOldNotConfirmedCreateTransferRequests = async (userId: number): Promise<void> => {
+      const currentTime = Date.now()
+      const cutoffTime = collectedAfter.getTime() - MAX_PROCESSING_DELAY_MILLISECONDS
+      await this.actions
+        .where('[userId+actionId]')
+        .between([userId, Dexie.minKey], [userId, Dexie.maxKey])
+        .filter(action => (
+          action.actionType === 'CreateTransfer' &&
+          getCreateTransferActionStatus(action, currentTime) === 'Not confirmed' &&
+          action.execution!.unresolvedRequestAt!.getTime() < cutoffTime
+        ))
+        .modify((action: { execution: ExecutionState }) => {
+          delete action.execution.unresolvedRequestAt
+        })
+    }
+
+    const storeTransferRecords = async (userId: number): Promise<void> => {
+      if (transfers) {
+        for (const transfer of transfers) {
+          if (!await this.isConcludedTransfer(transfer.uri)) {
+            await this.storeTransfer(userId, transfer)
+          }
+        }
+        resolveOldNotConfirmedCreateTransferRequests(userId)
+      }
+    }
+
+    return await this.transaction('rw', this.allTables, async () => {
+      const userId = await storeDebtorAndConfigRecords()
+      await deleteIrrelevantAbortTransferActions(userId)
+      await storeTransferRecords(userId)
+      return userId
     })
   }
 
