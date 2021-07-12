@@ -10,7 +10,7 @@ window.appConfig = {
   TransferDeletionDelaySeconds: 15 * 86400,
 }
 
-function assert(condition, msg) {
+window.assert = function assert(condition, msg) {
   if (!condition) {
     let e = new Error(msg)
     e.name = 'AssertionError'
