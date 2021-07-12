@@ -206,7 +206,7 @@ test("Install and uninstall user", async () => {
   const actions = await db.getActionRecords(userId)
   expect(actions.length).toBe(1)
   expect(actions[0].actionType).toBe('AbortTransfer')
-  await db.deleteActionRecord(actions[0])
+  await db.replaceActionRecord(actions[0], null)
   await expect(db.getActionRecords(userId)).resolves.toEqual([])
 
   const actionRecord = {
@@ -231,7 +231,7 @@ test("Install and uninstall user", async () => {
   const ar3 = { ...actionRecord, actionId: undefined }
   await expect(db.replaceActionRecord({ ...actionRecord, actionId }, ar3)).rejects.toBeInstanceOf(RecordDoesNotExist)
   await expect(db.getActionRecords(userId)).resolves.toEqual([ar2])
-  await expect(db.deleteActionRecord(ar2 as any as ActionRecordWithId)).resolves.toBeUndefined()
+  await expect(db.replaceActionRecord(ar2 as any as ActionRecordWithId, null)).resolves.toBeUndefined()
   await expect(db.getActionRecords(userId)).resolves.toEqual([])
   const x = await db.createActionRecord({ ...actionRecord, actionId: undefined })
   await expect(db.getActionRecords(userId)).resolves.toEqual([{ ...actionRecord, actionId: x }])
@@ -307,8 +307,8 @@ test("Install and uninstall user", async () => {
   expect(configRecord.configData).toBeDefined()
   await expect(db.getActionRecord(updateConifgActionId)).resolves.toBe(undefined)
 
-  await expect(db.deleteActionRecord(
-    { userId, createdAt: new Date(), actionId: -1, actionType: 'AbortTransfer', transferUri: 'xxx' }
+  await expect(db.replaceActionRecord(
+    { userId, createdAt: new Date(), actionId: -1, actionType: 'AbortTransfer', transferUri: 'xxx' }, null
   )).rejects.toBeInstanceOf(RecordDoesNotExist)
   const abortTransferAction = {
     userId,
@@ -318,7 +318,7 @@ test("Install and uninstall user", async () => {
   }
   const abortTransferActionId = await db.createActionRecord(abortTransferAction)
   expect(abortTransferActionId).toBeDefined()
-  await db.deleteActionRecord(abortTransferAction as AbortTransferActionWithId)
+  await db.replaceActionRecord(abortTransferAction as AbortTransferActionWithId, null)
   await expect(db.getActionRecord(abortTransferActionId)).resolves.toBe(undefined)
   await expect(db.getTransferRecord(transfers[1].uri)).resolves.toHaveProperty('aborted')
 

@@ -398,12 +398,6 @@ class DebtorsDb extends Dexie {
     })
   }
 
-  /* Deletes the passed action record. Will throw `RecordDoesNotExist`
-   * if the passed record does not exist, or has been changed. */
-  async deleteActionRecord(action: ActionRecordWithId): Promise<void> {
-    await this.replaceActionRecord(action, null)
-  }
-
   async storeUserData(data: UserData): Promise<number> {
     return await this.transaction('rw', this.allTables, async () => {
       const userId = await this.storeDebtorAndConfigRecords(data)
