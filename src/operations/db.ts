@@ -149,6 +149,10 @@ export type DeleteTransferTask =
     transferUri: string,
   }
 
+export class UserDoesNotExist extends Error {
+  name = 'UserDoesNotExist'
+}
+
 export class RecordDoesNotExist extends Error {
   name = 'RecordDoesNotExist'
 }
@@ -246,7 +250,7 @@ class DebtorsDb extends Dexie {
   async getDebtorRecord(userId: number): Promise<DebtorRecordWithId> {
     const debtorRecord = await this.debtors.get(userId)
     if (!debtorRecord) {
-      throw new RecordDoesNotExist(`DebtorRecord(userId=${userId})`)
+      throw new RecordDoesNotExist()
     }
     return debtorRecord as DebtorRecordWithId
   }
@@ -254,7 +258,7 @@ class DebtorsDb extends Dexie {
   async getConfigRecord(userId: number): Promise<ConfigRecord> {
     const configRecord = await this.configs.where({ userId }).first()
     if (!configRecord) {
-      throw new RecordDoesNotExist(`ConfigRecord(userId=${userId})`)
+      throw new RecordDoesNotExist()
     }
     return configRecord
   }
@@ -263,7 +267,7 @@ class DebtorsDb extends Dexie {
     return await this.transaction('rw', [this.configs, this.actions], async () => {
       const actionRecord = await this.actions.get(actionId)
       if (!(actionRecord && actionRecord.actionType === 'UpdateConfig')) {
-        throw new RecordDoesNotExist(`ActionRecord(actionId=${actionId}, actionType="UpdateConfig")`)
+        throw new RecordDoesNotExist()
       }
       await this.actions.delete(actionId)
       const userId = actionRecord.userId
@@ -342,7 +346,7 @@ class DebtorsDb extends Dexie {
     return await this.transaction('rw', [this.debtors, this.actions], async () => {
       const userId = action.userId
       if (!await this.isInstalledUser(userId)) {
-        throw new RecordDoesNotExist(`DebtorRecord(userId=${userId})`)
+        throw new UserDoesNotExist()
       }
       return await this.actions.add(action)
     })

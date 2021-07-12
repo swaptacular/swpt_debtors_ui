@@ -6,6 +6,7 @@ import { ServerSession, HttpError } from '../src/web-api'
 import {
   db,
   DebtorRecord,
+  UserDoesNotExist,
   RecordDoesNotExist,
   ActionRecordWithId,
   CreateTransferActionWithId,
@@ -217,7 +218,7 @@ test("Install and uninstall user", async () => {
     transferUri: 'https://example.com/1/transfers/xxxxxxxx',
   } as const
   await expect(db.getActionRecord(456)).resolves.toBeUndefined()
-  await expect(db.createActionRecord({ ...actionRecord, userId: -1 })).rejects.toBeInstanceOf(RecordDoesNotExist)
+  await expect(db.createActionRecord({ ...actionRecord, userId: -1 })).rejects.toBeInstanceOf(UserDoesNotExist)
 
   let actionId = await db.createActionRecord(actionRecord)
   expect(actionId).toBeDefined()
