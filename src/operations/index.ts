@@ -120,11 +120,6 @@ class UserContext {
    * create transfer action. May throw `IvalidPaymentRequest`. */
   async processPaymentRequest(blob: Blob): Promise<CreateTransferActionWithId> {
     const request = await parsePaymentRequest(blob)
-    if (request.deadline) {
-      // TODO: When working with the "Payments Web API", deadlines
-      // must be allowed.
-      throw new IvalidPaymentRequest('deadlines are not allowed')
-    }
     const actionRecord = {
       userId: this.userId,
       actionType: 'CreateTransfer' as const,
@@ -143,7 +138,7 @@ class UserContext {
         description: request.description,
       },
       requestedAmount: request.amount,
-      requestedDeadline: request.deadline,
+      // NOTE: `request.deadline` is ignored.
     }
     await db.createActionRecord(actionRecord)  // adds the `actionId` field
     return actionRecord as CreateTransferActionWithId
@@ -232,7 +227,7 @@ class UserContext {
     assert(transferRecord, 'missing transfer record')
 
     const createTransferAction = {
-      // Note that the `actionId` field will be added automatically.
+      // The `actionId` field will be added automatically.
       userId: transferRecord.userId,
       actionType: 'CreateTransfer' as const,
       createdAt: new Date(),
@@ -246,8 +241,7 @@ class UserContext {
       },
       paymentInfo: transferRecord.paymentInfo,
       requestedAmount: transferRecord.noteFormat === 'PAYMENT0' ? transferRecord.amount : 0n,
-      // TODO: When working with the "Payments Web API", the
-      // `requestedDeadline` field must be restored too.
+      // NOTE: `requestedDeadline` is not set.
     }
 
     if (abortTransferAction) {
