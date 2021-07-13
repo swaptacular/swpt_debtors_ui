@@ -138,7 +138,7 @@ class UserContext {
         description: request.description,
       },
       requestedAmount: request.amount,
-      // NOTE: `request.deadline` is ignored.
+      requestedDeadline: request.deadline,
     }
     await db.createActionRecord(actionRecord)  // adds the `actionId` field
     return actionRecord as CreateTransferActionWithId
