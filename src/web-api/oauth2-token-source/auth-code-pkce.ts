@@ -14,6 +14,7 @@ export type Configuration = {
   redirectUrl: string;
   scopes: string[];
   tokenUrl: string;
+  useLocalStorage: boolean;
   extraAuthorizationParams?: ObjStringDict;
   extraRefreshParams?: ObjStringDict;
 }
@@ -140,10 +141,12 @@ async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { 
  */
 export class OAuth2AuthCodePKCE {
   private config: Configuration;
+  private storage: Storage;
   private accessContextPromise?: Promise<AccessContext>;
 
   constructor(config: Configuration) {
     this.config = config;
+    this.storage = config.useLocalStorage ? localStorage : sessionStorage
     this.recoverState();
   }
 
@@ -439,7 +442,7 @@ export class OAuth2AuthCodePKCE {
   }
 
   private recoverState(): State {
-    const s = localStorage.getItem(LOCALSTORAGE_STATE) || '{}';
+    const s = this.storage.getItem(LOCALSTORAGE_STATE) || '{}';
     try {
       const state = JSON.parse(s);
       if (typeof state !== 'object') {
@@ -453,7 +456,7 @@ export class OAuth2AuthCodePKCE {
   }
 
   private setState(state: State) {
-    localStorage.setItem(LOCALSTORAGE_STATE, JSON.stringify(state));
+    this.storage.setItem(LOCALSTORAGE_STATE, JSON.stringify(state));
   }
 
   /**

@@ -27,6 +27,7 @@ export class Oauth2TokenSource implements AuthTokenSource {
     tokenUrl: appConfig.oauth2.tokenUrl,
     clientId: appConfig.oauth2.clientId,
     redirectUrl: appConfig.oauth2.redirectUrl,
+    useLocalStorage: appConfig.oauth2.useLocalStorage,
     extraAuthorizationParams: {},
     scopes: ['access'],
     async onAccessTokenExpiry(refreshAccessToken) {
