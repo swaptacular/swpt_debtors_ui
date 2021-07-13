@@ -241,7 +241,9 @@ class UserContext {
       },
       paymentInfo: transferRecord.paymentInfo,
       requestedAmount: transferRecord.noteFormat === 'PAYMENT0' ? transferRecord.amount : 0n,
-      // NOTE: `requestedDeadline` is not set.
+
+      // NOTE: The `requestedDeadline` field is not set, because
+      // deadlines are not supported in the Web API.
     }
 
     if (abortTransferAction) {
