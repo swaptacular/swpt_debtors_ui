@@ -6,17 +6,17 @@ const UTF8_ENCODER = new TextEncoder()
 
 export type ResourceReference = {
   /** The URI of the object. Can be a relative URI. */
-  uri: string;
+  uri: string,
 }
 
 export type DebtorIdentity = {
   /** The information contained in this field must be enough to
    * uniquely and reliably identify the debtor. Note that a network
    * request *should not be needed* to identify the debtor. */
-  uri: string;
+  uri: string,
 
   /** The type of this object. */
-  type: 'DebtorIdentity';
+  type: 'DebtorIdentity',
 }
 
 export type CoinPeg = {
@@ -29,14 +29,14 @@ export type CoinPeg = {
 export type CoinInfo = {
   type: 'CoinInfo',
   uri: string,
-  revision: bigint,
+  revision: number,
   validUntil?: Date,
   latestCoinInfo: ResourceReference,
   debtorIdentity: DebtorIdentity,
   debtorName: string,
   debtorHomepage?: ResourceReference,
   amountDevisor: number,
-  decimalPlaces: bigint,
+  decimalPlaces: number,
   unit: string,
   peg?: CoinPeg,
 }
