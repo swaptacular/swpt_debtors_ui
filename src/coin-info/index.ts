@@ -79,7 +79,7 @@ export async function parseCoinInfoBlob(blob: Blob): Promise<CoinInfo> {
   try {
     coinInfo = JSON.parse(await blob.text()) as CoinInfo
   } catch (e: unknown) {
-    throw new InvalidCoinInfo('UTF-8 encoding error')
+    throw new InvalidCoinInfo('parse error')
   }
   if (!validate(coinInfo)) {
     const e = validate.errors[0]
