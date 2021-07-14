@@ -72,10 +72,15 @@ export function generateCoinInfoBlob(coinInfo: CoinInfo): Blob {
 }
 
 export async function parseCoinInfoBlob(blob: Blob): Promise<CoinInfo> {
+  let coinInfo
   if (blob.type && blob.type !== MIME_TYPE_COIN_INFO) {
     throw new InvalidCoinInfo('wrong content type')
   }
-  const coinInfo = JSON.parse(await blob.text()) as CoinInfo
+  try {
+    coinInfo = JSON.parse(await blob.text()) as CoinInfo
+  } catch (e: unknown) {
+    throw new InvalidCoinInfo('UTF-8 encoding error')
+  }
   if (!validate(coinInfo)) {
     const e = validate.errors[0]
     throw new InvalidCoinInfo(`${e.schemaPath} ${e.message}`)

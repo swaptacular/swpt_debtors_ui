@@ -234,7 +234,13 @@ export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest> {
   if (blob.type && blob.type !== MIME_TYPE_PR0) {
     throw new IvalidPaymentRequest('wrong content type')
   }
-  const regexpMatch = (await blob.text()).match(PAYMENT_REQUEST_REGEXP)
+  let text
+  try {
+    text = await blob.text()
+  } catch (e: unknown) {
+    throw new IvalidPaymentRequest('UTF-8 encoding error')
+  }
+  const regexpMatch = text.match(PAYMENT_REQUEST_REGEXP)
   if (!regexpMatch) {
     throw new IvalidPaymentRequest('parse error')
   }
