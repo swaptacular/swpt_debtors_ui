@@ -54,7 +54,7 @@ export function generateCoinInfoBlob(coinInfo: CoinInfo): Blob {
     const e = validate.errors[0]
     throw new InvalidCoinInfo(`${e.instancePath} ${e.message}`)
   }
-  const content = UTF8_ENCODER.encode(JSON.stringify(coinInfo))
+  const content = UTF8_ENCODER.encode(JSON.stringify(data))
   return new Blob([content], { type: MIME_TYPE_COIN_INFO })
 }
 
@@ -62,20 +62,20 @@ export async function parseCoinInfoBlob(blob: Blob): Promise<CoinInfo> {
   if (blob.type && blob.type !== MIME_TYPE_COIN_INFO) {
     throw new InvalidCoinInfo('wrong content type')
   }
-  let coinInfo
+  let data
   try {
-    coinInfo = JSON.parse(await blob.text()) as CoinInfo
+    data = JSON.parse(await blob.text())
   } catch (e: unknown) {
     throw new InvalidCoinInfo('parse error')
   }
-  if (!validate(coinInfo)) {
+  if (!validate(data)) {
     const e = validate.errors[0]
     throw new InvalidCoinInfo(`${e.instancePath} ${e.message}`)
   }
-  const isoValidUntil = coinInfo.validUntil
+  const isoValidUntil = data.validUntil as string | undefined
   const validUntil = isoValidUntil ? new Date(isoValidUntil) : undefined
   if (validUntil && Number.isNaN(validUntil.getTime())) {
     throw new InvalidCoinInfo('invalid validUntil')
   }
-  return coinInfo
+  return { ...data, validUntil }
 }
