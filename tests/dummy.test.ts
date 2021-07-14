@@ -22,6 +22,7 @@ import {
   MIME_TYPE_PR0,
 } from '../src/payment-requests'
 import { UpdateScheduler } from '../src/update-scheduler'
+import validate from '../src/coin-info/validate-schema.js'
 
 const authToken = '3x-KAxNWrYPJUWNKTbpnTWxoR0Arr0gG_uEqeWUNDkk.B-Iqy02FM7rK1rKSb4I7D9gaqGFXc2vdyJQ6Uuv3EF4'
 
@@ -510,4 +511,29 @@ test("Deep equal", async () => {
   expect(equal({ a: 1n, b: new Date(0) }, { a: 1n, b: new Date(1) })).toBe(false)
   expect(equal({ a: 1n, b: new Date(0) }, { a: 2n, b: new Date(0) })).toBe(false)
   expect(equal({ a: 1n, b: new Date(0) }, undefined)).toBe(false)
+})
+
+test("Validate schema", () => {
+  expect(validate(1)).toEqual(false)
+  expect(validate({ 'type': 'CoinInfo' })).toEqual(false)
+  expect(validate({
+    type: 'CoinInfo',
+    uri: 'https://example.com/0',
+    revision: 0,
+    validUntil: '2021-01-01T10:00:00Z',
+    latestCoinInfo: { uri: 'http://example.com/' },
+    debtorIdentity: { type: 'DebtorIdentity', uri: 'swpt:123' },
+    debtorName: 'USA',
+    debtorHomepage: { uri: 'https://example.com/USA' },
+    amountDevisor: 100.0,
+    decimalPlaces: 2,
+    unit: 'USD',
+    peg: {
+      type: 'CoinPeg',
+      exchangeRate: 1.0,
+      debtorIdentity: { type: 'DebtorIdentity', uri: 'swpt:321' },
+      latestCoinInfo: { uri: 'http://example.com/' },
+    },
+    unknownProp: 1,
+  })).toEqual(true)
 })
