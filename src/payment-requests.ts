@@ -103,7 +103,7 @@ export const MIME_TYPE_PR0 = 'application/vnd.swaptacular.pr0'
  The currently defined standard content formats are:
 
  ""         : plain text
- "."        : an URI
+ "."        : an IRI (Internationalized Resource Identifier)
  "-"        : an opaque payer reference (the content is client-specific)
  "payment0" : payment format v0
  "PAYMENT0" : payment format v0 (an alternative name)
@@ -310,7 +310,7 @@ export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest> {
  * Also, an optional description format can be passed (the empty line
    right before the description). When an empty string is passed, this
    means that the description is in plain text. "."  indicates that
-   the description contains an URI, "-" indicates that the description
+   the description contains an IRI, "-" indicates that the description
    contains a payer reference.
 
  An alternative name for the "payment0" format is "PAYMENT0". It is
