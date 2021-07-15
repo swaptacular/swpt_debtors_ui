@@ -23,6 +23,7 @@ import {
 } from '../src/payment-requests'
 import { UpdateScheduler } from '../src/update-scheduler'
 import validate from '../src/coin-info/validate-schema.js'
+import { generateCoinInfoBlob, parseCoinInfoBlob, InvalidCoinInfo } from '../src/coin-info'
 
 const authToken = '3x-KAxNWrYPJUWNKTbpnTWxoR0Arr0gG_uEqeWUNDkk.B-Iqy02FM7rK1rKSb4I7D9gaqGFXc2vdyJQ6Uuv3EF4'
 
@@ -513,15 +514,16 @@ test("Deep equal", async () => {
   expect(equal({ a: 1n, b: new Date(0) }, undefined)).toBe(false)
 })
 
-test("Validate schema", () => {
+test("Validate CoinInfo schema", () => {
   expect(validate(1)).toEqual(false)
   expect(validate({ 'type': 'CoinInfo' })).toEqual(false)
   expect(validate({
-    type: 'CoinInfo',
+    type: 'CoinInfo-v1',
     uri: 'https://example.com/0',
     revision: 0,
-    validUntil: '2021-01-01T10:00:00Z',
+    willNotChangeUntil: '2021-01-01T10:00:00Z',
     latestCoinInfo: { uri: 'http://example.com/' },
+    summary: "bla-bla",
     debtorIdentity: { type: 'DebtorIdentity', uri: 'swpt:123' },
     debtorName: 'USA',
     debtorHomepage: { uri: 'https://example.com/USA' },
@@ -536,4 +538,32 @@ test("Validate schema", () => {
     },
     unknownProp: 1,
   })).toEqual(true)
+})
+
+test("Generate and parse CoinInfo", async () => {
+  const coinInfo = {
+    type: 'CoinInfo' as const,
+    uri: 'https://example.com/0',
+    revision: 0,
+    willNotChangeUntil: new Date('2021-01-01T10:00:00Z'),
+    latestCoinInfo: { uri: 'http://example.com/' },
+    summary: "bla-bla",
+    debtorIdentity: { type: 'DebtorIdentity' as const, uri: 'swpt:123' },
+    debtorName: 'USA',
+    debtorHomepage: { uri: 'https://example.com/USA' },
+    amountDevisor: 100.0,
+    decimalPlaces: 2,
+    unit: 'USD',
+    peg: {
+      type: 'CoinPeg' as const,
+      exchangeRate: 1.0,
+      debtorIdentity: { type: 'DebtorIdentity' as const, uri: 'swpt:321' },
+      latestCoinInfo: { uri: 'http://example.com/' },
+    },
+    unknownProp: 1,
+  }
+  const blob = generateCoinInfoBlob(coinInfo)
+  await expect(parseCoinInfoBlob(blob)).resolves.toEqual(coinInfo)
+  expect(() => generateCoinInfoBlob({ ...coinInfo, revision: -1 })).toThrow(InvalidCoinInfo)
+  expect(() => generateCoinInfoBlob({ ...coinInfo, willNotChangeUntil: new Date(NaN) })).toThrow(InvalidCoinInfo)
 })

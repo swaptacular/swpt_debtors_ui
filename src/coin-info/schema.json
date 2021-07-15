@@ -3,43 +3,109 @@
     "ResourceReference": {
       "type": "object",
       "properties": {
-        "uri": { "type": "string" }
+        "uri": {
+          "type": "string",
+          "description": "The IRI (Internationalized Resource Identifier) of the referenced resource. Can be a relative IRI."
+        }
       },
       "required": [ "uri" ]
     },
     "DebtorIdentity": {
       "type": "object",
       "properties": {
-        "type":  { "type": "string", "pattern": "^DebtorIdentity$" },
-        "uri": { "type": "string", "maxLength": 100 }
+        "type":  { "const": "DebtorIdentity" },
+        "uri": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "The information contained in this field must be enough to uniquely and reliably identify the debtor. Note that a network request should not be needed to identify the debtor. For example, if the debtor happens to be a bank, the URI would reveal the type of the debtor (a bank), and the ID of the bank. Note that some debtors may be used only to represent a physical value measurement unit (like ounces of gold). Those dummy debtors do not represent a person or an organization, do not owe anything to anyone, and are used solely as identifiers of value measurement units."
+        }
       },
       "required": [ "type", "uri" ]
     },
     "CoinPeg": {
       "type": "object",
       "properties": {
-        "type":  { "type": "string", "pattern": "^CoinPeg$" },
-        "exchangeRate": { "type": "number", "minimum": 0.0 },
-        "debtorIdentity": { "$ref": "#/definitions/DebtorIdentity" },
-        "latestCoinInfo": { "$ref": "#/definitions/ResourceReference" }
+        "type":  { "const": "CoinPeg" },
+        "exchangeRate": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "The exchange rate between the pegged currency and the peg currency. For example, `2.0` would mean that pegged currency's tokens are twice as valuable as peg currency's tokens."
+        },
+        "debtorIdentity": {
+          "$ref": "#/definitions/DebtorIdentity",
+          "description": "Uniquely identifies the peg currency."
+        },
+        "latestCoinInfo": {
+          "$ref": "#/definitions/ResourceReference",
+          "description": "A link to the newest revision of the peg currency's `CoinInfo` document."
+        }
       },
       "required": [ "type", "exchangeRate", "debtorIdentity", "latestCoinInfo" ]
     }
   },  
   "type": "object",
   "properties": {
-    "type":  { "type": "string", "pattern": "^CoinInfo$" },
-    "uri": { "type": "string", "minLength": 1, "maxLength": 200 },
-    "revision": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
-    "validUntil": { "type": "string" },
-    "latestCoinInfo": { "$ref": "#/definitions/ResourceReference" },
-    "debtorIdentity": { "$ref": "#/definitions/DebtorIdentity" },
-    "debtorName": { "type": "string", "minLength": 1, "maxLength": 40 },
-    "debtorHomepage": { "$ref": "#/definitions/ResourceReference" },
-    "amountDevisor": { "type": "number", "minimum": 0.0 },
-    "decimalPlaces": { "type": "integer", "minimum": -20, "maximum": 20 },
-    "unit": { "type": "string", "minLength": 1, "maxLength": 40 },
-    "peg":  { "$ref": "#/definitions/CoinPeg" }
+    "type":  { "type": "string", "pattern": "^CoinInfo(-v[1-9][0-9]*)?$" },
+    "uri": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "The IRI (Internationalized Resource Identifier) of this object. Must be an absolute IRI."
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295,
+      "description": "The revision number. Later revisions must have bigger revision numbers."
+    },
+    "willNotChangeUntil": {
+      "type": "string",
+      "description": "Optional promise that, until the specified (in ISO 8601 format) moment, there will be no new revisions of this document."
+    },
+    "latestCoinInfo": {
+      "$ref": "#/definitions/ResourceReference",
+      "description": "A link to the newest revision of this document."
+    },
+    "summary": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "A short description of the currency."
+    },
+    "debtorIdentity": {
+      "$ref": "#/definitions/DebtorIdentity",
+      "description": "Uniquely identifies the debtor (and the currency)."
+    },
+    "debtorName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40,
+      "description": "The name of the debtor. Should be unambiguous and easy to remember."
+    },
+    "debtorHomepage": {
+      "$ref": "#/definitions/ResourceReference",
+      "description": "Optional link to the debtor's homepage."
+    },
+    "amountDevisor": {
+      "type": "number",
+      "minimum": 0.0,
+      "description": "Before displaying the amount, it should be divided by this number. This value should be used for display purposes only. Notably, the value of this field must be ignored when the exchange rate between pegged currencies is calculated."
+},
+    "decimalPlaces": {
+      "type": "integer",
+      "minimum": -20,
+      "maximum": 20,
+      "description": "The number of digits to show after the decimal point, when displaying the amount. A negative number signifies the number of insignificant digits at the end of the integer number."
+    },
+    "unit": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40,
+      "description": "The value measurement unit. It should be shown right after the displayed amount, \"500.00 USD\" for example."
+    },
+    "peg":  {
+      "$ref": "#/definitions/CoinPeg",
+      "description": "Optional currency peg. A currency peg is a currency management strategy in which the debtor sets a specific fixed exchange rate between the tokens of his currency (the pegged currency) and the tokens of some other currency (the peg currency)."
+    }
   },
   "required": [
     "type",
