@@ -144,7 +144,7 @@ export class IvalidPaymentData extends Error {
 
 /*
  This function genarates a payment request file (a `Blob`) in
- "text/vnd.swaptacular.pr0" format (Swaptacular Payment Request
+ "application/vnd.swaptacular.pr0" format (Swaptacular Payment Request
  v0). This is a minimalist text format, whose goal is to be human
  readable, and yet be as concise as possible, so that it can be
  transferred via QR codes.
@@ -227,8 +227,9 @@ export function generatePr0Blob(
 
 /*
  Currently, this function can parse only files with content type
- "text/vnd.swaptacular.pr0" (Swaptacular Payment Request v0). An
- `IvalidPaymentRequest` error will be thrown if the blob can not be parsed.
+ "application/vnd.swaptacular.pr0" (Swaptacular Payment Request
+ v0). An `IvalidPaymentRequest` error will be thrown if the blob can
+ not be parsed.
 */
 export async function parsePaymentRequest(blob: Blob): Promise<PaymentRequest> {
   if (blob.type && blob.type !== MIME_TYPE_PR0) {

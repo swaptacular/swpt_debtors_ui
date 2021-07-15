@@ -1,18 +1,20 @@
+/* NOTE: The file `./validate-schema.js` is automatically generated
+ * from the `./schema.json` file, by running the following commands:
+ *
+ * $ npx ajv compile -s schema.json -o validate-schema.js --strict=true
+ * $ sed -i 's/require("ajv\/dist\/runtime\/ucs2length")/require(".\/ucs2length.js")/g' validate-schema.js
+ */
+
 import validate from './validate-schema.js'
 
 const UTF8_ENCODER = new TextEncoder()
 
 export type ResourceReference = {
-  /** The URI of the object. Can be a relative URI. */
   uri: string,
 }
 
 export type DebtorIdentity = {
   type: 'DebtorIdentity',
-
-  /** The information contained in this field must be enough to
-   * uniquely and reliably identify the debtor. Note that a network
-   * request *should not be needed* to identify the debtor. */
   uri: string,
 }
 
@@ -58,6 +60,12 @@ function validateOptionalDate(date?: Date): void {
   ) throw new InvalidCoinInfo('invalid date')
 }
 
+/*
+ This function genarates a "CoinInfo" file (a `Blob`) in
+ "application/vnd.swaptacular.coin-info+json" format. This format is
+ defined by a JSON Schema file (see "./schema.json"). An
+ `InvalidCoinInfo` error will be thrown when invalid data is parsed.
+*/
 export function generateCoinInfoBlob(coinInfo: CoinInfo): Blob {
   validateOptionalDate(coinInfo.willNotChangeUntil)
   const data = { ...coinInfo, willNotChangeUntil: coinInfo.willNotChangeUntil?.toISOString() }
@@ -69,6 +77,11 @@ export function generateCoinInfoBlob(coinInfo: CoinInfo): Blob {
   return new Blob([content], { type: MIME_TYPE_COIN_INFO })
 }
 
+/*
+ This function parses files with content type
+ "application/vnd.swaptacular.coin-info+json". An `InvalidCoinInfo`
+ error will be thrown if the blob can not be parsed.
+*/
 export async function parseCoinInfoBlob(blob: Blob): Promise<CoinInfo> {
   if (blob.type && blob.type !== MIME_TYPE_COIN_INFO) {
     throw new InvalidCoinInfo('wrong content type')
