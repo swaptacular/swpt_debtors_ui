@@ -9,7 +9,7 @@ This schema accepts additional properties.
  - <b id="#/properties/type">type</b> `required`
 	 - Type: `string`
 	 - <i id="#/properties/type">path: #/properties/type</i>
-	 - The value must match this pattern: `^CoinInfo(-v[1-9][0-9]*)?$`
+	 - The value must match this pattern: `^CoinInfo(-v[1-9][0-9]{0,5})?$`
  - <b id="#/properties/uri">uri</b> `required`
 	 - _The IRI (Internationalized Resource Identifier) of this object. Must be an absolute IRI._
 	 - Type: `string`
@@ -21,9 +21,10 @@ This schema accepts additional properties.
 	 - <i id="#/properties/revision">path: #/properties/revision</i>
 	 - Range: between 0 and 4294967295
  - <b id="#/properties/willNotChangeUntil">willNotChangeUntil</b>
-	 - _Optional promise that, until the specified (in ISO 8601 format) moment, there will be no new revisions of this document._
+	 - _Optional promise that, until the specified moment (in ISO 8601 format), there will be no new revisions of this document._
 	 - Type: `string`
 	 - <i id="#/properties/willNotChangeUntil">path: #/properties/willNotChangeUntil</i>
+	 - Length:  &le; 100
  - <b id="#/properties/latestCoinInfo">latestCoinInfo</b> `required`
 	 - _A link to the newest revision of this document._
 	 - <i id="#/properties/latestCoinInfo">path: #/properties/latestCoinInfo</i>
@@ -76,6 +77,7 @@ This schema accepts additional properties.
 		 - _The IRI (Internationalized Resource Identifier) of the referenced resource. Can be a relative IRI._
 		 - Type: `string`
 		 - <i id="#/definitions/ResourceReference/properties/uri">path: #/definitions/ResourceReference/properties/uri</i>
+		 - Length:  &le; 1000
 
 
 **_DebtorIdentity_**

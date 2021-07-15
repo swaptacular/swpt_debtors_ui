@@ -563,7 +563,8 @@ test("Generate and parse CoinInfo", async () => {
     unknownProp: 1,
   }
   const blob = generateCoinInfoBlob(coinInfo)
-  await expect(parseCoinInfoBlob(blob)).resolves.toEqual(coinInfo)
+  const { unknownProp, ...noUnknownProp } = coinInfo
+  await expect(parseCoinInfoBlob(blob)).resolves.toEqual(noUnknownProp)
   expect(() => generateCoinInfoBlob({ ...coinInfo, revision: -1 })).toThrow(InvalidCoinInfo)
   expect(() => generateCoinInfoBlob({ ...coinInfo, willNotChangeUntil: new Date(NaN) })).toThrow(InvalidCoinInfo)
 })
