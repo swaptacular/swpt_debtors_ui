@@ -7,7 +7,7 @@
 import validate from './validate-schema.js'
 
 const UTF8_ENCODER = new TextEncoder()
-const MAX_BLOB_SIZE = 1024 * 1024
+const MAX_BLOB_SIZE = 5 * 1024 * 1024
 
 function validateOptionalDate(date?: Date): void {
   if (
