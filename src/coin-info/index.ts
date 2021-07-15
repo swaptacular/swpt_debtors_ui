@@ -4,10 +4,19 @@
  * $ npx ajv compile -s schema.json -o validate-schema.js --strict=true
  * $ sed -i 's/require("ajv\/dist\/runtime\/ucs2length")/require(".\/ucs2length.js")/g' validate-schema.js
  */
-
 import validate from './validate-schema.js'
 
 const UTF8_ENCODER = new TextEncoder()
+
+function validateOptionalDate(date?: Date): void {
+  if (
+    date !== undefined && (
+      Number.isNaN(date.getTime()) ||
+      date.getFullYear() > 9999 ||
+      date.getFullYear() < 1970
+    )
+  ) throw new InvalidCoinInfo('invalid date')
+}
 
 export type ResourceReference = {
   uri: string,
@@ -49,16 +58,6 @@ export class InvalidCoinInfo extends Error {
 }
 
 export const MIME_TYPE_COIN_INFO = 'application/vnd.swaptacular.coin-info+json'
-
-function validateOptionalDate(date?: Date): void {
-  if (
-    date !== undefined && (
-      Number.isNaN(date.getTime()) ||
-      date.getFullYear() > 9999 ||
-      date.getFullYear() < 1970
-    )
-  ) throw new InvalidCoinInfo('invalid date')
-}
 
 /*
  This function genarates a "CoinInfo" file (a `Blob`) in
