@@ -7,6 +7,7 @@
 import validate from './validate-schema.js'
 
 const UTF8_ENCODER = new TextEncoder()
+const MAX_BLOB_SIZE = 1024 * 1024
 
 function validateOptionalDate(date?: Date): void {
   if (
@@ -85,6 +86,9 @@ export function generateCoinInfoBlob(coinInfo: CoinInfo): Blob {
 export async function parseCoinInfoBlob(blob: Blob): Promise<CoinInfo> {
   if (blob.type && blob.type !== MIME_TYPE_COIN_INFO) {
     throw new InvalidCoinInfo('wrong content type')
+  }
+  if (blob.size > MAX_BLOB_SIZE) {
+    throw new InvalidCoinInfo('too big')
   }
   let data
   try {
