@@ -12,7 +12,7 @@ function validateOptionalDate(date?: Date): void {
   if (
     date !== undefined && (
       Number.isNaN(date.getTime()) ||
-      date.getFullYear() > 9999 ||
+      date.getFullYear() > 9998 ||
       date.getFullYear() < 1970
     )
   ) throw new InvalidCoinInfo('invalid date')
