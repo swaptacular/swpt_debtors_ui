@@ -99,7 +99,12 @@ export async function parseCoinInfoBlob(blob: Blob): Promise<CoinInfo> {
     const e = validate.errors[0]
     throw new InvalidCoinInfo(`${e.instancePath} ${e.message}`)
   }
-  const willNotChangeUntil = data.willNotChangeUntil ? new Date(data.willNotChangeUntil) : undefined
-  validateOptionalDate(willNotChangeUntil)
+  let willNotChangeUntil
+  if (data.willNotChangeUntil) {
+    willNotChangeUntil = new Date(data.willNotChangeUntil)
+    if (Number.isNaN(willNotChangeUntil.getTime())) {
+      willNotChangeUntil = undefined
+    }
+  }
   return { ...data, willNotChangeUntil }
 }
