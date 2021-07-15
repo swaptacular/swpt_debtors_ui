@@ -527,7 +527,7 @@ test("Validate CoinInfo schema", () => {
     debtorIdentity: { type: 'DebtorIdentity', uri: 'swpt:123' },
     debtorName: 'USA',
     debtorHomepage: { uri: 'https://example.com/USA' },
-    amountDevisor: 100.0,
+    amountDivisor: 100.0,
     decimalPlaces: 2,
     unit: 'USD',
     peg: {
@@ -551,7 +551,7 @@ test("Generate and parse CoinInfo", async () => {
     debtorIdentity: { type: 'DebtorIdentity' as const, uri: 'swpt:123' },
     debtorName: 'USA',
     debtorHomepage: { uri: 'https://example.com/USA' },
-    amountDevisor: 100.0,
+    amountDivisor: 100.0,
     decimalPlaces: 2,
     unit: 'USD',
     peg: {

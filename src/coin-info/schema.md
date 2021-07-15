@@ -49,11 +49,11 @@ This schema accepts additional properties.
 	 - _Optional link to the debtor's homepage._
 	 - <i id="#/properties/debtorHomepage">path: #/properties/debtorHomepage</i>
 	 - &#36;ref: [#/definitions/Link](#/definitions/Link)
- - <b id="#/properties/amountDevisor">amountDevisor</b> `required`
+ - <b id="#/properties/amountDivisor">amountDivisor</b> `required`
 	 - _Before displaying the amount, it should be divided by this number. This value should be used for display purposes only. Notably, the value of this field must be ignored when the exchange rate between pegged currencies is calculated._
 	 - Type: `number`
-	 - <i id="#/properties/amountDevisor">path: #/properties/amountDevisor</i>
-	 - Range:  &ge; 0
+	 - <i id="#/properties/amountDivisor">path: #/properties/amountDivisor</i>
+	 - Exlusive Range:  > 0
  - <b id="#/properties/decimalPlaces">decimalPlaces</b> `required`
 	 - _The number of digits to show after the decimal point, when displaying the amount. A negative number signifies the number of insignificant digits at the end of the integer number._
 	 - Type: `integer`

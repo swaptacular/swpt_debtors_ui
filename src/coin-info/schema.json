@@ -107,10 +107,10 @@
       "$ref": "#/definitions/Link",
       "description": "Optional link to the debtor's homepage."
     },
-    "amountDevisor": {
+    "amountDivisor": {
       "type": "number",
       "format": "double",
-      "minimum": 0.0,
+      "exclusiveMinimum": 0.0,
       "description": "Before displaying the amount, it should be divided by this number. This value should be used for display purposes only. Notably, the value of this field must be ignored when the exchange rate between pegged currencies is calculated."
 },
     "decimalPlaces": {
@@ -138,7 +138,7 @@
     "latestCoinInfo",
     "debtorIdentity",
     "debtorName",
-    "amountDevisor",
+    "amountDivisor",
     "decimalPlaces",
     "unit"
   ],

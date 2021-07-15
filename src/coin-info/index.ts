@@ -38,7 +38,7 @@ export type BaseCoinInfo = {
   summary?: string,
   debtorName: string,
   debtorHomepage?: ResourceReference,
-  amountDevisor: number,
+  amountDivisor: number,
   decimalPlaces: number,
   unit: string,
   peg?: CoinPeg,
