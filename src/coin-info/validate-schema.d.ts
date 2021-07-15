@@ -1,4 +1,4 @@
-declare type ValidationError = {
+type ValidationError = {
   instancePath: string,
   schemaPath: string,
   keyword: string,
