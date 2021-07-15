@@ -62,8 +62,9 @@ export const MIME_TYPE_COIN_INFO = 'application/vnd.swaptacular.coin-info+json'
 /*
  This function genarates a "CoinInfo" file (a `Blob`) in
  "application/vnd.swaptacular.coin-info+json" format. This format is
- defined by a JSON Schema file (see "./schema.json"). An
- `InvalidCoinInfo` error will be thrown when invalid data is parsed.
+ defined by a JSON Schema file (see "./schema.json",
+ "./schema.md"). An `InvalidCoinInfo` error will be thrown when
+ invalid data is parsed.
 */
 export function generateCoinInfoBlob(coinInfo: CoinInfo): Blob {
   validateOptionalDate(coinInfo.willNotChangeUntil)
