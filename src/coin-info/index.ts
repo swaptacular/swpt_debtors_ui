@@ -1,8 +1,7 @@
 /* NOTE: The file `./validate-schema.js` is automatically generated
- * from the `./schema.json` file, by running the following commands:
+ * from the `./schema.json` file, by running the following command:
  *
- * $ npx ajv compile -s schema.json -o validate-schema.js --strict=true --remove-additional=all
- * $ sed -i 's/require("ajv\/dist\/runtime\/ucs2length")/require(".\/ucs2length.js")/g' validate-schema.js
+ * $ npx ajv compile -s schema.json -o validate-schema.js --strict=true --remove-additional=all --validate-formats=false
  */
 import validate from './validate-schema.js'
 

@@ -14,16 +14,18 @@ This schema accepts additional properties.
 	 - _The IRI (Internationalized Resource Identifier) of this object. Must be an absolute IRI._
 	 - Type: `string`
 	 - <i id="#/properties/uri">path: #/properties/uri</i>
+	 - String format must be a "iri"
 	 - Length: between 1 and 200
  - <b id="#/properties/revision">revision</b> `required`
 	 - _The revision number. Later revisions must have bigger revision numbers._
 	 - Type: `integer`
 	 - <i id="#/properties/revision">path: #/properties/revision</i>
-	 - Range: between 0 and 4294967295
+	 - Range: between 0 and 2147483647
  - <b id="#/properties/willNotChangeUntil">willNotChangeUntil</b>
 	 - _Optional promise that, until the specified moment (in ISO 8601 format), there will be no new revisions of this document._
 	 - Type: `string`
 	 - <i id="#/properties/willNotChangeUntil">path: #/properties/willNotChangeUntil</i>
+	 - String format must be a "date-time"
 	 - Length:  &le; 100
  - <b id="#/properties/latestCoinInfo">latestCoinInfo</b> `required`
 	 - _A link to the newest revision of this document._
@@ -77,6 +79,7 @@ This schema accepts additional properties.
 		 - _The IRI (Internationalized Resource Identifier) of the referenced resource. Can be a relative IRI._
 		 - Type: `string`
 		 - <i id="#/definitions/ResourceReference/properties/uri">path: #/definitions/ResourceReference/properties/uri</i>
+		 - String format must be a "iri-reference"
 		 - Length:  &le; 1000
 
 
@@ -91,6 +94,7 @@ This schema accepts additional properties.
 		 - _The information contained in this field must be enough to uniquely and reliably identify the debtor. Note that a network request should not be needed to identify the debtor. For example, if the debtor happens to be a bank, the URI would reveal the type of the debtor (a bank), and the ID of the bank. Note that some debtors may be used only to represent a physical value measurement unit (like ounces of gold). Those dummy debtors do not represent a person or an organization, do not owe anything to anyone, and are used solely as identifiers of value measurement units._
 		 - Type: `string`
 		 - <i id="#/definitions/DebtorIdentity/properties/uri">path: #/definitions/DebtorIdentity/properties/uri</i>
+		 - String format must be a "uri"
 		 - Length:  &le; 100
 
 

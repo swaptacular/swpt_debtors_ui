@@ -5,6 +5,7 @@
       "properties": {
         "uri": {
           "type": "string",
+          "format": "iri-reference",
           "maxLength": 1000,
           "description": "The IRI (Internationalized Resource Identifier) of the referenced resource. Can be a relative IRI."
         }
@@ -17,6 +18,7 @@
         "type":  { "const": "DebtorIdentity" },
         "uri": {
           "type": "string",
+          "format": "uri",
           "maxLength": 100,
           "description": "The information contained in this field must be enough to uniquely and reliably identify the debtor. Note that a network request should not be needed to identify the debtor. For example, if the debtor happens to be a bank, the URI would reveal the type of the debtor (a bank), and the ID of the bank. Note that some debtors may be used only to represent a physical value measurement unit (like ounces of gold). Those dummy debtors do not represent a person or an organization, do not owe anything to anyone, and are used solely as identifiers of value measurement units."
         }
@@ -29,6 +31,7 @@
         "type":  { "const": "CoinPeg" },
         "exchangeRate": {
           "type": "number",
+          "format": "double",
           "minimum": 0.0,
           "description": "The exchange rate between the pegged currency and the peg currency. For example, `2.0` would mean that pegged currency's tokens are twice as valuable as peg currency's tokens."
         },
@@ -49,18 +52,21 @@
     "type":  { "type": "string", "pattern": "^CoinInfo(-v[1-9][0-9]{0,5})?$" },
     "uri": {
       "type": "string",
+      "format": "iri",
       "minLength": 1,
       "maxLength": 200,
       "description": "The IRI (Internationalized Resource Identifier) of this object. Must be an absolute IRI."
     },
     "revision": {
       "type": "integer",
+      "format": "int32",
       "minimum": 0,
-      "maximum": 4294967295,
+      "maximum": 2147483647,
       "description": "The revision number. Later revisions must have bigger revision numbers."
     },
     "willNotChangeUntil": {
       "type": "string",
+      "format": "date-time",
       "maxLength": 100,
       "description": "Optional promise that, until the specified moment (in ISO 8601 format), there will be no new revisions of this document."
     },
@@ -89,11 +95,13 @@
     },
     "amountDevisor": {
       "type": "number",
+      "format": "double",
       "minimum": 0.0,
       "description": "Before displaying the amount, it should be divided by this number. This value should be used for display purposes only. Notably, the value of this field must be ignored when the exchange rate between pegged currencies is calculated."
 },
     "decimalPlaces": {
       "type": "integer",
+      "format": "int32",
       "minimum": -20,
       "maximum": 20,
       "description": "The number of digits to show after the decimal point, when displaying the amount. A negative number signifies the number of insignificant digits at the end of the integer number."
