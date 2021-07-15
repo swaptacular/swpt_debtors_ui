@@ -1,16 +1,30 @@
 {
   "definitions": {
-    "ResourceReference": {
+    "Link": {
       "type": "object",
       "properties": {
         "uri": {
           "type": "string",
-          "format": "iri-reference",
-          "maxLength": 1000,
-          "description": "The IRI (Internationalized Resource Identifier) of the referenced resource. Can be a relative IRI."
+          "format": "iri",
+          "maxLength": 10000,
+          "description": "The IRI (Internationalized Resource Identifier) of the referenced resource. Must be an absolute IRI."
         }
       },
-      "required": [ "uri" ]
+      "required": [ "uri" ],
+      "additionalProperties": false
+    },
+    "ShortLink": {
+      "type": "object",
+      "properties": {
+        "uri": {
+          "type": "string",
+          "format": "iri",
+          "maxLength": 200,
+          "description": "The IRI (Internationalized Resource Identifier) of the referenced resource. Must be an absolute IRI."
+        }
+      },
+      "required": [ "uri" ],
+      "additionalProperties": false
     },
     "DebtorIdentity": {
       "type": "object",
@@ -40,7 +54,7 @@
           "description": "Uniquely identifies the peg currency."
         },
         "latestCoinInfo": {
-          "$ref": "#/definitions/ResourceReference",
+          "$ref": "#/definitions/ShortLink",
           "description": "A link to the newest revision of the peg currency's `CoinInfo` document."
         }
       },
@@ -71,7 +85,7 @@
       "description": "Optional promise that, until the specified moment (in ISO 8601 format), there will be no new revisions of this document."
     },
     "latestCoinInfo": {
-      "$ref": "#/definitions/ResourceReference",
+      "$ref": "#/definitions/ShortLink",
       "description": "A link to the newest revision of this document."
     },
     "summary": {
@@ -90,7 +104,7 @@
       "description": "The name of the debtor. Should be unambiguous and easy to remember."
     },
     "debtorHomepage": {
-      "$ref": "#/definitions/ResourceReference",
+      "$ref": "#/definitions/Link",
       "description": "Optional link to the debtor's homepage."
     },
     "amountDevisor": {

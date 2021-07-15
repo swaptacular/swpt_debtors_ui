@@ -30,7 +30,7 @@ This schema accepts additional properties.
  - <b id="#/properties/latestCoinInfo">latestCoinInfo</b> `required`
 	 - _A link to the newest revision of this document._
 	 - <i id="#/properties/latestCoinInfo">path: #/properties/latestCoinInfo</i>
-	 - &#36;ref: [#/definitions/ResourceReference](#/definitions/ResourceReference)
+	 - &#36;ref: [#/definitions/ShortLink](#/definitions/ShortLink)
  - <b id="#/properties/summary">summary</b>
 	 - _A short description of the currency._
 	 - Type: `string`
@@ -48,7 +48,7 @@ This schema accepts additional properties.
  - <b id="#/properties/debtorHomepage">debtorHomepage</b>
 	 - _Optional link to the debtor's homepage._
 	 - <i id="#/properties/debtorHomepage">path: #/properties/debtorHomepage</i>
-	 - &#36;ref: [#/definitions/ResourceReference](#/definitions/ResourceReference)
+	 - &#36;ref: [#/definitions/Link](#/definitions/Link)
  - <b id="#/properties/amountDevisor">amountDevisor</b> `required`
 	 - _Before displaying the amount, it should be divided by this number. This value should be used for display purposes only. Notably, the value of this field must be ignored when the exchange rate between pegged currencies is calculated._
 	 - Type: `number`
@@ -70,17 +70,32 @@ This schema accepts additional properties.
 	 - &#36;ref: [#/definitions/CoinPeg](#/definitions/CoinPeg)
 # definitions
 
-**_ResourceReference_**
+**_Link_**
 
  - Type: `object`
- - <i id="#/definitions/ResourceReference">path: #/definitions/ResourceReference</i>
+ - <i id="#/definitions/Link">path: #/definitions/Link</i>
+ - This schema <u>does not</u> accept additional properties.
  - **_Properties_**
-	 - <b id="#/definitions/ResourceReference/properties/uri">uri</b> `required`
-		 - _The IRI (Internationalized Resource Identifier) of the referenced resource. Can be a relative IRI._
+	 - <b id="#/definitions/Link/properties/uri">uri</b> `required`
+		 - _The IRI (Internationalized Resource Identifier) of the referenced resource. Must be an absolute IRI._
 		 - Type: `string`
-		 - <i id="#/definitions/ResourceReference/properties/uri">path: #/definitions/ResourceReference/properties/uri</i>
-		 - String format must be a "iri-reference"
-		 - Length:  &le; 1000
+		 - <i id="#/definitions/Link/properties/uri">path: #/definitions/Link/properties/uri</i>
+		 - String format must be a "iri"
+		 - Length:  &le; 10000
+
+
+**_ShortLink_**
+
+ - Type: `object`
+ - <i id="#/definitions/ShortLink">path: #/definitions/ShortLink</i>
+ - This schema <u>does not</u> accept additional properties.
+ - **_Properties_**
+	 - <b id="#/definitions/ShortLink/properties/uri">uri</b> `required`
+		 - _The IRI (Internationalized Resource Identifier) of the referenced resource. Must be an absolute IRI._
+		 - Type: `string`
+		 - <i id="#/definitions/ShortLink/properties/uri">path: #/definitions/ShortLink/properties/uri</i>
+		 - String format must be a "iri"
+		 - Length:  &le; 200
 
 
 **_DebtorIdentity_**
@@ -117,7 +132,7 @@ This schema accepts additional properties.
 	 - <b id="#/definitions/CoinPeg/properties/latestCoinInfo">latestCoinInfo</b> `required`
 		 - _A link to the newest revision of the peg currency's `CoinInfo` document._
 		 - <i id="#/definitions/CoinPeg/properties/latestCoinInfo">path: #/definitions/CoinPeg/properties/latestCoinInfo</i>
-		 - &#36;ref: [#/definitions/ResourceReference](#/definitions/ResourceReference)
+		 - &#36;ref: [#/definitions/ShortLink](#/definitions/ShortLink)
 
 
 
