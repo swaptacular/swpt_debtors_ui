@@ -109,7 +109,7 @@ This schema accepts additional properties.
 		 - <i id="#/definitions/DebtorIdentity/properties/type">path: #/definitions/DebtorIdentity/properties/type</i>
 		 - The value must match this pattern: `^DebtorIdentity(-v[1-9][0-9]{0,5})?$`
 	 - <b id="#/definitions/DebtorIdentity/properties/uri">uri</b> `required`
-		 - _The information contained in this field must be enough to uniquely and reliably identify the debtor (and the currency). Note that a network request should not be needed to identify the debtor. For example, if the debtor happens to be a bank, the URI would reveal the type of the debtor (a bank), and the ID of the bank. Note that some debtors may be used only to represent a physical value measurement unit (like ounces of gold). Those dummy debtors do not represent a person or an organization, do not owe anything to anyone, and are used solely as identifiers of value measurement units._
+		 - _The information contained in this field must be enough to uniquely and reliably identify the debtor (and the currency). Note that a network request should not be needed to identify the debtor. For example, if the issuer happens to be a bank, the URI would reveal the type of the issuer (a bank), the ID of the bank, and the currency code (USD for example). Note that some debtors may be used only to represent a physical value measurement unit (like ounces of gold). Those dummy debtors do not represent a person or an organization, do not owe anything to anyone, and are used solely as identifiers of value measurement units._
 		 - Type: `string`
 		 - <i id="#/definitions/DebtorIdentity/properties/uri">path: #/definitions/DebtorIdentity/properties/uri</i>
 		 - String format must be a "uri"
