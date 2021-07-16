@@ -22,7 +22,7 @@ function validateOptionalDate(date?: Date): void {
       date.getFullYear() > 9998 ||
       date.getFullYear() < 1970
     )
-  ) throw new InvalidDebtorData('/willNotChangeUntil must be in ISO 8601 format')
+  ) throw new InvalidDocument('/willNotChangeUntil must be in ISO 8601 format')
 }
 
 export type ResourceReference = {
@@ -68,8 +68,8 @@ export type DocumentWithHash = Document & {
   sha256: string,
 }
 
-export class InvalidDebtorData extends Error {
-  name = 'InvalidDebtorData'
+export class InvalidDocument extends Error {
+  name = 'InvalidDocument'
 }
 
 export const MIME_TYPE_COIN_INFO = 'application/vnd.swaptacular.coin-info+json'
@@ -78,7 +78,7 @@ export const MIME_TYPE_COIN_INFO = 'application/vnd.swaptacular.coin-info+json'
  This function genarates a document in
  "application/vnd.swaptacular.coin-info+json" format. This format is
  defined by a JSON Schema file (see "./schema.json",
- "./schema.md"). An `InvalidDebtorData` error will be thrown when
+ "./schema.md"). An `InvalidDocument` error will be thrown when
  invalid data is passed.
 */
 export async function generateCoinInfoDocument(debtorData: DebtorData): Promise<DocumentWithHash> {
@@ -90,7 +90,7 @@ export async function generateCoinInfoDocument(debtorData: DebtorData): Promise<
   }
   if (!validate(data)) {
     const e = validate.errors[0]
-    throw new InvalidDebtorData(`${e.instancePath} ${e.message}`)
+    throw new InvalidDocument(`${e.instancePath} ${e.message}`)
   }
   const content = UTF8_ENCODER.encode(JSON.stringify(data))
   return {
@@ -102,30 +102,30 @@ export async function generateCoinInfoDocument(debtorData: DebtorData): Promise<
 
 /*
  Currently, this function can parse only files with content type
- "application/vnd.swaptacular.coin-info+json". An `InvalidDebtorData`
+ "application/vnd.swaptacular.coin-info+json". An `InvalidDocument`
  error will be thrown if the document can not be parsed.
 */
 export async function parseDebtorInfoDocument(document: Document): Promise<DebtorData> {
   if (document.contentType !== MIME_TYPE_COIN_INFO) {
-    throw new InvalidDebtorData('unknown content type')
+    throw new InvalidDocument('unknown content type')
   }
   if (document.content.byteLength > MAX_DOCUMENT_CONTENT_SIZE) {
-    throw new InvalidDebtorData('document is too big')
+    throw new InvalidDocument('document is too big')
   }
   let text, data
   try {
     text = UTF8_DECODER.decode(document.content)
   } catch {
-    throw new InvalidDebtorData('decoding error')
+    throw new InvalidDocument('decoding error')
   }
   try {
     data = JSON.parse(text)
   } catch {
-    throw new InvalidDebtorData('parse error')
+    throw new InvalidDocument('parse error')
   }
   if (!validate(data)) {
     const e = validate.errors[0]
-    throw new InvalidDebtorData(`${e.instancePath} ${e.message}`)
+    throw new InvalidDocument(`${e.instancePath} ${e.message}`)
   }
   let willNotChangeUntil
   if (data.willNotChangeUntil) {
