@@ -15,14 +15,14 @@ function buffer2hex(buffer: ArrayBuffer, options = { toUpperCase: true }) {
   return options.toUpperCase ? hex.toUpperCase() : hex
 }
 
-function validateOptionalDate(date?: Date): void {
+function validateOptionalDate(date: Date | undefined, errorMsg: string): void {
   if (
     date !== undefined && (
       Number.isNaN(date.getTime()) ||
       date.getFullYear() > 9998 ||
       date.getFullYear() < 1970
     )
-  ) throw new InvalidDocument('/willNotChangeUntil must be in ISO 8601 format')
+  ) throw new InvalidDocument(errorMsg)
 }
 
 export type ResourceReference = {
@@ -82,7 +82,7 @@ export const MIME_TYPE_COIN_INFO = 'application/vnd.swaptacular.coin-info+json'
  invalid data is passed.
 */
 export async function generateCoinInfoDocument(debtorData: DebtorData): Promise<DocumentWithHash> {
-  validateOptionalDate(debtorData.willNotChangeUntil)
+  validateOptionalDate(debtorData.willNotChangeUntil, '/willNotChangeUntil must be a valid Date')
   const data = {
     ...debtorData,
     type: 'CoinInfo',
