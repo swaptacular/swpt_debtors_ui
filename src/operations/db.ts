@@ -9,6 +9,7 @@ import type {
   Error as WebApiError,
 } from '../web-api-schemas'
 import { PaymentInfo, parseTransferNote } from '../payment-requests'
+import type { DocumentWithHash } from '../debtor-info'
 
 type ListQueryOptions = {
   before?: number,
@@ -42,7 +43,7 @@ export type UserData = {
   debtor: Debtor,
   transferUris: string[],
   transfers?: Transfer[],
-  document?: ResourceReference & { content: Blob },
+  document?: ResourceReference & DocumentWithHash,
 }
 
 export type DebtorRecord =
@@ -71,7 +72,7 @@ export type TransferRecord =
 export type DocumentRecord =
   & UserReference
   & ResourceReference
-  & { content: Blob }
+  & DocumentWithHash
 
 export type ActionRecord =
   | UpdateConfigAction

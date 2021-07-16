@@ -96,7 +96,7 @@ export async function generateCoinInfoDocument(debtorData: DebtorData): Promise<
   return {
     content,
     contentType: MIME_TYPE_COIN_INFO,
-    sha256: buffer2hex(await crypto.subtle.digest('SHA-256', content)),
+    sha256: await calcSha256(content),
   }
 }
 
@@ -136,4 +136,8 @@ export async function parseDebtorInfoDocument(document: Document): Promise<Debto
   }
   delete data.type
   return { ...data, willNotChangeUntil }
+}
+
+export async function calcSha256(buffer: ArrayBuffer): Promise<string> {
+  return buffer2hex(await crypto.subtle.digest('SHA-256', buffer))
 }

@@ -1,5 +1,6 @@
 import { db, UserData } from './db'
 import { server, Debtor, Transfer, HttpResponse, TransfersList, RootConfigData } from './server'
+import { calcSha256 } from '../debtor-info'
 
 function extractDocumentInfoUri(configData: string): string | undefined {
   let data
@@ -12,15 +13,19 @@ function extractDocumentInfoUri(configData: string): string | undefined {
 async function getDebtorInfoDocument(debtor: Debtor): Promise<UserData['document']> {
   const uri = extractDocumentInfoUri(debtor.config.configData)
   if (uri !== undefined) {
-    let content
-    const document = await db.getDocumentRecord(uri)
-    if (document) {
-      content = document.content
+    const documentRecord = await db.getDocumentRecord(uri)
+    if (documentRecord) {
+      const { userId, ...document } = documentRecord
+      return document
     } else {
       const { headers, data } = await server.getDocument(uri)
-      content = new Blob([data], { type: String(headers['content-type']) })
+      return {
+        uri,
+        contentType: String(headers['content-type']),
+        content: data,
+        sha256: await calcSha256(data),
+      }
     }
-    return { uri, content }
   }
   return undefined
 }
