@@ -37,7 +37,7 @@ This schema accepts additional properties.
 	 - <i id="#/properties/summary">path: #/properties/summary</i>
 	 - Length:  &le; 1000
  - <b id="#/properties/debtorIdentity">debtorIdentity</b> `required`
-	 - _Uniquely identifies the debtor (and the currency)._
+	 - _Uniquely identifies the debtor (and the currency). Note that in Swaptacular's terminology, the word "debtor" means a Swaptacular currency with its respective issuer. Therefore, if single issuer (a person or organization) issues multiple currencies, he/she will represent multiple different "debtors"._
 	 - <i id="#/properties/debtorIdentity">path: #/properties/debtorIdentity</i>
 	 - &#36;ref: [#/definitions/DebtorIdentity](#/definitions/DebtorIdentity)
  - <b id="#/properties/debtorName">debtorName</b> `required`
@@ -65,7 +65,7 @@ This schema accepts additional properties.
 	 - <i id="#/properties/unit">path: #/properties/unit</i>
 	 - Length: between 1 and 40
  - <b id="#/properties/peg">peg</b>
-	 - _Optional currency peg. A currency peg is a currency management strategy in which the debtor sets a specific fixed exchange rate between the tokens of his currency (the pegged currency) and the tokens of some other currency (the peg currency)._
+	 - _Optional currency peg. A currency peg is a currency management strategy in which the issuer sets a specific fixed exchange rate between the tokens of his currency (the pegged currency) and the tokens of some other currency (the peg currency)._
 	 - <i id="#/properties/peg">path: #/properties/peg</i>
 	 - &#36;ref: [#/definitions/Peg](#/definitions/Peg)
 # definitions
@@ -109,7 +109,7 @@ This schema accepts additional properties.
 		 - <i id="#/definitions/DebtorIdentity/properties/type">path: #/definitions/DebtorIdentity/properties/type</i>
 		 - The value must match this pattern: `^DebtorIdentity(-v[1-9][0-9]{0,5})?$`
 	 - <b id="#/definitions/DebtorIdentity/properties/uri">uri</b> `required`
-		 - _The information contained in this field must be enough to uniquely and reliably identify the debtor. Note that a network request should not be needed to identify the debtor. For example, if the debtor happens to be a bank, the URI would reveal the type of the debtor (a bank), and the ID of the bank. Note that some debtors may be used only to represent a physical value measurement unit (like ounces of gold). Those dummy debtors do not represent a person or an organization, do not owe anything to anyone, and are used solely as identifiers of value measurement units._
+		 - _The information contained in this field must be enough to uniquely and reliably identify the debtor (and the currency). Note that a network request should not be needed to identify the debtor. For example, if the debtor happens to be a bank, the URI would reveal the type of the debtor (a bank), and the ID of the bank. Note that some debtors may be used only to represent a physical value measurement unit (like ounces of gold). Those dummy debtors do not represent a person or an organization, do not owe anything to anyone, and are used solely as identifiers of value measurement units._
 		 - Type: `string`
 		 - <i id="#/definitions/DebtorIdentity/properties/uri">path: #/definitions/DebtorIdentity/properties/uri</i>
 		 - String format must be a "uri"
