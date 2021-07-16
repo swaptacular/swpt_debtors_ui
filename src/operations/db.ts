@@ -9,7 +9,7 @@ import type {
   Error as WebApiError,
 } from '../web-api-schemas'
 import { PaymentInfo, parseTransferNote } from '../payment-requests'
-import type { DocumentWithHash } from '../debtor-info'
+import type { DocumentWithHash, BaseDebtorData } from '../debtor-info'
 
 type ListQueryOptions = {
   before?: number,
@@ -20,14 +20,6 @@ type ListQueryOptions = {
 
 type UserReference = {
   userId: number,
-}
-
-type DocumentUri = string
-
-type ConfigData = {
-  // TODO: this is probably wrong.
-  rate: number,
-  info: DocumentUri | Blob,
 }
 
 type ActionData =
@@ -85,8 +77,11 @@ export type ActionRecordWithId =
 
 export type UpdateConfigAction =
   & ActionData
-  & ConfigData
-  & { actionType: 'UpdateConfig' }
+  & BaseDebtorData
+  & {
+    actionType: 'UpdateConfig',
+    rate: number,
+  }
 
 export type ExecutionState = {
   startedAt: Date,
