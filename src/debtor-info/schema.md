@@ -27,9 +27,9 @@ This schema accepts additional properties.
 	 - <i id="#/properties/willNotChangeUntil">path: #/properties/willNotChangeUntil</i>
 	 - String format must be a "date-time"
 	 - Length:  &le; 100
- - <b id="#/properties/latestCoinInfo">latestCoinInfo</b> `required`
-	 - _A link to the newest revision of this document._
-	 - <i id="#/properties/latestCoinInfo">path: #/properties/latestCoinInfo</i>
+ - <b id="#/properties/latestDebtorInfo">latestDebtorInfo</b> `required`
+	 - _A link to the newest revision of this currency's debtor info document. (Most probably, a link to the newest revision of this document.)_
+	 - <i id="#/properties/latestDebtorInfo">path: #/properties/latestDebtorInfo</i>
 	 - &#36;ref: [#/definitions/ShortLink](#/definitions/ShortLink)
  - <b id="#/properties/summary">summary</b>
 	 - _A short description of the currency._
@@ -129,9 +129,9 @@ This schema accepts additional properties.
 		 - _Uniquely identifies the peg currency._
 		 - <i id="#/definitions/CoinPeg/properties/debtorIdentity">path: #/definitions/CoinPeg/properties/debtorIdentity</i>
 		 - &#36;ref: [#/definitions/DebtorIdentity](#/definitions/DebtorIdentity)
-	 - <b id="#/definitions/CoinPeg/properties/latestCoinInfo">latestCoinInfo</b> `required`
-		 - _A link to the newest revision of the peg currency's `CoinInfo` document._
-		 - <i id="#/definitions/CoinPeg/properties/latestCoinInfo">path: #/definitions/CoinPeg/properties/latestCoinInfo</i>
+	 - <b id="#/definitions/CoinPeg/properties/latestDebtorInfo">latestDebtorInfo</b> `required`
+		 - _A link to the newest revision of the peg currency's debtor info document (a `CoinInfo` document, for example)._
+		 - <i id="#/definitions/CoinPeg/properties/latestDebtorInfo">path: #/definitions/CoinPeg/properties/latestDebtorInfo</i>
 		 - &#36;ref: [#/definitions/ShortLink](#/definitions/ShortLink)
 
 

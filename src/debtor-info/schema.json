@@ -53,12 +53,12 @@
           "$ref": "#/definitions/DebtorIdentity",
           "description": "Uniquely identifies the peg currency."
         },
-        "latestCoinInfo": {
+        "latestDebtorInfo": {
           "$ref": "#/definitions/ShortLink",
-          "description": "A link to the newest revision of the peg currency's `CoinInfo` document."
+          "description": "A link to the newest revision of the peg currency's debtor info document (a `CoinInfo` document, for example)."
         }
       },
-      "required": [ "type", "exchangeRate", "debtorIdentity", "latestCoinInfo" ]
+      "required": [ "type", "exchangeRate", "debtorIdentity", "latestDebtorInfo" ]
     }
   },  
   "type": "object",
@@ -84,9 +84,9 @@
       "maxLength": 100,
       "description": "Optional promise that, until the specified moment (in ISO 8601 format), there will be no new revisions of this document."
     },
-    "latestCoinInfo": {
+    "latestDebtorInfo": {
       "$ref": "#/definitions/ShortLink",
-      "description": "A link to the newest revision of this document."
+      "description": "A link to the newest revision of this currency's debtor info document. (Most probably, a link to the newest revision of this document.)"
     },
     "summary": {
       "type": "string",
@@ -135,7 +135,7 @@
     "type",
     "uri",
     "revision",
-    "latestCoinInfo",
+    "latestDebtorInfo",
     "debtorIdentity",
     "debtorName",
     "amountDivisor",

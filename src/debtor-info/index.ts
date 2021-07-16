@@ -15,7 +15,7 @@ function validateOptionalDate(date?: Date): void {
       date.getFullYear() > 9998 ||
       date.getFullYear() < 1970
     )
-  ) throw new InvalidCoinInfo('invalid date')
+  ) throw new InvalidDebtorData('/willNotChangeUntil must be in ISO 8601 format')
 }
 
 export type ResourceReference = {
@@ -31,10 +31,10 @@ export type CoinPeg = {
   type: 'CoinPeg',
   exchangeRate: number,
   debtorIdentity: DebtorIdentity,
-  latestCoinInfo: ResourceReference,
+  latestDebtorInfo: ResourceReference,
 }
 
-export type BaseCoinInfo = {
+export type BaseDebtorData = {
   summary?: string,
   debtorName: string,
   debtorHomepage?: ResourceReference,
@@ -44,17 +44,16 @@ export type BaseCoinInfo = {
   peg?: CoinPeg,
 }
 
-export type CoinInfo = BaseCoinInfo & {
-  type: 'CoinInfo',
+export type DebtorData = BaseDebtorData & {
   uri: string,
-  revision: number,
-  willNotChangeUntil?: Date,
-  latestCoinInfo: ResourceReference,
   debtorIdentity: DebtorIdentity,
+  revision: number,
+  latestDebtorInfo: ResourceReference,
+  willNotChangeUntil?: Date,
 }
 
-export class InvalidCoinInfo extends Error {
-  name = 'InvalidCoinInfo'
+export class InvalidDebtorData extends Error {
+  name = 'InvalidDebtorData'
 }
 
 export const MIME_TYPE_COIN_INFO = 'application/vnd.swaptacular.coin-info+json'
@@ -63,41 +62,45 @@ export const MIME_TYPE_COIN_INFO = 'application/vnd.swaptacular.coin-info+json'
  This function genarates a "CoinInfo" file (a `Blob`) in
  "application/vnd.swaptacular.coin-info+json" format. This format is
  defined by a JSON Schema file (see "./schema.json",
- "./schema.md"). An `InvalidCoinInfo` error will be thrown when
- invalid data is parsed.
+ "./schema.md"). An `InvalidDebtorData` error will be thrown when
+ invalid data is passed.
 */
-export function generateCoinInfoBlob(coinInfo: CoinInfo): Blob {
-  validateOptionalDate(coinInfo.willNotChangeUntil)
-  const data = { ...coinInfo, willNotChangeUntil: coinInfo.willNotChangeUntil?.toISOString() }
+export function generateCoinInfoBlob(debtorData: DebtorData): Blob {
+  validateOptionalDate(debtorData.willNotChangeUntil)
+  const data = {
+    ...debtorData,
+    type: 'CoinInfo',
+    willNotChangeUntil: debtorData.willNotChangeUntil?.toISOString(),
+  }
   if (!validate(data)) {
     const e = validate.errors[0]
-    throw new InvalidCoinInfo(`${e.instancePath} ${e.message}`)
+    throw new InvalidDebtorData(`${e.instancePath} ${e.message}`)
   }
   const content = UTF8_ENCODER.encode(JSON.stringify(data))
   return new Blob([content], { type: MIME_TYPE_COIN_INFO })
 }
 
 /*
- This function parses files with content type
- "application/vnd.swaptacular.coin-info+json". An `InvalidCoinInfo`
+ Currently, this function can parse only files with content type
+ "application/vnd.swaptacular.coin-info+json". An `InvalidDebtorData`
  error will be thrown if the blob can not be parsed.
 */
-export async function parseCoinInfoBlob(blob: Blob): Promise<CoinInfo> {
+export async function parseDebtorInfoBlob(blob: Blob): Promise<DebtorData> {
   if (blob.type && blob.type !== MIME_TYPE_COIN_INFO) {
-    throw new InvalidCoinInfo('wrong content type')
+    throw new InvalidDebtorData('wrong content type')
   }
   if (blob.size > MAX_BLOB_SIZE) {
-    throw new InvalidCoinInfo('too big')
+    throw new InvalidDebtorData('too big')
   }
   let data
   try {
     data = JSON.parse(await blob.text())
   } catch {
-    throw new InvalidCoinInfo('parse error')
+    throw new InvalidDebtorData('parse error')
   }
   if (!validate(data)) {
     const e = validate.errors[0]
-    throw new InvalidCoinInfo(`${e.instancePath} ${e.message}`)
+    throw new InvalidDebtorData(`${e.instancePath} ${e.message}`)
   }
   let willNotChangeUntil
   if (data.willNotChangeUntil) {
@@ -106,5 +109,6 @@ export async function parseCoinInfoBlob(blob: Blob): Promise<CoinInfo> {
       willNotChangeUntil = undefined
     }
   }
+  delete data.type
   return { ...data, willNotChangeUntil }
 }

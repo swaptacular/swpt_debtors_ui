@@ -22,8 +22,8 @@ import {
   MIME_TYPE_PR0,
 } from '../src/payment-requests'
 import { UpdateScheduler } from '../src/update-scheduler'
-import validate from '../src/coin-info/validate-schema.js'
-import { generateCoinInfoBlob, parseCoinInfoBlob, InvalidCoinInfo } from '../src/coin-info'
+import validate from '../src/debtor-info/validate-schema.js'
+import { generateCoinInfoBlob, parseDebtorInfoBlob, InvalidDebtorData } from '../src/debtor-info'
 
 const authToken = '3x-KAxNWrYPJUWNKTbpnTWxoR0Arr0gG_uEqeWUNDkk.B-Iqy02FM7rK1rKSb4I7D9gaqGFXc2vdyJQ6Uuv3EF4'
 
@@ -522,7 +522,7 @@ test("Validate CoinInfo schema", () => {
     uri: 'https://example.com/0',
     revision: 0,
     willNotChangeUntil: '2021-01-01T10:00:00Z',
-    latestCoinInfo: { uri: 'http://example.com/' },
+    latestDebtorInfo: { uri: 'http://example.com/' },
     summary: "bla-bla",
     debtorIdentity: { type: 'DebtorIdentity', uri: 'swpt:123' },
     debtorName: 'USA',
@@ -534,19 +534,18 @@ test("Validate CoinInfo schema", () => {
       type: 'CoinPeg',
       exchangeRate: 1.0,
       debtorIdentity: { type: 'DebtorIdentity', uri: 'swpt:321' },
-      latestCoinInfo: { uri: 'http://example.com/' },
+      latestDebtorInfo: { uri: 'http://example.com/' },
     },
     unknownProp: 1,
   })).toEqual(true)
 })
 
 test("Generate and parse CoinInfo", async () => {
-  const coinInfo = {
-    type: 'CoinInfo' as const,
+  const debtorData = {
     uri: 'https://example.com/0',
     revision: 0,
     willNotChangeUntil: new Date('2021-01-01T10:00:00Z'),
-    latestCoinInfo: { uri: 'http://example.com/' },
+    latestDebtorInfo: { uri: 'http://example.com/' },
     summary: "bla-bla",
     debtorIdentity: { type: 'DebtorIdentity' as const, uri: 'swpt:123' },
     debtorName: 'USA',
@@ -558,13 +557,13 @@ test("Generate and parse CoinInfo", async () => {
       type: 'CoinPeg' as const,
       exchangeRate: 1.0,
       debtorIdentity: { type: 'DebtorIdentity' as const, uri: 'swpt:321' },
-      latestCoinInfo: { uri: 'http://example.com/' },
+      latestDebtorInfo: { uri: 'http://example.com/' },
     },
     unknownProp: 1,
   }
-  const blob = generateCoinInfoBlob(coinInfo)
-  const { unknownProp, ...noUnknownProp } = coinInfo
-  await expect(parseCoinInfoBlob(blob)).resolves.toEqual(noUnknownProp)
-  expect(() => generateCoinInfoBlob({ ...coinInfo, revision: -1 })).toThrow(InvalidCoinInfo)
-  expect(() => generateCoinInfoBlob({ ...coinInfo, willNotChangeUntil: new Date(NaN) })).toThrow(InvalidCoinInfo)
+  const blob = generateCoinInfoBlob(debtorData)
+  const { unknownProp, ...noUnknownProp } = debtorData
+  await expect(parseDebtorInfoBlob(blob)).resolves.toEqual(noUnknownProp)
+  expect(() => generateCoinInfoBlob({ ...debtorData, revision: -1 })).toThrow(InvalidDebtorData)
+  expect(() => generateCoinInfoBlob({ ...debtorData, willNotChangeUntil: new Date(NaN) })).toThrow(InvalidDebtorData)
 })
