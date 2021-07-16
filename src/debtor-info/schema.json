@@ -39,10 +39,10 @@
       },
       "required": [ "type", "uri" ]
     },
-    "CoinPeg": {
+    "Peg": {
       "type": "object",
       "properties": {
-        "type":  { "const": "CoinPeg" },
+        "type":  { "const": "Peg" },
         "exchangeRate": {
           "type": "number",
           "format": "double",
@@ -127,7 +127,7 @@
       "description": "The value measurement unit. It should be shown right after the displayed amount, \"500.00 USD\" for example."
     },
     "peg":  {
-      "$ref": "#/definitions/CoinPeg",
+      "$ref": "#/definitions/Peg",
       "description": "Optional currency peg. A currency peg is a currency management strategy in which the debtor sets a specific fixed exchange rate between the tokens of his currency (the pegged currency) and the tokens of some other currency (the peg currency)."
     }
   },

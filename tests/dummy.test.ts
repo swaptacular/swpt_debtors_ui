@@ -531,7 +531,7 @@ test("Validate CoinInfo schema", () => {
     decimalPlaces: 2,
     unit: 'USD',
     peg: {
-      type: 'CoinPeg',
+      type: 'Peg',
       exchangeRate: 1.0,
       debtorIdentity: { type: 'DebtorIdentity', uri: 'swpt:321' },
       latestDebtorInfo: { uri: 'http://example.com/' },
@@ -554,7 +554,7 @@ test("Generate and parse CoinInfo", async () => {
     decimalPlaces: 2,
     unit: 'USD',
     peg: {
-      type: 'CoinPeg' as const,
+      type: 'Peg' as const,
       exchangeRate: 1.0,
       debtorIdentity: { type: 'DebtorIdentity' as const, uri: 'swpt:321' },
       latestDebtorInfo: { uri: 'http://example.com/' },

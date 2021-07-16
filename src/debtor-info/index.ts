@@ -34,8 +34,8 @@ export type DebtorIdentity = {
   uri: string,
 }
 
-export type CoinPeg = {
-  type: 'CoinPeg',
+export type Peg = {
+  type: 'Peg',
   exchangeRate: number,
   debtorIdentity: DebtorIdentity,
   latestDebtorInfo: ResourceReference,
@@ -48,7 +48,7 @@ export type BaseDebtorData = {
   amountDivisor: number,
   decimalPlaces: number,
   unit: string,
-  peg?: CoinPeg,
+  peg?: Peg,
 }
 
 export type DebtorData = BaseDebtorData & {
@@ -75,7 +75,7 @@ export class InvalidDebtorData extends Error {
 export const MIME_TYPE_COIN_INFO = 'application/vnd.swaptacular.coin-info+json'
 
 /*
- This function genarates a "CoinInfo" document in
+ This function genarates a document in
  "application/vnd.swaptacular.coin-info+json" format. This format is
  defined by a JSON Schema file (see "./schema.json",
  "./schema.md"). An `InvalidDebtorData` error will be thrown when

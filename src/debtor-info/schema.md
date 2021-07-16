@@ -67,7 +67,7 @@ This schema accepts additional properties.
  - <b id="#/properties/peg">peg</b>
 	 - _Optional currency peg. A currency peg is a currency management strategy in which the debtor sets a specific fixed exchange rate between the tokens of his currency (the pegged currency) and the tokens of some other currency (the peg currency)._
 	 - <i id="#/properties/peg">path: #/properties/peg</i>
-	 - &#36;ref: [#/definitions/CoinPeg](#/definitions/CoinPeg)
+	 - &#36;ref: [#/definitions/Peg](#/definitions/Peg)
 # definitions
 
 **_Link_**
@@ -113,25 +113,25 @@ This schema accepts additional properties.
 		 - Length:  &le; 100
 
 
-**_CoinPeg_**
+**_Peg_**
 
  - Type: `object`
- - <i id="#/definitions/CoinPeg">path: #/definitions/CoinPeg</i>
+ - <i id="#/definitions/Peg">path: #/definitions/Peg</i>
  - **_Properties_**
-	 - <b id="#/definitions/CoinPeg/properties/type">type</b> `required`
-		 - <i id="#/definitions/CoinPeg/properties/type">path: #/definitions/CoinPeg/properties/type</i>
-	 - <b id="#/definitions/CoinPeg/properties/exchangeRate">exchangeRate</b> `required`
+	 - <b id="#/definitions/Peg/properties/type">type</b> `required`
+		 - <i id="#/definitions/Peg/properties/type">path: #/definitions/Peg/properties/type</i>
+	 - <b id="#/definitions/Peg/properties/exchangeRate">exchangeRate</b> `required`
 		 - _The exchange rate between the pegged currency and the peg currency. For example, `2.0` would mean that pegged currency's tokens are twice as valuable as peg currency's tokens._
 		 - Type: `number`
-		 - <i id="#/definitions/CoinPeg/properties/exchangeRate">path: #/definitions/CoinPeg/properties/exchangeRate</i>
+		 - <i id="#/definitions/Peg/properties/exchangeRate">path: #/definitions/Peg/properties/exchangeRate</i>
 		 - Range:  &ge; 0
-	 - <b id="#/definitions/CoinPeg/properties/debtorIdentity">debtorIdentity</b> `required`
+	 - <b id="#/definitions/Peg/properties/debtorIdentity">debtorIdentity</b> `required`
 		 - _Uniquely identifies the peg currency._
-		 - <i id="#/definitions/CoinPeg/properties/debtorIdentity">path: #/definitions/CoinPeg/properties/debtorIdentity</i>
+		 - <i id="#/definitions/Peg/properties/debtorIdentity">path: #/definitions/Peg/properties/debtorIdentity</i>
 		 - &#36;ref: [#/definitions/DebtorIdentity](#/definitions/DebtorIdentity)
-	 - <b id="#/definitions/CoinPeg/properties/latestDebtorInfo">latestDebtorInfo</b> `required`
+	 - <b id="#/definitions/Peg/properties/latestDebtorInfo">latestDebtorInfo</b> `required`
 		 - _A link to the newest revision of the peg currency's debtor info document (a `CoinInfo` document, for example)._
-		 - <i id="#/definitions/CoinPeg/properties/latestDebtorInfo">path: #/definitions/CoinPeg/properties/latestDebtorInfo</i>
+		 - <i id="#/definitions/Peg/properties/latestDebtorInfo">path: #/definitions/Peg/properties/latestDebtorInfo</i>
 		 - &#36;ref: [#/definitions/ShortLink](#/definitions/ShortLink)
 
 
