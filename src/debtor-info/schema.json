@@ -103,7 +103,7 @@
       "type": "string",
       "minLength": 1,
       "maxLength": 40,
-      "description": "The name of the debtor. Should be unambiguous and easy to remember."
+      "description": "The name of the debtor. Should be unambiguous, easy to remember, and unlikely to be duplicated accidentally. Different currencies should have different `debtorName`s, even when they are issued by the same person or organization."
     },
     "debtorHomepage": {
       "$ref": "#/definitions/Link",
