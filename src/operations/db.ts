@@ -1,7 +1,6 @@
 import equal from 'fast-deep-equal'
 import Dexie from 'dexie'
 import type {
-  ObjectReference as ResourceReference,
   Debtor,
   DebtorConfig,
   Transfer,
@@ -9,7 +8,7 @@ import type {
   Error as WebApiError,
 } from '../web-api-schemas'
 import { PaymentInfo, parseTransferNote } from '../payment-requests'
-import type { DocumentWithHash, BaseDebtorData } from '../debtor-info'
+import type { ResourceReference, DocumentWithHash, BaseDebtorData } from '../debtor-info'
 
 type ListQueryOptions = {
   before?: number,
