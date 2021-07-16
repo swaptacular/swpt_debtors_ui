@@ -29,7 +29,7 @@
     "DebtorIdentity": {
       "type": "object",
       "properties": {
-        "type":  { "const": "DebtorIdentity" },
+        "type":  { "type": "string", "pattern": "^DebtorIdentity(-v[1-9][0-9]{0,5})?$" },
         "uri": {
           "type": "string",
           "format": "uri",
@@ -37,12 +37,13 @@
           "description": "The information contained in this field must be enough to uniquely and reliably identify the debtor. Note that a network request should not be needed to identify the debtor. For example, if the debtor happens to be a bank, the URI would reveal the type of the debtor (a bank), and the ID of the bank. Note that some debtors may be used only to represent a physical value measurement unit (like ounces of gold). Those dummy debtors do not represent a person or an organization, do not owe anything to anyone, and are used solely as identifiers of value measurement units."
         }
       },
-      "required": [ "type", "uri" ]
+      "required": [ "type", "uri" ],
+      "additionalProperties": true
     },
     "Peg": {
       "type": "object",
       "properties": {
-        "type":  { "const": "Peg" },
+        "type":  { "type": "string", "pattern": "^Peg(-v[1-9][0-9]{0,5})?$" },
         "exchangeRate": {
           "type": "number",
           "format": "double",
@@ -58,7 +59,8 @@
           "description": "A link to the newest revision of the peg currency's debtor info document (a `CoinInfo` document, for example)."
         }
       },
-      "required": [ "type", "exchangeRate", "debtorIdentity", "latestDebtorInfo" ]
+      "required": [ "type", "exchangeRate", "debtorIdentity", "latestDebtorInfo" ],
+      "additionalProperties": true
     }
   },  
   "type": "object",

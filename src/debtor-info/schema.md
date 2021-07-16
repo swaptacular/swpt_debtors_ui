@@ -102,9 +102,12 @@ This schema accepts additional properties.
 
  - Type: `object`
  - <i id="#/definitions/DebtorIdentity">path: #/definitions/DebtorIdentity</i>
+ - This schema accepts additional properties.
  - **_Properties_**
 	 - <b id="#/definitions/DebtorIdentity/properties/type">type</b> `required`
+		 - Type: `string`
 		 - <i id="#/definitions/DebtorIdentity/properties/type">path: #/definitions/DebtorIdentity/properties/type</i>
+		 - The value must match this pattern: `^DebtorIdentity(-v[1-9][0-9]{0,5})?$`
 	 - <b id="#/definitions/DebtorIdentity/properties/uri">uri</b> `required`
 		 - _The information contained in this field must be enough to uniquely and reliably identify the debtor. Note that a network request should not be needed to identify the debtor. For example, if the debtor happens to be a bank, the URI would reveal the type of the debtor (a bank), and the ID of the bank. Note that some debtors may be used only to represent a physical value measurement unit (like ounces of gold). Those dummy debtors do not represent a person or an organization, do not owe anything to anyone, and are used solely as identifiers of value measurement units._
 		 - Type: `string`
@@ -117,9 +120,12 @@ This schema accepts additional properties.
 
  - Type: `object`
  - <i id="#/definitions/Peg">path: #/definitions/Peg</i>
+ - This schema accepts additional properties.
  - **_Properties_**
 	 - <b id="#/definitions/Peg/properties/type">type</b> `required`
+		 - Type: `string`
 		 - <i id="#/definitions/Peg/properties/type">path: #/definitions/Peg/properties/type</i>
+		 - The value must match this pattern: `^Peg(-v[1-9][0-9]{0,5})?$`
 	 - <b id="#/definitions/Peg/properties/exchangeRate">exchangeRate</b> `required`
 		 - _The exchange rate between the pegged currency and the peg currency. For example, `2.0` would mean that pegged currency's tokens are twice as valuable as peg currency's tokens._
 		 - Type: `number`
