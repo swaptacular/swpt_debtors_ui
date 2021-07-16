@@ -25,6 +25,17 @@ function validateOptionalDate(date: Date | undefined, errorMsg: string): void {
   ) throw new InvalidDocument(errorMsg)
 }
 
+function parseOptionalDate(s?: string): Date | undefined {
+  let date
+  if (s !== undefined) {
+    date = new Date(s)
+    if (Number.isNaN(date.getTime())) {
+      return undefined
+    }
+  }
+  return date
+}
+
 export type ResourceReference = {
   uri: string,
 }
@@ -127,15 +138,9 @@ export async function parseDebtorInfoDocument(document: Document): Promise<Debto
     const e = validate.errors[0]
     throw new InvalidDocument(`${e.instancePath} ${e.message}`)
   }
-  let willNotChangeUntil
-  if (data.willNotChangeUntil) {
-    willNotChangeUntil = new Date(data.willNotChangeUntil)
-    if (Number.isNaN(willNotChangeUntil.getTime())) {
-      willNotChangeUntil = undefined
-    }
-  }
+  data.willNotChangeUntil = parseOptionalDate(data.willNotChangeUntil)
   delete data.type
-  return { ...data, willNotChangeUntil }
+  return data
 }
 
 export async function calcSha256(buffer: ArrayBuffer): Promise<string> {
