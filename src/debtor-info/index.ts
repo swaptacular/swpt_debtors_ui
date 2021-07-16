@@ -6,7 +6,14 @@
 import validate from './validate-schema.js'
 
 const UTF8_ENCODER = new TextEncoder()
-const MAX_BLOB_SIZE = 5 * 1024 * 1024
+const UTF8_DECODER = new TextDecoder()
+const MAX_DOCUMENT_CONTENT_SIZE = 5 * 1024 * 1024
+
+function buffer2hex(buffer: ArrayBuffer, options = { toUpperCase: true }) {
+  const bytes = [...new Uint8Array(buffer)]
+  const hex = bytes.map(n => n.toString(16).padStart(2, '0')).join('')
+  return options.toUpperCase ? hex.toUpperCase() : hex
+}
 
 function validateOptionalDate(date?: Date): void {
   if (
@@ -52,6 +59,15 @@ export type DebtorData = BaseDebtorData & {
   willNotChangeUntil?: Date,
 }
 
+export type Document = {
+  contentType: string,
+  content: ArrayBuffer,
+}
+
+export type DocumentWithHash = Document & {
+  sha256: string,
+}
+
 export class InvalidDebtorData extends Error {
   name = 'InvalidDebtorData'
 }
@@ -59,13 +75,13 @@ export class InvalidDebtorData extends Error {
 export const MIME_TYPE_COIN_INFO = 'application/vnd.swaptacular.coin-info+json'
 
 /*
- This function genarates a "CoinInfo" file (a `Blob`) in
+ This function genarates a "CoinInfo" document in
  "application/vnd.swaptacular.coin-info+json" format. This format is
  defined by a JSON Schema file (see "./schema.json",
  "./schema.md"). An `InvalidDebtorData` error will be thrown when
  invalid data is passed.
 */
-export function generateCoinInfoBlob(debtorData: DebtorData): Blob {
+export async function generateCoinInfoDocument(debtorData: DebtorData): Promise<DocumentWithHash> {
   validateOptionalDate(debtorData.willNotChangeUntil)
   const data = {
     ...debtorData,
@@ -77,24 +93,33 @@ export function generateCoinInfoBlob(debtorData: DebtorData): Blob {
     throw new InvalidDebtorData(`${e.instancePath} ${e.message}`)
   }
   const content = UTF8_ENCODER.encode(JSON.stringify(data))
-  return new Blob([content], { type: MIME_TYPE_COIN_INFO })
+  return {
+    content,
+    contentType: MIME_TYPE_COIN_INFO,
+    sha256: buffer2hex(await crypto.subtle.digest('SHA-256', content)),
+  }
 }
 
 /*
  Currently, this function can parse only files with content type
  "application/vnd.swaptacular.coin-info+json". An `InvalidDebtorData`
- error will be thrown if the blob can not be parsed.
+ error will be thrown if the document can not be parsed.
 */
-export async function parseDebtorInfoBlob(blob: Blob): Promise<DebtorData> {
-  if (blob.type && blob.type !== MIME_TYPE_COIN_INFO) {
-    throw new InvalidDebtorData('wrong content type')
+export async function parseDebtorInfoDocument(document: Document): Promise<DebtorData> {
+  if (document.contentType !== MIME_TYPE_COIN_INFO) {
+    throw new InvalidDebtorData('unknown content type')
   }
-  if (blob.size > MAX_BLOB_SIZE) {
-    throw new InvalidDebtorData('too big')
+  if (document.content.byteLength > MAX_DOCUMENT_CONTENT_SIZE) {
+    throw new InvalidDebtorData('document is too big')
   }
-  let data
+  let text, data
   try {
-    data = JSON.parse(await blob.text())
+    text = UTF8_DECODER.decode(document.content)
+  } catch {
+    throw new InvalidDebtorData('decoding error')
+  }
+  try {
+    data = JSON.parse(text)
   } catch {
     throw new InvalidDebtorData('parse error')
   }

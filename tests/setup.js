@@ -9,3 +9,12 @@ require("fake-indexeddb/auto")
 
 globalThis.Blob = require("cross-blob")
 globalThis.TextEncoder = require("util").TextEncoder
+globalThis.TextDecoder = require("util").TextDecoder
+globalThis.crypto = {
+  subtle: {
+    async digest() {
+      return new ArrayBuffer()
+    }
+  }
+}
+

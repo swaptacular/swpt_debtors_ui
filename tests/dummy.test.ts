@@ -23,7 +23,7 @@ import {
 } from '../src/payment-requests'
 import { UpdateScheduler } from '../src/update-scheduler'
 import validate from '../src/debtor-info/validate-schema.js'
-import { generateCoinInfoBlob, parseDebtorInfoBlob, InvalidDebtorData } from '../src/debtor-info'
+import { generateCoinInfoDocument, parseDebtorInfoDocument, InvalidDebtorData } from '../src/debtor-info'
 
 const authToken = '3x-KAxNWrYPJUWNKTbpnTWxoR0Arr0gG_uEqeWUNDkk.B-Iqy02FM7rK1rKSb4I7D9gaqGFXc2vdyJQ6Uuv3EF4'
 
@@ -561,9 +561,11 @@ test("Generate and parse CoinInfo", async () => {
     },
     unknownProp: 1,
   }
-  const blob = generateCoinInfoBlob(debtorData)
+  const document = await generateCoinInfoDocument(debtorData)
   const { unknownProp, ...noUnknownProp } = debtorData
-  await expect(parseDebtorInfoBlob(blob)).resolves.toEqual(noUnknownProp)
-  expect(() => generateCoinInfoBlob({ ...debtorData, revision: -1 })).toThrow(InvalidDebtorData)
-  expect(() => generateCoinInfoBlob({ ...debtorData, willNotChangeUntil: new Date(NaN) })).toThrow(InvalidDebtorData)
+  await expect(parseDebtorInfoDocument(document)).resolves.toEqual(noUnknownProp)
+  await expect(generateCoinInfoDocument({ ...debtorData, revision: -1 }))
+    .rejects.toBeInstanceOf(InvalidDebtorData)
+  await expect(generateCoinInfoDocument({ ...debtorData, willNotChangeUntil: new Date(NaN) }))
+    .rejects.toBeInstanceOf(InvalidDebtorData)
 })
