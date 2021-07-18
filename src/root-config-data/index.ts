@@ -18,7 +18,7 @@ export class InvalidRootConfigData extends Error {
   name = 'InvalidRootConfigData'
 }
 
-export function generateRootConfigData(rootConfigData: RootConfigData): string {
+export function stringifyRootConfigData(rootConfigData: RootConfigData): string {
   const data: any = { ...rootConfigData, type: 'RootConfigData' }
   if (data.info) {
     data.info.type = 'DebtorInfo'
