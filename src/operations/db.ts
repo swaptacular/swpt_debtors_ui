@@ -37,6 +37,10 @@ export type UserData = {
   document?: ResourceReference & DocumentWithHash,
 }
 
+export type DebtorConfigData = BaseDebtorData & {
+  rate: number,
+}
+
 export type DebtorRecord =
   & Partial<UserReference>
   & Omit<Debtor, 'config'>
@@ -76,11 +80,8 @@ export type ActionRecordWithId =
 
 export type UpdateConfigAction =
   & ActionData
-  & BaseDebtorData
-  & {
-    actionType: 'UpdateConfig',
-    rate: number,
-  }
+  & DebtorConfigData
+  & { actionType: 'UpdateConfig' }
 
 export type ExecutionState = {
   startedAt: Date,
