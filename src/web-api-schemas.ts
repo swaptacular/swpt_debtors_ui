@@ -372,19 +372,3 @@ export type TransferCancelationRequest = {
   /** The type of this object. */
   type?: string;
 }
-
-export type RootConfigData = {
-  /** The type of this object. */
-  type?: 'RootConfigData',
-
-  /** The interest rate set by the debtor (the issuer). */
-  rate: number,
-
-  /** Link to information about the debtor (the issuer). */
-  info: {
-    type?: 'DebtorInfo',
-    iri: string,
-    contentType?: string,
-    sha256?: string,  // For example: "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
-  }
-}

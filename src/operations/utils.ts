@@ -1,17 +1,17 @@
 import { db, UserData } from './db'
-import { server, Debtor, Transfer, HttpResponse, TransfersList, RootConfigData } from './server'
+import { server, Debtor, Transfer, HttpResponse, TransfersList } from './server'
 import { calcSha256 } from '../debtor-info'
-
-function extractDocumentInfoUri(configData: string): string | undefined {
-  let data
-  try {
-    data = JSON.parse(configData) as RootConfigData
-  } catch { }
-  return data?.info?.iri
-}
+import { parseRootConfigData, InvalidRootConfigData } from '../root-config-data'
 
 async function getDebtorInfoDocument(debtor: Debtor): Promise<UserData['document']> {
-  const uri = extractDocumentInfoUri(debtor.config.configData)
+  let rootConfigData
+  try {
+    rootConfigData = parseRootConfigData(debtor.config.configData)
+  } catch (e: unknown) {
+    if (e instanceof InvalidRootConfigData) rootConfigData = {}
+    else throw e
+  }
+  const uri = rootConfigData.info?.iri
   if (uri !== undefined) {
     const documentRecord = await db.getDocumentRecord(uri)
     if (documentRecord) {

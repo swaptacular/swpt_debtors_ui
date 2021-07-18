@@ -22,7 +22,8 @@ import {
   MIME_TYPE_PR0,
 } from '../src/payment-requests'
 import { UpdateScheduler } from '../src/update-scheduler'
-import validate from '../src/debtor-info/validate-schema.js'
+import validateCointInfo from '../src/debtor-info/validate-schema.js'
+import validateRootConfigData from '../src/root-config-data/validate-schema.js'
 import { generateCoinInfoDocument, parseDebtorInfoDocument, InvalidDocument } from '../src/debtor-info'
 
 const authToken = '3x-KAxNWrYPJUWNKTbpnTWxoR0Arr0gG_uEqeWUNDkk.B-Iqy02FM7rK1rKSb4I7D9gaqGFXc2vdyJQ6Uuv3EF4'
@@ -180,7 +181,9 @@ test("Install and uninstall user", async () => {
   const transferUris = ['https://example.com/1/transfers/xxxxxxxxx', 'https://example.com/1/transfers/yyyyyyyyy']
   const document = {
     uri: 'https://example.com/1/documents/123',
-    content: '' as any as Blob,  // It seems that "fake-indexeddb" has a problem with Blobs.
+    contentType: 'text/plain',
+    content: new ArrayBuffer(0),
+    sha256: '',
   }
   const collectedAfter = new Date()
   await db.storeUserData({ collectedAfter, debtor, transferUris, transfers, document })
@@ -303,7 +306,10 @@ test("Install and uninstall user", async () => {
     actionType: 'UpdateConfig',
     createdAt: new Date(),
     rate: 5.0,
-    info: 'http://example.com/document',
+    debtorName: 'USA',
+    amountDivisor: 100,
+    decimalPlaces: 2,
+    unit: 'USD',
   })
   expect(createTransferActionId).toBeDefined()
   const configRecord = await db.updateConfig(updateConifgActionId, theDebtorConfig)
@@ -515,9 +521,9 @@ test("Deep equal", async () => {
 })
 
 test("Validate CoinInfo schema", () => {
-  expect(validate(1)).toEqual(false)
-  expect(validate({ 'type': 'CoinInfo' })).toEqual(false)
-  expect(validate({
+  expect(validateCointInfo(1)).toEqual(false)
+  expect(validateCointInfo({ 'type': 'CoinInfo' })).toEqual(false)
+  expect(validateCointInfo({
     type: 'CoinInfo-v1',
     uri: 'https://example.com/0',
     revision: 0,
@@ -568,4 +574,21 @@ test("Generate and parse CoinInfo", async () => {
     .rejects.toBeInstanceOf(InvalidDocument)
   await expect(generateCoinInfoDocument({ ...debtorData, willNotChangeUntil: new Date(NaN) }))
     .rejects.toBeInstanceOf(InvalidDocument)
+})
+
+test("Validate RootConfigData schema", () => {
+  expect(validateRootConfigData(1)).toEqual(false)
+  expect(validateRootConfigData({ 'type': 'INVALID' })).toEqual(false)
+  expect(validateRootConfigData({ 'type': 'RootConfigData' })).toEqual(true)
+  expect(validateRootConfigData({
+    type: 'RootConfigData-v1',
+    rate: 0,
+    info: {
+      type: 'DebtorInfo',
+      iri: 'http://example.com',
+      contentType: 'text/plain',
+      sha256: 'E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855',
+    },
+    unknownProp: 1,
+  })).toEqual(true)
 })
