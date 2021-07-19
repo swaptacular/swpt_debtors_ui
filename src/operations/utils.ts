@@ -60,8 +60,8 @@ export async function getUserData(getTransfers = true): Promise<UserData> {
       } catch (e: unknown) {
         if (e instanceof HttpError && e.status === 404 && attemptsLeft--) {
           // Normally, this can happen only if a transfer has been
-          // deleted after the transfer list has been obtained. In
-          // this case, we should obtain the transfer list again, and
+          // deleted after the transfer list was obtained. In this
+          // case, we should obtain the transfer list again, and
           // retry.
           continue
         } else throw e
