@@ -1,5 +1,5 @@
 import { db, UserData } from './db'
-import { server, Debtor, Transfer, HttpResponse, TransfersList } from './server'
+import { server, Debtor, Transfer, HttpResponse, TransfersList, HttpError } from './server'
 import { calcSha256 } from '../debtor-info'
 import { parseRootConfigData, InvalidRootConfigData } from '../root-config-data'
 
@@ -41,19 +41,34 @@ export async function getUserData(getTransfers = true): Promise<UserData> {
   const debtorResponse = await server.getEntrypointResponse() as HttpResponse<Debtor>
   const debtor = { ...debtorResponse.data }
 
-  const transfersListUri = debtorResponse.buildUri(debtor.transfersList.uri)
-  const transfersListResponse = await server.get(transfersListUri) as HttpResponse<TransfersList>
-  const transferUris = transfersListResponse.data.items.map(item => transfersListResponse.buildUri(item.uri))
-
+  let transferUris
   let transfers
-  if (getTransfers) {
-    const unconcludedTransferUris = (
-      await Promise.all(transferUris.map(async uri => await db.isConcludedTransfer(uri) ? undefined : uri))
-    ).filter(uri => uri !== undefined) as string[]
-    const timeout = calcParallelTimeout(unconcludedTransferUris.length)
-    transfers = (
-      await Promise.all(unconcludedTransferUris.map(uri => server.get(uri, { timeout }))) as HttpResponse<Transfer>[]
-    ).map(response => ({ ...response.data, uri: response.url } as Transfer))
+  let attemptsLeft = 10
+  while (true) {
+    const transfersListUri = debtorResponse.buildUri(debtor.transfersList.uri)
+    const transfersListResponse = await server.get(transfersListUri) as HttpResponse<TransfersList>
+    transferUris = transfersListResponse.data.items.map(item => transfersListResponse.buildUri(item.uri))
+
+    if (getTransfers) {
+      const unconcludedTransferUris = (
+        await Promise.all(transferUris.map(async uri => await db.isConcludedTransfer(uri) ? undefined : uri))
+      ).filter(uri => uri !== undefined) as string[]
+      const timeout = calcParallelTimeout(unconcludedTransferUris.length)
+      try {
+        transfers = (
+          await Promise.all(unconcludedTransferUris.map(uri => server.get(uri, { timeout }))) as HttpResponse<Transfer>[]
+        ).map(response => ({ ...response.data, uri: response.url } as Transfer))
+      } catch (e: unknown) {
+        if (e instanceof HttpError && e.status === 404 && attemptsLeft--) {
+          // Normally, this can happen only if a transfer has been
+          // deleted after the transfer list has been obtained. In
+          // this case, we should obtain the transfer list again, and
+          // retry.
+          continue
+        } else throw e
+      }
+    }
+    break
   }
 
   return {
