@@ -37,8 +37,9 @@ export type UserData = {
   document?: ResourceReference & DocumentWithHash,
 }
 
-export type DebtorConfigData = BaseDebtorData & {
-  rate: number,
+export type DebtorConfigData = {
+  interestRate?: number,
+  debtorInfo?: BaseDebtorData,
 }
 
 export type DebtorRecord =
@@ -82,6 +83,10 @@ export type UpdateConfigAction =
   & ActionData
   & DebtorConfigData
   & { actionType: 'UpdateConfig' }
+
+export type UpdateConfigActionWithId =
+  & ActionRecordWithId
+  & UpdateConfigAction
 
 export type ExecutionState = {
   startedAt: Date,
@@ -301,12 +306,35 @@ class DebtorsDb extends Dexie {
   /* Creates a new `ActionRecord` and returns its `actionId`. Note
    * that the passed `action` object should not have an `actionId`
    * field, and it will be added automatically. */
-  async createActionRecord(action: ActionRecord & { actionId?: undefined }): Promise<number> {
+  async createActionRecord(action: ActionRecord): Promise<number> {
+    if (action.actionId !== undefined) throw new Error('actionId must be undefined')
     return await this.transaction('rw', [this.debtors, this.actions], async () => {
       if (!await this.isInstalledUser(action.userId)) {
         throw new UserDoesNotExist()
       }
       return await this.actions.add(action)
+    })
+  }
+
+  /* Creates a new update config action for the given user, but only
+   * if an update config action does not exist already for the
+   * user. */
+  async ensureUpdateConfigAction(userId: number, data: DebtorConfigData): Promise<UpdateConfigActionWithId> {
+    return await this.transaction('rw', [this.debtors, this.actions], async () => {
+      let action = await this.actions
+        .where({ userId })
+        .filter(action => action.actionType === 'UpdateConfig')
+        .first()
+      if (!action) {
+        action = {
+          ...data,
+          userId,
+          actionType: 'UpdateConfig' as const,
+          createdAt: new Date(),
+        }
+        await this.createActionRecord(action)
+      }
+      return action as UpdateConfigActionWithId
     })
   }
 

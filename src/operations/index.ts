@@ -15,6 +15,7 @@ import {
   AbortTransferActionWithId,
   TransferRecord,
   RecordDoesNotExist,
+  UpdateConfigActionWithId,
   ExecutionState,
   DebtorConfigData,
   getCreateTransferActionStatus,
@@ -26,8 +27,8 @@ import {
 } from '../payment-requests'
 import { UpdateScheduler } from '../update-scheduler'
 import { getUserData } from './utils'
-import { RootConfigData, parseRootConfigData, InvalidRootConfigData } from '../root-config-data';
-import { DebtorData, parseDebtorInfoDocument, InvalidDocument } from '../debtor-info';
+import { parseRootConfigData, InvalidRootConfigData } from '../root-config-data';
+import { parseDebtorInfoDocument, InvalidDocument } from '../debtor-info';
 
 
 export {
@@ -122,13 +123,14 @@ class UserContext {
 
   async getDebtorConfigData(): Promise<DebtorConfigData> {
     const configRecord = await db.getConfigRecord(this.userId)
-    let configData: RootConfigData | undefined
-    let info: DebtorData | undefined
+    let configData
     try {
       configData = parseRootConfigData(configRecord.configData)
     } catch (e: unknown) {
       if (!(e instanceof InvalidRootConfigData)) throw e
     }
+    const interestRate = configData?.rate
+    let debtorInfo
     if (configData?.info) {
       const document = await db.getDocumentRecord(configData.info.iri)
       if (
@@ -137,22 +139,29 @@ class UserContext {
         (configData.info.sha256 ?? document.sha256) === document.sha256
       ) {
         try {
-          info = await parseDebtorInfoDocument(document)
+          debtorInfo = await parseDebtorInfoDocument(document)
         } catch (e: unknown) {
           if (!(e instanceof InvalidDocument)) throw e
         }
       }
     }
-    return {
-      summary: info?.summary,
-      debtorName: info?.debtorName ?? '',
-      debtorHomepage: info?.debtorHomepage,
-      amountDivisor: info?.amountDivisor ?? 1,
-      decimalPlaces: info?.decimalPlaces ?? 0,
-      unit: info?.unit ?? '',
-      peg: info?.peg,
-      rate: configData?.rate ?? 0.0,
-    }
+    return { interestRate, debtorInfo }
+  }
+
+  async editDebtorConfigData(data: DebtorConfigData): Promise<UpdateConfigActionWithId> {
+    return await db.ensureUpdateConfigAction(this.userId, data)
+  }
+
+  async executeUpdateConfigAction(action: UpdateConfigActionWithId): Promise<boolean> {
+    // TODO:
+    return true
+  }
+
+  /* Deletes the given update config action. The caller must be
+   * prepared this method to throw `RecordDoesNotExist` in case of a
+   * failure due to concurrent execution/deletion of the action.*/
+  async deleteUpdateConfigAction(action: UpdateConfigActionWithId): Promise<void> {
+    await db.replaceActionRecord(action, null)
   }
 
   /* Reads a payment request, and adds and returns a new
