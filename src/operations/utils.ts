@@ -43,9 +43,9 @@ export async function getUserData(getTransfers = true): Promise<UserData> {
 
   let transferUris
   let transfers
+  const transfersListUri = debtorResponse.buildUri(debtor.transfersList.uri)
   let attemptsLeft = 10
   while (true) {
-    const transfersListUri = debtorResponse.buildUri(debtor.transfersList.uri)
     const transfersListResponse = await server.get(transfersListUri) as HttpResponse<TransfersList>
     transferUris = transfersListResponse.data.items.map(item => transfersListResponse.buildUri(item.uri))
     if (getTransfers) {
