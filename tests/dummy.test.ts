@@ -69,7 +69,7 @@ test("Stringify non-ASCII", () => {
 
 test("Stringify bigint", () => {
   const s = stringify({ float: 1, int: 1n, bigint: 123456789012345678901234567890n })
-  expect(s).toBe('{\"float":1,"int":1,"bigint":123456789012345678901234567890}')
+  expect(s).toBe('{\"float":1e+0,"int":1,"bigint":123456789012345678901234567890}')
 })
 
 test("Parse bigint", () => {

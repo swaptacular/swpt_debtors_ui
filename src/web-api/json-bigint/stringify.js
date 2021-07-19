@@ -233,7 +233,7 @@ var JSON = {};
 
       // JSON numbers must be finite. Encode non-finite numbers as null.
 
-      return isFinite(value) ? String(value) : 'null';
+      return isFinite(value) ? value.toExponential() : 'null';
 
     case 'boolean':
     case 'null':
