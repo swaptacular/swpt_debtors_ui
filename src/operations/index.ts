@@ -93,10 +93,10 @@ async function update(getTransfers = true): Promise<void> {
   try {
     data = await getUserData(getTransfers)
   } catch (e: unknown) {
-    if (e instanceof ServerSessionError) {
-      console.log(e)
-      return
-    } else throw e
+    if (e instanceof ServerSessionError) console.log(e)
+    else if (e instanceof HttpError) console.error(e)
+    else throw e
+    return
   }
   await db.storeUserData(data)
 }

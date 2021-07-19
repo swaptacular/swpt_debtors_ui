@@ -4,28 +4,28 @@ import { calcSha256 } from '../debtor-info'
 import { parseRootConfigData, InvalidRootConfigData } from '../root-config-data'
 
 async function getDebtorInfoDocument(debtor: Debtor): Promise<UserData['document']> {
-  let rootConfigData
   try {
-    rootConfigData = parseRootConfigData(debtor.config.configData)
-  } catch (e: unknown) {
-    if (e instanceof InvalidRootConfigData) rootConfigData = {}
-    else throw e
-  }
-  const uri = rootConfigData.info?.iri
-  if (uri !== undefined) {
-    const documentRecord = await db.getDocumentRecord(uri)
-    if (documentRecord) {
-      const { userId, ...document } = documentRecord
-      return document
-    } else {
-      const { headers, data } = await server.getDocument(uri)
-      return {
-        uri,
-        contentType: String(headers['content-type']),
-        content: data,
-        sha256: await calcSha256(data),
+    const rootConfigData = parseRootConfigData(debtor.config.configData)
+    const uri = rootConfigData.info?.iri
+    if (uri !== undefined) {
+      const documentRecord = await db.getDocumentRecord(uri)
+      if (documentRecord) {
+        const { userId, ...document } = documentRecord
+        return document
+      } else {
+        const { headers, data } = await server.getDocument(uri)
+        return {
+          uri,
+          contentType: String(headers['content-type']),
+          content: data,
+          sha256: await calcSha256(data),
+        }
       }
     }
+  } catch (e: unknown) {
+    if (e instanceof InvalidRootConfigData) { /* ignore */ }
+    else if (e instanceof HttpError && e.status === 404) { /* ignore */ }
+    else throw e
   }
   return undefined
 }
