@@ -48,7 +48,6 @@ export async function getUserData(getTransfers = true): Promise<UserData> {
     const transfersListUri = debtorResponse.buildUri(debtor.transfersList.uri)
     const transfersListResponse = await server.get(transfersListUri) as HttpResponse<TransfersList>
     transferUris = transfersListResponse.data.items.map(item => transfersListResponse.buildUri(item.uri))
-
     if (getTransfers) {
       const unconcludedTransferUris = (
         await Promise.all(transferUris.map(async uri => await db.isConcludedTransfer(uri) ? undefined : uri))
