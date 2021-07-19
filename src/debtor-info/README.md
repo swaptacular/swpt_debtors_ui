@@ -1,3 +1,10 @@
+# debtor-info
+
+This module implements a validating parser and a validating serializer
+for `CoinInfo` JSON documents.
+
+# JSON Schema
+
 Type: `object`
 
 <i id="#">path: #</i>
