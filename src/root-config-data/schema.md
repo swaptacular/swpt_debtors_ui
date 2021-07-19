@@ -1,3 +1,10 @@
+# root-config-data
+
+This module implements a validating parser and a validating serializer
+for `RootConfigData` JSON documents.
+
+# JSON Schema
+
 Type: `object`
 
 <i id="#">path: #</i>
