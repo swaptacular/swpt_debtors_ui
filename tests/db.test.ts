@@ -8,74 +8,102 @@ import {
   AbortTransferActionWithId,
 } from '../src/operations/db'
 
+const now = Date.now()
+const isoNow = new Date(now).toISOString()
+const isoNowPlus = new Date(now + 100).toISOString()
+const debtor = {
+  type: 'Debtor',
+  uri: 'https://example.com/debtors/1/',
+  createTransfer: { uri: 'https://example.com/1/transfers/' },
+  saveDocument: { uri: 'https://example.com/1/documents/' },
+  publicInfoDocument: { uri: 'https:/example.com/1/public' },
+  transfersList: { uri: 'https://example.com/1/transfers/' },
+  noteMaxBytes: 200n,
+  identity: { type: 'DebtorIdentity', uri: 'swpt:1234' },
+  balance: 20000n,
+  createdAt: '2020-01-01T00:00:00Z',
+  config: {
+    uri: 'config',
+    latestUpdateAt: '2020-01-01T00:00:00Z',
+    latestUpdateId: 1n,
+    configData: '',
+    debtor: { uri: 'https://example.com/1/' }
+  },
+}
+const successfulTransfer = {
+  type: 'Transfer',
+  uri: 'https://example.com/1/transfers/xxxxxxxxx',
+  recipient: { uri: 'swpt:1/2' },
+  amount: 1000n,
+  transferUuid: 'xxxxxxxxx',
+  transfersList: { uri: 'https://example.com/1/transfers/' },
+  note: '',
+  noteFormat: '',
+  initiatedAt: isoNow,
+  result: {
+    type: 'TransferResult',
+    finalizedAt: isoNow,
+    committedAmount: 1000n,
+  },
+}
+const unsuccessfulTransfer = {
+  type: 'Transfer',
+  uri: 'https://example.com/1/transfers/yyyyyyyyy',
+  recipient: { uri: 'swpt:1/2' },
+  amount: 666n,
+  transferUuid: 'yyyyyyyyy',
+  transfersList: { uri: 'https://example.com/1/transfers/' },
+  note: '',
+  noteFormat: '',
+  initiatedAt: isoNowPlus,
+  result: {
+    type: 'TransferResult',
+    finalizedAt: isoNow,
+    committedAmount: 0n,
+    error: {
+      type: 'TransferError',
+      errorCode: 'TEST_ERROR',
+    },
+  },
+}
+const transfers = [
+  successfulTransfer,
+  unsuccessfulTransfer,
+]
+const transferUris = [
+  successfulTransfer.uri,
+  unsuccessfulTransfer.uri,
+]
+const document = {
+  uri: 'https://example.com/1/documents/123',
+  contentType: 'text/plain',
+  content: new ArrayBuffer(0),
+  sha256: '',
+}
+const userData = { debtor, collectedAfter: new Date(), transferUris, transfers, }
+
+beforeEach(async () => {
+  await db.clearAllTables()
+})
+
 test("Install and uninstall user", async () => {
-  const debtor = {
-    type: 'Debtor',
-    uri: 'https://example.com/debtors/1/',
-    createTransfer: { uri: 'https://example.com/1/transfers/' },
-    saveDocument: { uri: 'https://example.com/1/documents/' },
-    publicInfoDocument: { uri: 'https:/example.com/1/public' },
-    transfersList: { uri: 'https://example.com/1/transfers/' },
-    noteMaxBytes: 200n,
-    identity: { type: 'DebtorIdentity', uri: 'swpt:1234' },
-    balance: 20000n,
-    createdAt: '2020-01-01T00:00:00Z',
-    config: {
-      uri: 'config',
-      latestUpdateAt: '2020-01-01T00:00:00Z',
-      latestUpdateId: 1n,
-      configData: '',
-      debtor: { uri: 'https://example.com/1/' }
-    },
-  }
-  const now = Date.now()
-  const isoNow = new Date(now).toISOString()
-  const isoNow2 = new Date(now + 100).toISOString()
-  const transfers = [{
-    type: 'Transfer',
-    uri: 'https://example.com/1/transfers/xxxxxxxxx',
-    recipient: { uri: 'swpt:1/2' },
-    amount: 1000n,
-    transferUuid: 'xxxxxxxxx',
-    transfersList: { uri: 'https://example.com/1/transfers/' },
-    note: '',
-    noteFormat: '',
-    initiatedAt: isoNow,
-    result: {
-      type: 'TransferResult',
-      finalizedAt: isoNow,
-      committedAmount: 1000n,
-    },
-  }, {
-    type: 'Transfer',
-    uri: 'https://example.com/1/transfers/yyyyyyyyy',
-    recipient: { uri: 'swpt:1/2' },
-    amount: 666n,
-    transferUuid: 'yyyyyyyyy',
-    transfersList: { uri: 'https://example.com/1/transfers/' },
-    note: '',
-    noteFormat: '',
-    initiatedAt: isoNow2,
-    result: {
-      type: 'TransferResult',
-      finalizedAt: isoNow,
-      committedAmount: 0n,
-      error: {
-        type: 'TransferError',
-        errorCode: 'TEST_ERROR',
-      },
-    },
-  }]
-  const transferUris = ['https://example.com/1/transfers/xxxxxxxxx', 'https://example.com/1/transfers/yyyyyyyyy']
-  const document = {
-    uri: 'https://example.com/1/documents/123',
-    contentType: 'text/plain',
-    content: new ArrayBuffer(0),
-    sha256: '',
-  }
-  const collectedAfter = new Date()
-  await db.storeUserData({ collectedAfter, debtor, transferUris, transfers, document })
-  const userId = await db.storeUserData({ collectedAfter, debtor, transferUris, transfers, document })
+  await expect(db.getUserId(debtor.uri)).resolves.toBeUndefined()
+  const userId = await db.storeUserData(userData)
+  await expect(db.getUserId(debtor.uri)).resolves.toEqual(userId)
+  await expect(db.getDebtorRecord(userId)).resolves.toBeDefined()
+  await expect(db.getConfigRecord(userId)).resolves.toBeDefined()
+  expect((await db.getTransferRecords(userId)).length).toBe(2)
+  await db.uninstallUser(userId)
+  await expect(db.getUserId(debtor.uri)).resolves.toBeUndefined()
+  await expect(db.getDebtorRecord(userId)).rejects.toBeInstanceOf(UserDoesNotExist)
+  await expect(db.getConfigRecord(userId)).rejects.toBeInstanceOf(UserDoesNotExist)
+  await expect(db.getTransferRecords(userId)).resolves.toEqual([])
+  await expect(db.getActionRecords(userId)).resolves.toEqual([])
+  await expect(db.getDocumentRecord('https://example.com/1/documents/123')).resolves.toEqual(undefined)
+})
+
+test("All in", async () => {
+  const userId = await db.storeUserData({ collectedAfter: new Date(now), debtor, transferUris, transfers, document })
   const debtorRecord = await db.getDebtorRecord(userId) as DebtorRecord
   expect(debtorRecord.userId).toEqual(userId)
   expect(debtorRecord.config.uri).toBe('config')
@@ -88,7 +116,7 @@ test("Install and uninstall user", async () => {
   })
   await expect(db.getTransferRecords(userId)).resolves.toEqual(
     [{
-      ...transfers[1], userId, time: new Date(isoNow2).getTime(),
+      ...transfers[1], userId, time: new Date(isoNowPlus).getTime(),
       paymentInfo: { payeeName: '', payeeReference: '', description: { content: '', contentFormat: '' } }
     },
     {
@@ -261,12 +289,4 @@ test("Install and uninstall user", async () => {
     time: time * (1 + Number.EPSILON) * (1 + Number.EPSILON),
     paymentInfo,
   })
-
-  await db.uninstallUser(userId)
-  await expect(db.getUserId(debtor.uri)).resolves.toBeUndefined()
-  await expect(db.getDebtorRecord(userId)).rejects.toBeInstanceOf(UserDoesNotExist)
-  await expect(db.getConfigRecord(userId)).rejects.toBeInstanceOf(UserDoesNotExist)
-  await expect(db.getTransferRecords(userId)).resolves.toEqual([])
-  await expect(db.getActionRecords(userId)).resolves.toEqual([])
-  await expect(db.getDocumentRecord('https://example.com/1/documents/123')).resolves.toEqual(undefined)
 })

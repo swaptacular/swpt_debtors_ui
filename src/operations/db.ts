@@ -236,6 +236,14 @@ class DebtorsDb extends Dexie {
     this.tasks = this.table('tasks')
   }
 
+  async clearAllTables(): Promise<void> {
+    await this.transaction('rw', this.allTables, async () => {
+      for (const table of this.allTables) {
+        await table.clear()
+      }
+    })
+  }
+
   async getUserId(debtorUri: string): Promise<number | undefined> {
     return (await this.debtors.where({ uri: debtorUri }).primaryKeys())[0]
   }
