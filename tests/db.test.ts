@@ -4,7 +4,6 @@ import {
   DebtorRecord,
   UserDoesNotExist,
   RecordDoesNotExist,
-  ActionRecordWithId,
   CreateTransferActionWithId,
   AbortTransferActionWithId,
 } from '../src/operations/db'
@@ -149,48 +148,68 @@ test("Install and uninstall user", async () => {
   await expect(db.getActionRecords(userId)).resolves.toEqual([])
 })
 
-test("All in", async () => {
-  const userId = await db.storeUserData(userData)
-  const actions = await db.getActionRecords(userId)
-  await db.replaceActionRecord(actions[0], null)
+test("Create and replace action records", async () => {
+  const userId = await db.storeUserData({ debtor, collectedAfter: new Date(), transferUris: [], transfers: [], document })
+  await expect(db.getActionRecords(userId)).resolves.toEqual([])
+  await expect(db.getActionRecords(-1)).resolves.toEqual([])
 
-  const actionRecord = {
+  const originalActionRecord = {
     actionId: undefined,
     userId,
     actionType: 'AbortTransfer',
     createdAt: new Date(),
-    transferUri: 'https://example.com/1/transfers/-successul-',
+    transferUri: 'NOT UPDATED',
   } as const
-  await expect(db.getActionRecord(456)).resolves.toBeUndefined()
+  let actionRecord = { ...originalActionRecord } as any as AbortTransferActionWithId
+
+  // fails to create action for non-existing user
   await expect(db.createActionRecord({ ...actionRecord, userId: -1 })).rejects.toBeInstanceOf(UserDoesNotExist)
 
-  let actionId = await db.createActionRecord(actionRecord)
+  // create the action
+  const actionId = await db.createActionRecord(actionRecord)
   expect(actionId).toBeDefined()
-  expect(actionRecord.actionId).toEqual(actionId)
-  await expect(db.getActionRecord(actionId)).resolves.toBeDefined()
-  const ar2 = { ...actionRecord, actionId: undefined }
-  await expect(db.replaceActionRecord({ ...actionRecord, actionId }, ar2)).resolves.toBeUndefined()
-  expect(ar2.actionId).toBeDefined()
-  expect(ar2.actionId).toBeGreaterThan(actionId)
+  expect({ ...originalActionRecord, actionId }).toEqual(actionRecord)
+  await expect(db.getActionRecord(actionId)).resolves.toEqual(actionRecord)
+  await expect(db.getActionRecords(userId)).resolves.toEqual([actionRecord])
+
+  // replace the action record
+  const replacement = { ...actionRecord, actionId: undefined } as any
+  await expect(db.replaceActionRecord(actionRecord, replacement)).resolves.toBeUndefined()
+  const replacementActionId = replacement.actionId as any
+  expect(replacementActionId).toBeDefined()
+  expect(replacementActionId).toBeGreaterThan(actionId)
   await expect(db.getActionRecord(actionId)).resolves.toBeUndefined()
-  const ar3 = { ...actionRecord, actionId: undefined }
-  await expect(db.replaceActionRecord({ ...actionRecord, actionId }, ar3)).rejects.toBeInstanceOf(RecordDoesNotExist)
-  await expect(db.getActionRecords(userId)).resolves.toEqual([ar2])
-  await expect(db.replaceActionRecord(ar2 as any as ActionRecordWithId, null)).resolves.toBeUndefined()
+  await expect(db.getActionRecord(replacementActionId)).resolves.toEqual(replacement)
+  await expect(db.getActionRecords(userId)).resolves.toEqual([replacement])
+
+  // fails to replace an already replaced record
+  await expect(db.replaceActionRecord(actionRecord, { ...actionRecord, actionId: undefined }))
+    .rejects.toBeInstanceOf(RecordDoesNotExist)
+  await expect(db.getActionRecords(userId)).resolves.toEqual([replacement])
+
+  // update the repacement
+  const updatedReplacement = { ...replacement, transferUri: 'UPDATED' }
+  await expect(db.replaceActionRecord(replacement, updatedReplacement)).resolves.toBeUndefined()
+  expect(replacement.actionId).toBe(replacementActionId)
+  expect(replacement.transferUri).toBe('NOT UPDATED')
+  expect(updatedReplacement.actionId).toBe(replacementActionId)
+  expect(updatedReplacement.transferUri).toBe('UPDATED')
+  await expect(db.getActionRecord(replacementActionId)).resolves.toEqual(updatedReplacement)
+  await expect(db.getActionRecords(userId)).resolves.toEqual([updatedReplacement])
+
+  // fails to delete an updated record
+  await expect(db.replaceActionRecord(replacement, null)).rejects.toBeInstanceOf(RecordDoesNotExist)
+
+  // delete the updated replacement
+  await expect(db.replaceActionRecord(updatedReplacement, null)).resolves.toBeUndefined()
+  await expect(db.getActionRecord(replacementActionId)).resolves.toBeUndefined()
   await expect(db.getActionRecords(userId)).resolves.toEqual([])
-  const x = await db.createActionRecord({ ...actionRecord, actionId: undefined })
-  await expect(db.getActionRecords(userId)).resolves.toEqual([{ ...actionRecord, actionId: x }])
-  await expect(db.replaceActionRecord(
-    { ...actionRecord, actionId: x },
-    { ...actionRecord, actionId: x, transferUri: 'https://example.com/1/transfers/updated' },
-  )).resolves.toBeUndefined()
-  await expect(db.getActionRecords(userId)).resolves.toEqual([
-    { ...actionRecord, actionId: x, transferUri: 'https://example.com/1/transfers/updated' }
-  ])
-  await expect(db.replaceActionRecord(
-    { ...actionRecord, actionId: -1, transferUri: 'https://example.com/1/transfers/updated' },
-    { ...actionRecord, actionId: -1, transferUri: 'https://example.com/1/transfers/updated-again' },
-  )).rejects.toBeInstanceOf(RecordDoesNotExist)
+})
+
+test("All in", async () => {
+  const userId = await db.storeUserData(userData)
+  const actions = await db.getActionRecords(userId)
+  await db.replaceActionRecord(actions[0], null)
 
   const theCreatedTransfer = {
     type: 'Transfer',
