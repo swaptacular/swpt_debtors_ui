@@ -12,15 +12,6 @@ import {
   CreateTransferActionWithId,
   AbortTransferActionWithId,
 } from '../src/operations/db'
-import {
-  parsePaymentRequest,
-  parseTransferNote,
-  generatePr0Blob,
-  generatePayment0TransferNote,
-  IvalidPaymentData,
-  PaymentDescription,
-  MIME_TYPE_PR0,
-} from '../src/payment-requests'
 import { UpdateScheduler } from '../src/update-scheduler'
 import validateCointInfo from '../src/debtor-info/validate-schema.js'
 import validateRootConfigData from '../src/root-config-data/validate-schema.js'
@@ -305,11 +296,13 @@ test("Install and uninstall user", async () => {
     userId,
     actionType: 'UpdateConfig',
     createdAt: new Date(),
-    rate: 5.0,
-    debtorName: 'USA',
-    amountDivisor: 100,
-    decimalPlaces: 2,
-    unit: 'USD',
+    interestRate: 5.0,
+    debtorInfo: {
+      debtorName: 'USA',
+      amountDivisor: 100,
+      decimalPlaces: 2,
+      unit: 'USD',
+    },
   })
   expect(createTransferActionId).toBeDefined()
   const configRecord = await db.updateConfig(updateConifgActionId, theDebtorConfig)
@@ -379,108 +372,6 @@ test("Install and uninstall user", async () => {
   await expect(db.getTransferRecords(userId)).resolves.toEqual([])
   await expect(db.getActionRecords(userId)).resolves.toEqual([])
   await expect(db.getDocumentRecord('https://example.com/1/documents/123')).resolves.toEqual(undefined)
-})
-
-test("Generate payment request", async () => {
-  const request = {
-    accountUri: 'swpt:124/456',
-    payeeName: 'Payee name',
-    amount: 1000n,
-    deadline: new Date(),
-    payeeReference: 'payeeReference',
-    description: {
-      contentFormat: '',
-      content: 'This is a multi-line\ndescription.',
-    },
-  }
-  for (const includeCrc of [true, false]) {
-    const blob = generatePr0Blob(request, { includeCrc })
-    expect(blob.type).toEqual(MIME_TYPE_PR0)
-    const { amount: a1, ...r1 } = await parsePaymentRequest(blob)
-    const { amount: a2, ...r2 } = request
-    expect(r1).toEqual(r2)
-    expect(a1).toEqual(a2)
-  }
-})
-
-test("Generate and parse payment0 transfer note", async () => {
-  const request = {
-    accountUri: 'swpt:124/456',
-    payeeName: 'Payee name',
-    amount: 1000n,
-    deadline: new Date(),
-    payeeReference: 'payeeReference',
-    description: {
-      contentFormat: '',
-      content: 'This is a multi-line\ndescription.',
-    },
-  }
-  const noteFormat = 'payment0'
-  const note = generatePayment0TransferNote(request)
-  const r = parseTransferNote({ noteFormat, note })
-  expect(r.payeeReference).toEqual('payeeReference')
-  expect(r.payeeName).toEqual('Payee name')
-  const description = {
-    contentFormat: '',
-    content: 'This is a multi-line\ndescription.',
-  }
-  expect(r.description).toEqual(description)
-  expect(r.description as PaymentDescription).toEqual(description)
-  expect(r.description as PaymentDescription).toEqual(request.description)
-  expect(parseTransferNote({ note: 'Hi!\nHere is a payment.', noteFormat: 'unknown' })).toEqual({
-    payeeName: '',
-    payeeReference: 'Hi!',
-    description: {
-      contentFormat: 'unknown',
-      content: 'Hi!\nHere is a payment.',
-    }
-  })
-  expect(parseTransferNote({ note: 'Hi!', noteFormat: '' })).toEqual({
-    'description': {
-      'content': 'Hi!',
-      'contentFormat': '',
-    },
-    'payeeName': '',
-    'payeeReference': '',
-  })
-  expect(parseTransferNote({ note: 'A payment for `Santa\nClaus`.', noteFormat: '' })).toEqual({
-    'description': {
-      'content': 'A payment for `Santa\nClaus`.',
-      'contentFormat': '',
-    },
-    'payeeName': 'Santa Claus',
-    'payeeReference': '',
-  })
-  expect(() => generatePayment0TransferNote(request, 10)).toThrowError(IvalidPaymentData)
-})
-
-test("Parse payment0 note", async () => {
-  const noteFormat = 'PAYMENT0'
-  const note = [
-    '12d3a45642665544\n',
-    'Payee Name\n',
-    'alabala\n',
-    'This is a multi-line\ndescription.',
-  ].join('')
-  const info = parseTransferNote({ note, noteFormat })
-  expect(info.payeeReference).toEqual('12d3a45642665544')
-  expect(info.payeeName).toEqual('Payee Name')
-  expect(info.description.contentFormat).toEqual('alabala')
-  expect(info.description.content).toEqual('This is a multi-line\ndescription.')
-})
-
-test("Parse payement request", async () => {
-  const blob = new Blob([
-    'PR0\n',
-    '\n',
-    'swpt:112233445566778899/998877665544332211\n',
-    'Payee Name\n',
-    '1000\n',
-    '2001-01-01\n',
-    '12d3a45642665544\n',
-  ])
-  const request = await parsePaymentRequest(blob)
-  expect(request.payeeName).toEqual('Payee Name')
 })
 
 test("Create update scheduler", async () => {
