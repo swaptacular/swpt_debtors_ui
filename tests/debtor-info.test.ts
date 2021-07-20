@@ -59,6 +59,10 @@ test("Parse CoinInfo document", async () => {
   expect(parseDebtorInfoDocument({ ...document, contentType: 'text/unknown' }))
     .rejects.toBeInstanceOf(InvalidDocument)
 
+  // failed schema validation
+  expect(parseDebtorInfoDocument({ ...document, content: (new TextEncoder()).encode('{}') }))
+    .rejects.toBeInstanceOf(InvalidDocument)
+
   // too big
   expect(parseDebtorInfoDocument({ ...document, content: (new TextEncoder()).encode(text + ' '.repeat(10_000_000)) }))
     .rejects.toBeInstanceOf(InvalidDocument)
