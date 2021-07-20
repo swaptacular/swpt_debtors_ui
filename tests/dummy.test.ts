@@ -12,10 +12,7 @@ import {
   CreateTransferActionWithId,
   AbortTransferActionWithId,
 } from '../src/operations/db'
-import { UpdateScheduler } from '../src/update-scheduler'
-import validateCointInfo from '../src/debtor-info/validate-schema.js'
 import validateRootConfigData from '../src/root-config-data/validate-schema.js'
-import { generateCoinInfoDocument, parseDebtorInfoDocument, InvalidDocument } from '../src/debtor-info'
 
 const authToken = '3x-KAxNWrYPJUWNKTbpnTWxoR0Arr0gG_uEqeWUNDkk.B-Iqy02FM7rK1rKSb4I7D9gaqGFXc2vdyJQ6Uuv3EF4'
 
@@ -374,97 +371,11 @@ test("Install and uninstall user", async () => {
   await expect(db.getDocumentRecord('https://example.com/1/documents/123')).resolves.toEqual(undefined)
 })
 
-test("Create update scheduler", async () => {
-  let run = 0
-  let callbacks = 0
-  const sch = new UpdateScheduler(async () => run++)
-  await (sch as any).updatePromise
-  expect((sch as any).updatePromise).toBeUndefined()
-  expect(run).toBe(1)
-  expect(callbacks).toBe(0);
-  sch.schedule(100, () => callbacks++)
-  sch.schedule(101, () => callbacks++)
-  sch.schedule(99)
-  await (sch as any).updatePromise
-  expect((sch as any).updatePromise).toBeUndefined()
-  expect(run).toBe(1);
-  expect(callbacks).toBe(0);
-  (sch as any).checkTasks(Date.now() + 200 * 1000)
-  await (sch as any).updatePromise
-  expect((sch as any).updatePromise).toBeUndefined()
-  expect(run).toBe(2)
-  expect(callbacks).toBe(2);
-  sch.schedule(() => callbacks++)
-  await (sch as any).updatePromise
-  expect((sch as any).updatePromise).toBeUndefined()
-  expect(run).toBe(3)
-  expect(callbacks).toBe(3)
-  expect((sch as any).tasks.peek()).toBeDefined()
-  sch.close()
-  sch.close()
-})
-
 test("Deep equal", async () => {
   expect(equal({ a: 1n, b: new Date(0) }, { a: 1n, b: new Date(0) })).toBe(true)
   expect(equal({ a: 1n, b: new Date(0) }, { a: 1n, b: new Date(1) })).toBe(false)
   expect(equal({ a: 1n, b: new Date(0) }, { a: 2n, b: new Date(0) })).toBe(false)
   expect(equal({ a: 1n, b: new Date(0) }, undefined)).toBe(false)
-})
-
-test("Validate CoinInfo schema", () => {
-  expect(validateCointInfo(1)).toEqual(false)
-  expect(validateCointInfo({ 'type': 'CoinInfo' })).toEqual(false)
-  expect(validateCointInfo({
-    type: 'CoinInfo-v1',
-    uri: 'https://example.com/0',
-    revision: 0,
-    willNotChangeUntil: '2021-01-01T10:00:00Z',
-    latestDebtorInfo: { uri: 'http://example.com/' },
-    summary: "bla-bla",
-    debtorIdentity: { type: 'DebtorIdentity', uri: 'swpt:123' },
-    debtorName: 'USA',
-    debtorHomepage: { uri: 'https://example.com/USA' },
-    amountDivisor: 100.0,
-    decimalPlaces: 2,
-    unit: 'USD',
-    peg: {
-      type: 'Peg',
-      exchangeRate: 1.0,
-      debtorIdentity: { type: 'DebtorIdentity', uri: 'swpt:321' },
-      latestDebtorInfo: { uri: 'http://example.com/' },
-    },
-    unknownProp: 1,
-  })).toEqual(true)
-})
-
-test("Generate and parse CoinInfo", async () => {
-  const debtorData = {
-    uri: 'https://example.com/0',
-    revision: 0,
-    willNotChangeUntil: new Date('2021-01-01T10:00:00Z'),
-    latestDebtorInfo: { uri: 'http://example.com/' },
-    summary: "bla-bla",
-    debtorIdentity: { type: 'DebtorIdentity' as const, uri: 'swpt:123' },
-    debtorName: 'USA',
-    debtorHomepage: { uri: 'https://example.com/USA' },
-    amountDivisor: 100.0,
-    decimalPlaces: 2,
-    unit: 'USD',
-    peg: {
-      type: 'Peg' as const,
-      exchangeRate: 1.0,
-      debtorIdentity: { type: 'DebtorIdentity' as const, uri: 'swpt:321' },
-      latestDebtorInfo: { uri: 'http://example.com/' },
-    },
-    unknownProp: 1,
-  }
-  const document = await generateCoinInfoDocument(debtorData)
-  const { unknownProp, ...noUnknownProp } = debtorData
-  await expect(parseDebtorInfoDocument(document)).resolves.toEqual(noUnknownProp)
-  await expect(generateCoinInfoDocument({ ...debtorData, revision: -1 }))
-    .rejects.toBeInstanceOf(InvalidDocument)
-  await expect(generateCoinInfoDocument({ ...debtorData, willNotChangeUntil: new Date(NaN) }))
-    .rejects.toBeInstanceOf(InvalidDocument)
 })
 
 test("Validate RootConfigData schema", () => {
