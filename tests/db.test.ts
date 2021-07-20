@@ -206,6 +206,64 @@ test("Create and replace action records", async () => {
   await expect(db.getActionRecords(userId)).resolves.toEqual([])
 })
 
+test("Perform a create transfer action", async () => {
+  const userId = await db.storeUserData({ debtor, collectedAfter: new Date(), transferUris: [], transfers: [], document })
+
+  let paymentInfo = {
+    payeeName: 'XYZ',
+    payeeReference: '123',
+    description: {
+      contentFormat: '.',
+      content: 'http://example.com/link',
+    }
+  }
+  let createTransferAction = {
+    userId,
+    paymentInfo,
+    actionType: 'CreateTransfer' as const,
+    createdAt: new Date(),
+    creationRequest: {
+      recipient: { uri: 'swpt:1/2' },
+      amount: 777n,
+      transferUuid: '123e4567-e89b-12d3-a456-426655440000',
+    },
+    requestedAmount: 0n,
+  } as CreateTransferActionWithId
+  const theCreatedTransfer = {
+    type: 'Transfer',
+    uri: 'https://example.com/1/transfers/123e4567-e89b-12d3-a456-426655440000',
+    recipient: { uri: 'swpt:1/2' },
+    amount: 777n,
+    transferUuid: '123e4567-e89b-12d3-a456-426655440000',
+    transfersList: { uri: 'https://example.com/1/transfers/' },
+    note: '123\nXYZ\n.\nhttp://example.com/link',
+    noteFormat: 'payment0',
+    initiatedAt: isoNow,
+  }
+
+  // create an action record
+  const actionId = await db.createActionRecord(createTransferAction)
+
+  // fails to create a transfer record for a non-existing action record
+  await expect(db.createTransferRecord({ ...createTransferAction, actionId: -1 }, theCreatedTransfer))
+    .rejects.toBeInstanceOf(RecordDoesNotExist)
+
+  // create a transfer record
+  const transferRecord = await db.createTransferRecord(createTransferAction, theCreatedTransfer)
+  expect(transferRecord.time).toBeDefined()
+  expect(transferRecord.originatesHere).toBe(true)
+  expect(transferRecord.paymentInfo).toEqual(paymentInfo)
+  expect(equal(transferRecord, {
+    ...theCreatedTransfer,
+    userId,
+    paymentInfo,
+    time: transferRecord.time,
+    originatesHere: true,
+  })).toBeTruthy()
+  await expect(db.getActionRecord(actionId)).resolves.toBe(undefined)
+  expect(equal(await db.getTransferRecord(transferRecord.uri), transferRecord)).toBeTruthy()
+})
+
 test("All in", async () => {
   const userId = await db.storeUserData(userData)
   const actions = await db.getActionRecords(userId)
@@ -222,33 +280,7 @@ test("All in", async () => {
     noteFormat: '',
     initiatedAt: isoNow,
   }
-  let createTransferAction = {
-    userId,
-    actionType: 'CreateTransfer' as const,
-    createdAt: new Date(),
-    creationRequest: {
-      recipient: { uri: 'swpt:1/2' },
-      amount: 777n,
-      transferUuid: '123e4567-e89b-12d3-a456-426655440000',
-    },
-    paymentInfo: {
-      payeeName: 'XYZ',
-      payeeReference: '',
-      description: {
-        contentFormat: '',
-        content: '',
-      }
-    },
-    requestedAmount: 0n,
-  }
-  await expect(db.createTransferRecord({ ...createTransferAction, actionId: -1 }, theCreatedTransfer))
-    .rejects.toBeInstanceOf(RecordDoesNotExist)
-  const createTransferActionId = await db.createActionRecord(createTransferAction)
-  expect(createTransferActionId).toBeDefined()
-  const transferRecord = await db.createTransferRecord(
-    createTransferAction as any as CreateTransferActionWithId, theCreatedTransfer)
-  expect(transferRecord.time).toBeDefined()
-  await expect(db.getActionRecord(createTransferActionId)).resolves.toBe(undefined)
+  db.storeTransfer(userId, theCreatedTransfer)
 
   const theDebtorConfig = {
     type: 'DebtorConfig',
@@ -271,7 +303,6 @@ test("All in", async () => {
       unit: 'USD',
     },
   })
-  expect(createTransferActionId).toBeDefined()
   const configRecord = await db.updateConfig(updateConifgActionId, theDebtorConfig)
   expect(configRecord.configData).toBeDefined()
   await expect(db.getActionRecord(updateConifgActionId)).resolves.toBe(undefined)
