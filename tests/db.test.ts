@@ -1,3 +1,4 @@
+import equal from 'fast-deep-equal'
 import {
   db,
   DebtorRecord,
@@ -26,16 +27,16 @@ const debtor = {
     uri: 'config',
     latestUpdateAt: '2020-01-01T00:00:00Z',
     latestUpdateId: 1n,
-    configData: '',
+    configData: '{"info": {"iri": "https://example.com/1/documents/123"}}',
     debtor: { uri: 'https://example.com/1/' }
   },
 }
 const successfulTransfer = {
   type: 'Transfer',
-  uri: 'https://example.com/1/transfers/xxxxxxxxx',
+  uri: 'https://example.com/1/transfers/-successul-',
   recipient: { uri: 'swpt:1/2' },
   amount: 1000n,
-  transferUuid: 'xxxxxxxxx',
+  transferUuid: '-successul-',
   transfersList: { uri: 'https://example.com/1/transfers/' },
   note: '',
   noteFormat: '',
@@ -48,13 +49,13 @@ const successfulTransfer = {
 }
 const unsuccessfulTransfer = {
   type: 'Transfer',
-  uri: 'https://example.com/1/transfers/yyyyyyyyy',
+  uri: 'https://example.com/1/transfers/-unsuccessul-',
   recipient: { uri: 'swpt:1/2' },
   amount: 666n,
-  transferUuid: 'yyyyyyyyy',
+  transferUuid: '-unsuccessul-',
   transfersList: { uri: 'https://example.com/1/transfers/' },
-  note: '',
-  noteFormat: '',
+  note: '123\nPayee Name\n.\nhttp://example.com/link',
+  noteFormat: 'payment0',
   initiatedAt: isoNowPlus,
   result: {
     type: 'TransferResult',
@@ -80,7 +81,7 @@ const document = {
   content: new ArrayBuffer(0),
   sha256: '',
 }
-const userData = { debtor, collectedAfter: new Date(), transferUris, transfers, }
+const userData = { debtor, collectedAfter: new Date(), transferUris, transfers, document }
 
 beforeEach(async () => {
   await db.clearAllTables()
@@ -88,55 +89,77 @@ beforeEach(async () => {
 
 test("Install and uninstall user", async () => {
   await expect(db.getUserId(debtor.uri)).resolves.toBeUndefined()
+
   const userId = await db.storeUserData(userData)
   await expect(db.getUserId(debtor.uri)).resolves.toEqual(userId)
-  await expect(db.getDebtorRecord(userId)).resolves.toBeDefined()
-  await expect(db.getConfigRecord(userId)).resolves.toBeDefined()
-  expect((await db.getTransferRecords(userId)).length).toBe(2)
+
+  const debtorRecord = await db.getDebtorRecord(userId) as DebtorRecord
+  expect(equal(debtorRecord, {
+    ...debtor,
+    config: { uri: 'config' },
+    userId,
+  })).toBeTruthy()
+
+  const configRecord = await db.getConfigRecord(userId)
+  expect(equal(configRecord, {
+    ...debtor.config,
+    uri: 'https://example.com/debtors/1/config',
+    userId,
+  })).toBeTruthy()
+
+  const transferRecords = (await db.getTransferRecords(userId)).sort((a, b) => a.time - b.time)
+  expect(transferRecords.length).toBe(2)
+  expect(equal(transferRecords[0], {
+    ...successfulTransfer,
+    userId,
+    time: new Date(isoNow).getTime(),
+    paymentInfo: {
+      payeeReference: '',
+      payeeName: '',
+      description: { content: '', contentFormat: '' },
+    },
+    originatesHere: false,
+  })).toBeTruthy()
+  expect(equal(transferRecords[1], {
+    ...unsuccessfulTransfer,
+    userId,
+    time: new Date(isoNowPlus).getTime(),
+    paymentInfo: {
+      payeeReference: '123',
+      payeeName: 'Payee Name',
+      description: { content: 'http://example.com/link', contentFormat: '.' },
+    },
+    originatesHere: false,
+  })).toBeTruthy()
+
+  const documentRecord = await db.getDocumentRecord('https://example.com/1/documents/123')
+  expect(documentRecord).toEqual({ ...document, userId })
+
+  const actionRecords = await db.getActionRecords(userId) as AbortTransferActionWithId[]
+  expect(actionRecords.length).toBe(1)
+  expect(actionRecords[0].actionType).toBe('AbortTransfer')
+  expect(actionRecords[0].transferUri).toBe('https://example.com/1/transfers/-unsuccessul-')
+
   await db.uninstallUser(userId)
   await expect(db.getUserId(debtor.uri)).resolves.toBeUndefined()
   await expect(db.getDebtorRecord(userId)).rejects.toBeInstanceOf(UserDoesNotExist)
   await expect(db.getConfigRecord(userId)).rejects.toBeInstanceOf(UserDoesNotExist)
   await expect(db.getTransferRecords(userId)).resolves.toEqual([])
-  await expect(db.getActionRecords(userId)).resolves.toEqual([])
   await expect(db.getDocumentRecord('https://example.com/1/documents/123')).resolves.toEqual(undefined)
+  await expect(db.getActionRecords(userId)).resolves.toEqual([])
 })
 
 test("All in", async () => {
-  const userId = await db.storeUserData({ collectedAfter: new Date(now), debtor, transferUris, transfers, document })
-  const debtorRecord = await db.getDebtorRecord(userId) as DebtorRecord
-  expect(debtorRecord.userId).toEqual(userId)
-  expect(debtorRecord.config.uri).toBe('config')
-  expect(debtorRecord.config).toEqual({ uri: 'config' })
-  await expect(db.getUserId(debtor.uri)).resolves.toBeDefined()
-  await expect(db.getConfigRecord(userId)).resolves.toEqual({
-    ...debtor.config,
-    uri: 'https://example.com/debtors/1/config',
-    userId,
-  })
-  await expect(db.getTransferRecords(userId)).resolves.toEqual(
-    [{
-      ...transfers[1], userId, time: new Date(isoNowPlus).getTime(),
-      paymentInfo: { payeeName: '', payeeReference: '', description: { content: '', contentFormat: '' } }
-    },
-    {
-      ...transfers[0], userId, time: new Date(isoNow).getTime(),
-      paymentInfo: { payeeName: '', payeeReference: '', description: { content: '', contentFormat: '' } }
-    }]
-  )
-  await expect(db.getDocumentRecord('https://example.com/1/documents/123')).resolves.toEqual({ ...document, userId })
+  const userId = await db.storeUserData(userData)
   const actions = await db.getActionRecords(userId)
-  expect(actions.length).toBe(1)
-  expect(actions[0].actionType).toBe('AbortTransfer')
   await db.replaceActionRecord(actions[0], null)
-  await expect(db.getActionRecords(userId)).resolves.toEqual([])
 
   const actionRecord = {
     actionId: undefined,
     userId,
     actionType: 'AbortTransfer',
     createdAt: new Date(),
-    transferUri: 'https://example.com/1/transfers/xxxxxxxx',
+    transferUri: 'https://example.com/1/transfers/-successul-',
   } as const
   await expect(db.getActionRecord(456)).resolves.toBeUndefined()
   await expect(db.createActionRecord({ ...actionRecord, userId: -1 })).rejects.toBeInstanceOf(UserDoesNotExist)
@@ -264,15 +287,29 @@ test("All in", async () => {
     userId,
     time: time,
     paymentInfo,
+    originatesHere: false,
   })
-  await expect(db.getTransferRecord(t.uri)).resolves.toEqual({ ...t, userId, time, paymentInfo })
+  await expect(db.getTransferRecord(t.uri)).resolves.toEqual({
+    ...t,
+    userId,
+    time,
+    paymentInfo,
+    originatesHere: false,
+  })
   await expect((db as any).storeTransfer(userId, t)).resolves.toEqual({
     ...t,
     userId,
     time: time,
     paymentInfo,
+    originatesHere: false,
   })
-  await expect(db.getTransferRecord(t.uri)).resolves.toEqual({ ...t, userId, time, paymentInfo })
+  await expect(db.getTransferRecord(t.uri)).resolves.toEqual({
+    ...t,
+    userId,
+    time,
+    paymentInfo,
+    originatesHere: false,
+  })
   await expect((db as any).storeTransfer(userId + 1, t)).rejects.toBeInstanceOf(UserDoesNotExist)
   const alteredUri = t.uri + '/something'
   await expect((db as any).storeTransfer(userId, { ...t, uri: alteredUri })).resolves.toEqual({
@@ -281,6 +318,7 @@ test("All in", async () => {
     uri: alteredUri,
     time: time * (1 + Number.EPSILON) * (1 + Number.EPSILON),
     paymentInfo,
+    originatesHere: false,
   })
   await expect(db.getTransferRecord(t.uri + '/something')).resolves.toEqual({
     ...t,
@@ -288,5 +326,6 @@ test("All in", async () => {
     uri: alteredUri,
     time: time * (1 + Number.EPSILON) * (1 + Number.EPSILON),
     paymentInfo,
+    originatesHere: false,
   })
 })
