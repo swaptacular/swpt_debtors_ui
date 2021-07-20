@@ -1,6 +1,5 @@
 import equal from 'fast-deep-equal'
 import App from '../src/App.svelte'
-import { stringify, parse } from '../src/web-api/json-bigint'
 import type { AuthTokenSource } from '../src/web-api/oauth2-token-source'
 import { ServerSession, HttpError } from '../src/web-api'
 import {
@@ -12,7 +11,6 @@ import {
   CreateTransferActionWithId,
   AbortTransferActionWithId,
 } from '../src/operations/db'
-import validateRootConfigData from '../src/root-config-data/validate-schema.js'
 
 const authToken = '3x-KAxNWrYPJUWNKTbpnTWxoR0Arr0gG_uEqeWUNDkk.B-Iqy02FM7rK1rKSb4I7D9gaqGFXc2vdyJQ6Uuv3EF4'
 
@@ -48,21 +46,6 @@ test("Instantiate svelte app", () => {
   })
   expect(el).toBeInstanceOf(HTMLElement)
   expect(app).toBeTruthy()
-})
-
-test("Stringify non-ASCII", () => {
-  const s = stringify("Кирилица")
-  expect(s).toBe('"Кирилица"')
-})
-
-test("Stringify bigint", () => {
-  const s = stringify({ float: 1, int: 1n, bigint: 123456789012345678901234567890n })
-  expect(s).toBe('{\"float":1e+0,"int":1,"bigint":123456789012345678901234567890}')
-})
-
-test("Parse bigint", () => {
-  const o = parse('{\"float":1.0,"int":1,"bigint":123456789012345678901234567890}')
-  expect(o).toEqual({ float: 1, int: 1n, bigint: 123456789012345678901234567890n })
 })
 
 test.skip("Create ServerSession", async () => {
@@ -376,21 +359,4 @@ test("Deep equal", async () => {
   expect(equal({ a: 1n, b: new Date(0) }, { a: 1n, b: new Date(1) })).toBe(false)
   expect(equal({ a: 1n, b: new Date(0) }, { a: 2n, b: new Date(0) })).toBe(false)
   expect(equal({ a: 1n, b: new Date(0) }, undefined)).toBe(false)
-})
-
-test("Validate RootConfigData schema", () => {
-  expect(validateRootConfigData(1)).toEqual(false)
-  expect(validateRootConfigData({ 'type': 'INVALID' })).toEqual(false)
-  expect(validateRootConfigData({ 'type': 'RootConfigData' })).toEqual(true)
-  expect(validateRootConfigData({
-    type: 'RootConfigData-v1',
-    rate: 0,
-    info: {
-      type: 'DebtorInfo',
-      iri: 'http://example.com',
-      contentType: 'text/plain',
-      sha256: 'E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855',
-    },
-    unknownProp: 1,
-  })).toEqual(true)
 })
