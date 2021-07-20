@@ -61,7 +61,7 @@ export type TransferRecord =
   & {
     time: number,
     paymentInfo: PaymentInfo,
-    aborted?: true,
+    aborted: boolean,
     originatesHere: boolean,
   }
 
@@ -469,7 +469,7 @@ class DebtorsDb extends Dexie {
         const time = new Date(initiatedAt).getTime() || Date.now()
         const paymentInfo = parseTransferNote(transfer)
         const originatesHere = await matchCreateTransferAction()
-        transferRecord = { ...transfer, userId, time, paymentInfo, originatesHere }
+        transferRecord = { ...transfer, userId, time, paymentInfo, originatesHere, aborted: false }
       }
       let attemptsLeft = 100
       while (true) {

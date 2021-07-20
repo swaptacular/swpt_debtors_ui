@@ -10,7 +10,6 @@ import {
 
 const now = Date.now()
 const isoNow = new Date(now).toISOString()
-const isoNowPlus = new Date(now + 100).toISOString()
 const debtor = {
   type: 'Debtor',
   uri: 'https://example.com/debtors/1/',
@@ -55,7 +54,7 @@ const unsuccessfulTransfer = {
   transfersList: { uri: 'https://example.com/1/transfers/' },
   note: '123\nPayee Name\n.\nhttp://example.com/link',
   noteFormat: 'payment0',
-  initiatedAt: isoNowPlus,
+  initiatedAt: isoNow,
   result: {
     type: 'TransferResult',
     finalizedAt: isoNow,
@@ -118,17 +117,19 @@ test("Install and uninstall user", async () => {
       description: { content: '', contentFormat: '' },
     },
     originatesHere: false,
+    aborted: false,
   })).toBeTruthy()
   expect(equal(transferRecords[1], {
     ...unsuccessfulTransfer,
     userId,
-    time: new Date(isoNowPlus).getTime(),
+    time: now * (1 + Number.EPSILON),
     paymentInfo: {
       payeeReference: '123',
       payeeName: 'Payee Name',
       description: { content: 'http://example.com/link', contentFormat: '.' },
     },
     originatesHere: false,
+    aborted: false,
   })).toBeTruthy()
 
   const documentRecord = await db.getDocumentRecord('https://example.com/1/documents/123')
@@ -259,123 +260,61 @@ test("Perform a create transfer action", async () => {
     paymentInfo,
     time: transferRecord.time,
     originatesHere: true,
+    aborted: false,
   })).toBeTruthy()
   await expect(db.getActionRecord(actionId)).resolves.toBe(undefined)
   expect(equal(await db.getTransferRecord(transferRecord.uri), transferRecord)).toBeTruthy()
 })
 
-test("All in", async () => {
-  const userId = await db.storeUserData(userData)
-  const actions = await db.getActionRecords(userId)
-  await db.replaceActionRecord(actions[0], null)
+test("Store transfers", async () => {
+  const userId = await db.storeUserData({ debtor, collectedAfter: new Date(), transferUris: [], transfers: [], document })
 
-  const theCreatedTransfer = {
-    type: 'Transfer',
-    uri: 'https://example.com/1/transfers/123e4567-e89b-12d3-a456-426655440000',
-    recipient: { uri: 'swpt:1/2' },
-    amount: 777n,
-    transferUuid: '123e4567-e89b-12d3-a456-426655440000',
-    transfersList: { uri: 'https://example.com/1/transfers/' },
-    note: '',
-    noteFormat: '',
-    initiatedAt: isoNow,
-  }
-  db.storeTransfer(userId, theCreatedTransfer)
+  // fails to store transfer for a non-existing user
+  await expect(db.storeTransfer(-1, successfulTransfer)).rejects.toBeInstanceOf(UserDoesNotExist)
 
-  const theDebtorConfig = {
-    type: 'DebtorConfig',
-    uri: 'https://example.com/debtors/1/config',
-    latestUpdateId: 2n,
-    latestUpdateAt: isoNow,
-    debtor: { uri: '/debtors/1/' },
-    configData: '',
-  }
-  await expect(db.updateConfig(-1, theDebtorConfig)).rejects.toBeInstanceOf(RecordDoesNotExist)
-  const updateConifgActionId = await db.createActionRecord({
-    userId,
-    actionType: 'UpdateConfig',
-    createdAt: new Date(),
-    interestRate: 5.0,
-    debtorInfo: {
-      debtorName: 'USA',
-      amountDivisor: 100,
-      decimalPlaces: 2,
-      unit: 'USD',
-    },
-  })
-  const configRecord = await db.updateConfig(updateConifgActionId, theDebtorConfig)
-  expect(configRecord.configData).toBeDefined()
-  await expect(db.getActionRecord(updateConifgActionId)).resolves.toBe(undefined)
+  // store a successful transfer
+  const successfulTransferRecord = await db.storeTransfer(userId, successfulTransfer)
+  expect(successfulTransferRecord.originatesHere).toBe(false)
+  expect(successfulTransferRecord.aborted).toBe(false)
+  expect(equal(await db.getTransferRecord(successfulTransferRecord.uri), successfulTransferRecord)).toBeTruthy()
+  expect(equal(await db.getTransferRecords(userId), [successfulTransferRecord]))
+  await expect(db.getActionRecords(userId)).resolves.toEqual([])
 
-  await expect(db.replaceActionRecord(
-    { userId, createdAt: new Date(), actionId: -1, actionType: 'AbortTransfer', transferUri: 'xxx' }, null
-  )).rejects.toBeInstanceOf(RecordDoesNotExist)
-  const abortTransferAction = {
-    userId,
-    actionType: 'AbortTransfer' as const,
-    createdAt: new Date(),
-    transferUri: transfers[1].uri,
-  }
-  const abortTransferActionId = await db.createActionRecord(abortTransferAction)
-  expect(abortTransferActionId).toBeDefined()
-  await db.replaceActionRecord(abortTransferAction as AbortTransferActionWithId, null)
-  await expect(db.getActionRecord(abortTransferActionId)).resolves.toBe(undefined)
-  await expect(db.getTransferRecord(transfers[1].uri)).resolves.toHaveProperty('aborted')
+  // storing the same transfer again does nothing
+  expect(equal(await db.getTransferRecords(userId), [successfulTransferRecord]))
+  await expect(db.getActionRecords(userId)).resolves.toEqual([])
 
-  const paymentInfo = {
-    payeeName: '',
-    payeeReference: '',
-    description: {
-      content: '',
-      contentFormat: '',
-    }
-  }
-  const t = transfers[0]
-  const time = new Date(t.initiatedAt).getTime()
-  await expect((db as any).storeTransfer(userId, t)).resolves.toEqual({
-    ...t,
-    userId,
-    time: time,
-    paymentInfo,
-    originatesHere: false,
-  })
-  await expect(db.getTransferRecord(t.uri)).resolves.toEqual({
-    ...t,
-    userId,
-    time,
-    paymentInfo,
-    originatesHere: false,
-  })
-  await expect((db as any).storeTransfer(userId, t)).resolves.toEqual({
-    ...t,
-    userId,
-    time: time,
-    paymentInfo,
-    originatesHere: false,
-  })
-  await expect(db.getTransferRecord(t.uri)).resolves.toEqual({
-    ...t,
-    userId,
-    time,
-    paymentInfo,
-    originatesHere: false,
-  })
-  await expect((db as any).storeTransfer(userId + 1, t)).rejects.toBeInstanceOf(UserDoesNotExist)
-  const alteredUri = t.uri + '/something'
-  await expect((db as any).storeTransfer(userId, { ...t, uri: alteredUri })).resolves.toEqual({
-    ...t,
-    userId,
-    uri: alteredUri,
-    time: time * (1 + Number.EPSILON) * (1 + Number.EPSILON),
-    paymentInfo,
-    originatesHere: false,
-  })
-  await expect(db.getTransferRecord(t.uri + '/something')).resolves.toEqual({
-    ...t,
-    userId,
-    uri: alteredUri,
-    time: time * (1 + Number.EPSILON) * (1 + Number.EPSILON),
-    paymentInfo,
-    originatesHere: false,
-  })
+  // store a transfer that is not finalized yet
+  const { result, ...notFinalized } = unsuccessfulTransfer
+  const notFinalizedTransferRecord = await db.storeTransfer(userId, notFinalized)
+  expect(notFinalizedTransferRecord.originatesHere).toBe(false)
+  expect(notFinalizedTransferRecord.aborted).toBe(false)
+  expect(equal(await db.getTransferRecord(notFinalizedTransferRecord.uri), notFinalizedTransferRecord)).toBeTruthy()
+  await expect(db.getActionRecords(userId)).resolves.toEqual([])
+
+  // the not finalized transfer becomes unsuccessful
+  const unsuccessfulTransferRecord = await db.storeTransfer(userId, unsuccessfulTransfer)
+  expect(unsuccessfulTransferRecord.originatesHere).toBe(false)
+  expect(unsuccessfulTransferRecord.aborted).toBe(false)
+  expect(equal(
+    await db.getTransferRecord(unsuccessfulTransferRecord.uri),
+    unsuccessfulTransferRecord
+  )).toBeTruthy()
+
+  // ensure that an abort transfer action has been automatically
+  // created for the unsuccessful transfer
+  const actionRecords = await db.getActionRecords(userId)
+  expect(actionRecords.length).toBe(1)
+  const abortTransferAction = actionRecords[0] as AbortTransferActionWithId
+  expect(abortTransferAction.actionType).toBe('AbortTransfer')
+  expect(abortTransferAction.transferUri).toBe(unsuccessfulTransferRecord.uri)
+
+  // ensure that once the abort transfer action has been deleted, the
+  // transfer is marked as aborted.
+  await db.replaceActionRecord(abortTransferAction, null)
+  await expect(db.getActionRecord(abortTransferAction.actionId)).resolves.toBe(undefined)
+  expect(equal(
+    await db.getTransferRecord(unsuccessfulTransferRecord.uri),
+    { ...unsuccessfulTransferRecord, aborted: true }
+  )).toBeTruthy()
 })
