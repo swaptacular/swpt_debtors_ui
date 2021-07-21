@@ -290,7 +290,7 @@ class DebtorsDb extends Dexie {
 
   async putDocumentRecord(documentRecord: DocumentRecord): Promise<void> {
     await this.transaction('rw', [this.debtors, this.documents], async () => {
-      if (!await this.isInstalledUser(userId)) {
+      if (!await this.isInstalledUser(documentRecord.userId)) {
         throw new UserDoesNotExist()
       }
       const existingDocumentRecord = await this.documents.get(documentRecord.uri)

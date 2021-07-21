@@ -7,6 +7,7 @@ import {
   CreateTransferActionWithId,
   AbortTransferActionWithId,
   UpdateConfigActionWithId,
+  getCreateTransferActionStatus,
 } from '../src/operations/db'
 
 const now = Date.now()
@@ -233,6 +234,8 @@ test("Perform a create transfer action", async () => {
     },
     requestedAmount: 0n,
   } as CreateTransferActionWithId
+  expect(getCreateTransferActionStatus(createTransferAction)).toBe('Draft')
+
   const theCreatedTransfer = {
     type: 'Transfer',
     uri: 'https://example.com/1/transfers/123e4567-e89b-12d3-a456-426655440000',
@@ -369,10 +372,35 @@ test("Update user's config record", async () => {
   }
 
   // fails to update the config record of a non-existing user
-  expect(db.updateConfigRecord(-1, config)).rejects.toBeInstanceOf(UserDoesNotExist)
+  await expect(db.updateConfigRecord(-1, config)).rejects.toBeInstanceOf(UserDoesNotExist)
 
   // updates the config record
   const updatedConfigRecord = await db.updateConfigRecord(userId, config)
   expect(equal(updatedConfigRecord, await db.getConfigRecord(userId))).toBeTruthy()
   expect(equal(updatedConfigRecord, { ...config, userId })).toBeTruthy()
+})
+
+test("Store a document", async () => {
+  const userId = await db.storeUserData(minimalUserData)
+
+  const uri = 'https://example.com/1/documents/124'
+  const documentRecord = {
+    userId,
+    uri,
+    content: new ArrayBuffer(0),
+    contentType: 'text/plain',
+    sha256: '0'.repeat(64),
+  }
+
+  // fails to store a document for a non-existing user
+  await expect(db.putDocumentRecord({ ...documentRecord, userId: -1 })).rejects.toBeInstanceOf(UserDoesNotExist)
+  await expect(db.getDocumentRecord(uri)).resolves.toBeUndefined()
+
+  // successfully store a document
+  await expect(db.putDocumentRecord(documentRecord)).resolves.toBeUndefined()
+  await expect(db.getDocumentRecord(uri)).resolves.toEqual(documentRecord)
+
+  // storing the same document again does nothing
+  await expect(db.putDocumentRecord(documentRecord)).resolves.toBeUndefined()
+  await expect(db.getDocumentRecord(uri)).resolves.toEqual(documentRecord)
 })
