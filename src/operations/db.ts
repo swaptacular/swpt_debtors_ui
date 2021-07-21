@@ -272,7 +272,7 @@ class DebtorsDb extends Dexie {
     return configRecord
   }
 
-  async updateConfig(userId: number, debtorConfig: DebtorConfig): Promise<ConfigRecord> {
+  async updateConfigRecord(userId: number, debtorConfig: DebtorConfig): Promise<ConfigRecord> {
     return await this.transaction('rw', this.configs, async () => {
       let configRecord = await this.getConfigRecord(userId)
       assert(configRecord.uri === debtorConfig.uri, 'wrong config record URI')
@@ -286,6 +286,17 @@ class DebtorsDb extends Dexie {
 
   async getDocumentRecord(uri: string): Promise<DocumentRecord | undefined> {
     return await this.documents.get(uri)
+  }
+
+  async putDocumentRecord(documentRecord: DocumentRecord): Promise<void> {
+    await this.transaction('rw', [this.debtors, this.documents], async () => {
+      if (!await this.isInstalledUser(userId)) {
+        throw new UserDoesNotExist()
+      }
+      const existingDocumentRecord = await this.documents.get(documentRecord.uri)
+      assert(!existingDocumentRecord || existingDocumentRecord.userId === documentRecord.userId, 'wrong userId')
+      await this.documents.put(documentRecord)
+    })
   }
 
   async getActionRecords(userId: number, options: ListQueryOptions = {}): Promise<ActionRecordWithId[]> {

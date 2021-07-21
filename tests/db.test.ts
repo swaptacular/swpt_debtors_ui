@@ -351,10 +351,28 @@ test("Create update config action", async () => {
   expect(action.debtorInfo).toBe(debtorConfigData.debtorInfo)
   await expect(db.getActionRecords(userId)).resolves.toEqual([action])
 
-  // fails to create another update action for the same user
+  // fails to create another update config action for the same user
   const changedDebtorConfigData = { ...debtorConfigData, interestRate: -5 }
   const anotherAction = await db.ensureUpdateConfigAction(userId, changedDebtorConfigData) as UpdateConfigActionWithId
   expect(anotherAction).toEqual(action)
   await expect(db.getActionRecords(userId)).resolves.toEqual([action])
+})
 
+test("Update user's config record", async () => {
+  const userId = await db.storeUserData(minimalUserData)
+  const config = {
+    uri: 'https://example.com/debtors/1/config',
+    latestUpdateAt: '2020-01-02T00:00:00Z',
+    latestUpdateId: 2n,
+    configData: '{"info": {"iri": "https://example.com/1/documents/124"}}',
+    debtor: { uri: 'https://example.com/1/' }
+  }
+
+  // fails to update the config record of a non-existing user
+  expect(db.updateConfigRecord(-1, config)).rejects.toBeInstanceOf(UserDoesNotExist)
+
+  // updates the config record
+  const updatedConfigRecord = await db.updateConfigRecord(userId, config)
+  expect(equal(updatedConfigRecord, await db.getConfigRecord(userId))).toBeTruthy()
+  expect(equal(updatedConfigRecord, { ...config, userId })).toBeTruthy()
 })
