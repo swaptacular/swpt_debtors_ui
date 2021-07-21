@@ -4,6 +4,7 @@ import {
   DebtorRecord,
   UserDoesNotExist,
   RecordDoesNotExist,
+  CreateTransferAction,
   CreateTransferActionWithId,
   AbortTransferActionWithId,
   UpdateConfigActionWithId,
@@ -234,7 +235,6 @@ test("Perform a create transfer action", async () => {
     },
     requestedAmount: 0n,
   } as CreateTransferActionWithId
-  expect(getCreateTransferActionStatus(createTransferAction)).toBe('Draft')
 
   const theCreatedTransfer = {
     type: 'Transfer',
@@ -403,4 +403,54 @@ test("Store a document", async () => {
   // storing the same document again does nothing
   await expect(db.putDocumentRecord(documentRecord)).resolves.toBeUndefined()
   await expect(db.getDocumentRecord(uri)).resolves.toEqual(documentRecord)
+})
+
+test("Get create transfer action status", async () => {
+  let createTransferAction = {
+    userId: -1,
+    actionType: 'CreateTransfer' as const,
+    createdAt: new Date(now),
+    paymentInfo: {
+      payeeName: '',
+      payeeReference: '',
+      description: {
+        contentFormat: '',
+        content: '',
+      }
+    },
+    creationRequest: {
+      recipient: { uri: 'swpt:1/2' },
+      amount: 777n,
+      transferUuid: '123e4567-e89b-12d3-a456-426655440000',
+    },
+    requestedAmount: 0n,
+  } as CreateTransferAction
+
+  expect(getCreateTransferActionStatus(createTransferAction
+  )).toBe('Draft')
+
+  expect(getCreateTransferActionStatus({
+    ...createTransferAction,
+    execution: { startedAt: new Date(now) }
+  })).toBe('Not sent')
+
+  expect(getCreateTransferActionStatus({
+    ...createTransferAction,
+    execution: { startedAt: new Date(now), unresolvedRequestAt: new Date(now) }
+  })).toBe('Not confirmed')
+
+  expect(getCreateTransferActionStatus({
+    ...createTransferAction,
+    execution: { startedAt: new Date(now), result: { ok: true, transferUri: 'http://example.com/transfer' } }
+  })).toBe('Sent')
+
+  expect(getCreateTransferActionStatus({
+    ...createTransferAction,
+    execution: { startedAt: new Date(now), result: { ok: false, errors: [] } }
+  })).toBe('Failed')
+
+  expect(getCreateTransferActionStatus({
+    ...createTransferAction,
+    execution: { startedAt: new Date(now - 1e12) }
+  })).toBe('Timed out')
 })
