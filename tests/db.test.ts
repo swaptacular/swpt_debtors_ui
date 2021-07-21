@@ -6,6 +6,7 @@ import {
   RecordDoesNotExist,
   CreateTransferActionWithId,
   AbortTransferActionWithId,
+  UpdateConfigActionWithId,
 } from '../src/operations/db'
 
 const now = Date.now()
@@ -80,6 +81,8 @@ const document = {
   sha256: '',
 }
 const userData = { debtor, collectedAfter: new Date(), transferUris, transfers, document }
+const minimalUserData = { debtor, collectedAfter: new Date(), transferUris: [], transfers: [], document }
+
 
 beforeEach(async () => {
   await db.clearAllTables()
@@ -150,7 +153,7 @@ test("Install and uninstall user", async () => {
 })
 
 test("Create and replace action records", async () => {
-  const userId = await db.storeUserData({ debtor, collectedAfter: new Date(), transferUris: [], transfers: [], document })
+  const userId = await db.storeUserData(minimalUserData)
   await expect(db.getActionRecords(userId)).resolves.toEqual([])
   await expect(db.getActionRecords(-1)).resolves.toEqual([])
 
@@ -208,7 +211,7 @@ test("Create and replace action records", async () => {
 })
 
 test("Perform a create transfer action", async () => {
-  const userId = await db.storeUserData({ debtor, collectedAfter: new Date(), transferUris: [], transfers: [], document })
+  const userId = await db.storeUserData(minimalUserData)
 
   let paymentInfo = {
     payeeName: 'XYZ',
@@ -267,7 +270,7 @@ test("Perform a create transfer action", async () => {
 })
 
 test("Store transfers", async () => {
-  const userId = await db.storeUserData({ debtor, collectedAfter: new Date(), transferUris: [], transfers: [], document })
+  const userId = await db.storeUserData(minimalUserData)
 
   // fails to store transfer for a non-existing user
   await expect(db.storeTransfer(-1, successfulTransfer)).rejects.toBeInstanceOf(UserDoesNotExist)
@@ -317,4 +320,41 @@ test("Store transfers", async () => {
     await db.getTransferRecord(unsuccessfulTransferRecord.uri),
     { ...unsuccessfulTransferRecord, aborted: true }
   )).toBeTruthy()
+})
+
+test("Create update config action", async () => {
+  const userId = await db.storeUserData(minimalUserData)
+  await expect(db.getActionRecords(userId)).resolves.toEqual([])
+
+  const debtorConfigData = {
+    interestRate: 5,
+    debtorInfo: {
+      summary: 'summary',
+      debtorName: 'name',
+      debtorHomepage: { uri: 'http://example.com/homepage' },
+      amountDivisor: 100,
+      decimalPlaces: 2,
+      unit: 'USD',
+      peg: {
+        type: 'Peg' as const,
+        exchangeRate: 1,
+        debtorIdentity: { type: 'DebtorIdentity' as const, uri: 'swpt:123' },
+        latestDebtorInfo: { uri: 'http://example.com/USD' },
+      },
+    },
+  }
+
+  // create an update config action
+  const action = await db.ensureUpdateConfigAction(userId, debtorConfigData) as UpdateConfigActionWithId
+  expect(action.actionType).toBe('UpdateConfig')
+  expect(action.interestRate).toBe(debtorConfigData.interestRate)
+  expect(action.debtorInfo).toBe(debtorConfigData.debtorInfo)
+  await expect(db.getActionRecords(userId)).resolves.toEqual([action])
+
+  // fails to create another update action for the same user
+  const changedDebtorConfigData = { ...debtorConfigData, interestRate: -5 }
+  const anotherAction = await db.ensureUpdateConfigAction(userId, changedDebtorConfigData) as UpdateConfigActionWithId
+  expect(anotherAction).toEqual(action)
+  await expect(db.getActionRecords(userId)).resolves.toEqual([action])
+
 })

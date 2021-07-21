@@ -272,15 +272,8 @@ class DebtorsDb extends Dexie {
     return configRecord
   }
 
-  async updateConfig(actionId: number, debtorConfig: DebtorConfig): Promise<ConfigRecord> {
-    // TODO: this should be improved.
-    return await this.transaction('rw', [this.configs, this.actions], async () => {
-      const actionRecord = await this.actions.get(actionId)
-      if (!(actionRecord && actionRecord.actionType === 'UpdateConfig')) {
-        throw new RecordDoesNotExist()
-      }
-      await this.actions.delete(actionId)
-      const userId = actionRecord.userId
+  async updateConfig(userId: number, debtorConfig: DebtorConfig): Promise<ConfigRecord> {
+    return await this.transaction('rw', this.configs, async () => {
       let configRecord = await this.getConfigRecord(userId)
       assert(configRecord.uri === debtorConfig.uri, 'wrong config record URI')
       if (configRecord.latestUpdateId < debtorConfig.latestUpdateId) {
