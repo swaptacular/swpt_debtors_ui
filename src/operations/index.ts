@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import {
-  server,
+  server as defaultServer,
+  ServerSession,
   ServerSessionError,
   HttpResponse,
   HttpError,
@@ -58,19 +59,19 @@ export class ForbiddenOperation extends Error {
 
 /* If the user is logged in -- does nothing. Otherwise, redirects to
  * the login page, and never resolves. */
-export async function login(): Promise<void> {
+export async function login(server = defaultServer): Promise<void> {
   await server.login(async (login) => await login())
 }
 
 /* Logs out the user and redirects to home, never resolves. */
-export async function logout(): Promise<never> {
+export async function logout(server = defaultServer): Promise<never> {
   return await server.logout()
 }
 
 /* If the user is logged in, returns an user context
  * instance. Otherise, returns `undefined`. The obtained user context
  * instance can be used to perform operations on user's behalf. */
-export async function obtainUserContext(): Promise<UserContext | undefined> {
+export async function obtainUserContext(server = defaultServer): Promise<UserContext | undefined> {
   const entrypoint = await server.entrypointPromise
   if (entrypoint === undefined) {
     return undefined
@@ -79,20 +80,20 @@ export async function obtainUserContext(): Promise<UserContext | undefined> {
   let userId
   while ((userId = await db.getUserId(entrypoint)) === undefined) {
     if (alreadyTriedToUpdate) {
-      await logout()
+      await logout(server)
     }
-    await update(false)
+    await update(server, false)
     alreadyTriedToUpdate = true
   }
-  return new UserContext(await db.getDebtorRecord(userId))
+  return new UserContext(server, await db.getDebtorRecord(userId))
 }
 
 /* Tries to update the local database, reading the latest data from
  * the server. Any network failures will be swallowed. */
-async function update(getTransfers = true): Promise<void> {
+async function update(server: ServerSession, getTransfers = true): Promise<void> {
   let data
   try {
-    data = await getUserData(getTransfers)
+    data = await getUserData(server, getTransfers)
   } catch (e: unknown) {
     if (e instanceof ServerSessionError) console.log(e)
     else if (e instanceof HttpError) console.error(e)
@@ -103,15 +104,19 @@ async function update(getTransfers = true): Promise<void> {
 }
 
 class UserContext {
-  private updateScheduler = new UpdateScheduler(update)
+  private server: ServerSession
+  private updateScheduler: UpdateScheduler
   private createTransferUri: string
   private noteMaxBytes: number
 
   readonly userId: number
-  readonly scheduleUpdate = this.updateScheduler.schedule.bind(this.updateScheduler)
+  readonly scheduleUpdate: UpdateScheduler['schedule']
   readonly getCreateTransferActionStatus = getCreateTransferActionStatus
 
-  constructor(debtroRecord: DebtorRecordWithId) {
+  constructor(server: ServerSession, debtroRecord: DebtorRecordWithId) {
+    this.server = server
+    this.updateScheduler = new UpdateScheduler(update.bind(undefined, server))
+    this.scheduleUpdate = this.updateScheduler.schedule.bind(this.updateScheduler)
     this.userId = debtroRecord.userId
     this.createTransferUri = new URL(debtroRecord.createTransfer.uri, debtroRecord.uri).href
     this.noteMaxBytes = Number(debtroRecord.noteMaxBytes)
@@ -213,7 +218,7 @@ class UserContext {
         const requestTime = Math.max(now, (unresolvedRequestAt?.getTime() ?? -Infinity) + 1)
         await updateExecutionState(action, { startedAt, unresolvedRequestAt: new Date(requestTime) })
         try {
-          const response = await server.post(
+          const response = await this.server.post(
             this.createTransferUri,
             action.creationRequest,
             { attemptLogin: true },
@@ -327,7 +332,7 @@ class UserContext {
   async cancelTransfer(action: AbortTransferActionWithId): Promise<boolean> {
     let transfer
     try {
-      const response = await server.post(
+      const response = await this.server.post(
         action.transferUri,
         { type: 'TransferCancelationRequest' },
         { attemptLogin: true },

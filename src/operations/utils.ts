@@ -1,9 +1,9 @@
 import { db, UserData } from './db'
-import { server, Debtor, Transfer, HttpResponse, TransfersList, HttpError } from './server'
+import { ServerSession, Debtor, Transfer, HttpResponse, TransfersList, HttpError } from './server'
 import { calcSha256 } from '../debtor-info'
 import { parseRootConfigData, InvalidRootConfigData } from '../root-config-data'
 
-async function getDebtorInfoDocument(debtor: Debtor): Promise<UserData['document']> {
+async function getDebtorInfoDocument(server: ServerSession, debtor: Debtor): Promise<UserData['document']> {
   try {
     const rootConfigData = parseRootConfigData(debtor.config.configData)
     const uri = rootConfigData.info?.iri
@@ -35,7 +35,7 @@ function calcParallelTimeout(numberOfParallelRequests: number): number {
   return appConfig.serverApiTimeout * (numberOfParallelRequests + n - 1) / n
 }
 
-export async function getUserData(getTransfers = true): Promise<UserData> {
+export async function getUserData(server: ServerSession, getTransfers = true): Promise<UserData> {
   const collectedAfter = new Date()
 
   const debtorResponse = await server.getEntrypointResponse() as HttpResponse<Debtor>
@@ -75,6 +75,6 @@ export async function getUserData(getTransfers = true): Promise<UserData> {
     debtor,
     transferUris,
     transfers,
-    document: await getDebtorInfoDocument(debtor),
+    document: await getDebtorInfoDocument(server, debtor),
   }
 }
