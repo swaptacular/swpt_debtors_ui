@@ -27,7 +27,7 @@ const debtor = {
   },
 }
 
-const requestBlob = generatePr0Blob({
+const paymentRequest = {
   payeeName: 'Payee Name',
   payeeReference: 'payee-reference',
   description: {
@@ -36,7 +36,8 @@ const requestBlob = generatePr0Blob({
   },
   accountUri: 'swpt:1/2',
   amount: 1000n,
-})
+}
+const requestBlob = generatePr0Blob(paymentRequest)
 
 beforeEach(async () => {
   await db.clearAllTables()
@@ -69,11 +70,31 @@ test("Make a payment", async () => {
   const uc = await obtainUserContext(serverMock)
   assert(uc)
 
+  // create a payment draft
   const action = await uc.processPaymentRequest(requestBlob)
   expect(action.actionId).toBeDefined()
   expect(equal(await uc.getActionRecords(), [action])).toBeTruthy()
   expect(equal(await uc.getTransferRecords(), [])).toBeTruthy()
+  expect(serverMock.post.mock.calls.length).toBe(0)
+
+  // send the payment
   const transferRecord = await uc.executeCreateTransferAction(action)
+  expect(serverMock.post.mock.calls.length).toBe(1)
+  expect(equal(
+    [...serverMock.post.mock.calls[0]],
+    [
+      debtor.createTransfer.uri,
+      {
+        type: 'TransferCreationRequest',
+        recipient: { uri: paymentRequest.accountUri },
+        amount: paymentRequest.amount,
+        transferUuid: transferRecord.transferUuid,
+        noteFormat: transferRecord.noteFormat,
+        note: transferRecord.note,
+      },
+      { attemptLogin: true },
+    ]
+  )).toBeTruthy()
   expect(equal(await uc.getActionRecords(), [])).toBeTruthy()
   expect(equal(await uc.getTransferRecords(), [transferRecord])).toBeTruthy()
   expect(transferRecord.originatesHere).toBe(true)
@@ -84,7 +105,6 @@ test("Make a payment", async () => {
   expect(transferRecord.paymentInfo.payeeName).toBe('Payee Name')
 })
 
-
 test("Cancel a payment draft", async () => {
   const serverMock = createServerMock(debtor)
   const uc = await obtainUserContext(serverMock)
@@ -92,6 +112,7 @@ test("Cancel a payment draft", async () => {
 
   const action = await uc.processPaymentRequest(requestBlob)
   await uc.deleteCreateTransferAction(action)
+  expect(serverMock.post.mock.calls.length).toBe(0)
   expect(equal(await uc.getActionRecords(), [])).toBeTruthy()
   expect(equal(await uc.getTransferRecords(), [])).toBeTruthy()
 })

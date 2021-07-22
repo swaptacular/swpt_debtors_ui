@@ -50,11 +50,11 @@ export function createServerMock(debtor: Debtor, transfers: Transfer[] = [], _do
     login: jest.fn(),
     logout: jest.fn(),
 
-    async getEntrypointResponse(): Promise<HttpResponse> {
+    getEntrypointResponse: jest.fn(async (): Promise<HttpResponse> => {
       return create200Response(debtor.uri, debtor)
-    },
+    }),
 
-    async get(url: string): Promise<HttpResponse> {
+    get: jest.fn(async (url: string): Promise<HttpResponse> => {
       switch (url) {
         case debtor.transfersList.uri:
           return create200Response(url, {
@@ -82,9 +82,9 @@ export function createServerMock(debtor: Debtor, transfers: Transfer[] = [], _do
           }
           return createErrorResponse(url, 404)
       }
-    },
+    }),
 
-    async post(url: string, data?: any, config?: RequestConfig): Promise<HttpResponse> {
+    post: jest.fn(async (url: string, data?: any, config?: RequestConfig): Promise<HttpResponse> => {
       switch (url) {
         case debtor.createTransfer.uri:
           const now = Date.now()
@@ -115,9 +115,9 @@ export function createServerMock(debtor: Debtor, transfers: Transfer[] = [], _do
           }
           return createErrorResponse(url, 404)
       }
-    },
+    }),
 
-    async patch(url: string, data?: any): Promise<HttpResponse> {
+    patch: jest.fn(async (url: string, data?: any): Promise<HttpResponse> => {
       switch (url) {
         case debtor.config.uri:
           const isNext = data.latestUpdateId === debtor.config.latestUpdateId + 1n
@@ -134,9 +134,9 @@ export function createServerMock(debtor: Debtor, transfers: Transfer[] = [], _do
         default:
           return createErrorResponse(url, 404)
       }
-    },
+    }),
 
-    async delete(url: string): Promise<HttpResponse> {
+    delete: jest.fn(async (url: string): Promise<HttpResponse> => {
       for (const transfer of transfers) {
         if (transfer.uri === url) {
           transfers = transfers.filter(t => t.uri !== url)
@@ -144,7 +144,7 @@ export function createServerMock(debtor: Debtor, transfers: Transfer[] = [], _do
         }
       }
       return createErrorResponse(url, 404)
-    },
+    }),
 
     async getDocument(url: string): Promise<HttpResponse<ArrayBuffer>> {
       return await this.get(url) as HttpResponse<ArrayBuffer>
