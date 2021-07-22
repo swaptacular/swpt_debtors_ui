@@ -1,6 +1,6 @@
 import App from '../src/App.svelte'
 
-test("Instantiate svelte app", () => {
+test.skip("Instantiate svelte app", () => {
   const el = document.body
   const app = new App({
     target: el,

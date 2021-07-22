@@ -1,4 +1,4 @@
-import type { HttpResponse, RequestConfig } from '../src/web-api'
+import { HttpError, HttpResponse, RequestConfig } from '../src/web-api'
 import type { Debtor, Transfer } from '../src/web-api-schemas'
 import type { Document } from '../src/debtor-info'
 
@@ -19,19 +19,6 @@ export function createServerMock(debtor: Debtor, transfers: Transfer[] = [], _do
     }
   }
 
-  function createErrorResponse(url: string, status: number): HttpResponse {
-    return {
-      url,
-      status,
-      data: undefined,
-      headers: {},
-      time: new Date(),
-      buildUri(uriReference: string): string {
-        return new URL(uriReference, this.url).href
-      },
-    }
-  }
-
   function create201Response(url: string, location: string, data: any, contentType?: 'application/json'): HttpResponse {
     return {
       url,
@@ -45,6 +32,30 @@ export function createServerMock(debtor: Debtor, transfers: Transfer[] = [], _do
     }
   }
 
+  function create204Response(url: string): HttpResponse {
+    return {
+      url,
+      data: undefined,
+      status: 204,
+      headers: {},
+      time: new Date(),
+      buildUri(uriReference: string): string {
+        return new URL(uriReference, this.url).href
+      },
+    }
+  }
+
+  function createErrorResponse(url: string, status: number): never {
+    throw new HttpError({
+      status,
+      statusText: `${status} error`,
+      request: { responseURL: url },
+      headers: {},
+      data: undefined,
+      config: {},
+    })
+  }
+
   return {
     entrypointPromise: Promise.resolve(debtor.uri),
     login: jest.fn(),
@@ -56,6 +67,9 @@ export function createServerMock(debtor: Debtor, transfers: Transfer[] = [], _do
 
     get: jest.fn(async (url: string): Promise<HttpResponse> => {
       switch (url) {
+        case debtor.uri:
+          return create200Response(url, debtor)
+
         case debtor.transfersList.uri:
           return create200Response(url, {
             type: 'TransfersList',
@@ -63,7 +77,7 @@ export function createServerMock(debtor: Debtor, transfers: Transfer[] = [], _do
             first: '',
             debtor: debtor.uri,
             itemsType: 'ObjectReference',
-            items: transfers.map(t => { t.uri })
+            items: transfers.map(t => ({ uri: t.uri }))
           })
 
         case debtor.config.uri:
@@ -110,8 +124,10 @@ export function createServerMock(debtor: Debtor, transfers: Transfer[] = [], _do
           return create201Response(url, document.uri, data, contentType)
 
         default:
-          if (transfer.uri === url) {
-            return createErrorResponse(url, 403)
+          for (const transfer of transfers) {
+            if (transfer.uri === url) {
+              return createErrorResponse(url, 403)
+            }
           }
           return createErrorResponse(url, 404)
       }
@@ -140,7 +156,7 @@ export function createServerMock(debtor: Debtor, transfers: Transfer[] = [], _do
       for (const transfer of transfers) {
         if (transfer.uri === url) {
           transfers = transfers.filter(t => t.uri !== url)
-          return createErrorResponse(url, 204)
+          return create204Response(url)
         }
       }
       return createErrorResponse(url, 404)

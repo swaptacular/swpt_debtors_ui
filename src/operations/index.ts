@@ -74,7 +74,10 @@ export async function logout(server = defaultServer): Promise<never> {
 /* If the user is logged in, returns an user context
  * instance. Otherise, returns `undefined`. The obtained user context
  * instance can be used to perform operations on user's behalf. */
-export async function obtainUserContext(server = defaultServer): Promise<UserContext | undefined> {
+export async function obtainUserContext(
+  server = defaultServer,
+  updateScheduler = new UpdateScheduler(update.bind(undefined, server)),
+): Promise<UserContext | undefined> {
   const entrypoint = await server.entrypointPromise
   if (entrypoint === undefined) {
     return undefined
@@ -88,12 +91,12 @@ export async function obtainUserContext(server = defaultServer): Promise<UserCon
     await update(server, false)
     alreadyTriedToUpdate = true
   }
-  return new UserContext(server, await db.getDebtorRecord(userId))
+  return new UserContext(server, updateScheduler, await db.getDebtorRecord(userId))
 }
 
 /* Tries to update the local database, reading the latest data from
  * the server. Any network failures will be swallowed. */
-async function update(server: ServerSession, getTransfers = true): Promise<void> {
+export async function update(server: ServerSession, getTransfers = true): Promise<void> {
   let data
   try {
     data = await getUserData(server, getTransfers)
@@ -116,14 +119,15 @@ class UserContext {
   readonly scheduleUpdate: UpdateScheduler['schedule']
   readonly getActionRecords: (options?: ListQueryOptions) => Promise<ActionRecordWithId[]>
   readonly getTransferRecords: (options?: ListQueryOptions) => Promise<TransferRecord[]>
+  readonly getTransferRecord = db.getTransferRecord.bind(db)
   readonly getCreateTransferActionStatus = getCreateTransferActionStatus
 
-  constructor(server: ServerSession, debtroRecord: DebtorRecordWithId) {
+  constructor(server: ServerSession, updateScheduler: UpdateScheduler, debtroRecord: DebtorRecordWithId) {
     this.server = server
+    this.updateScheduler = updateScheduler
     this.userId = debtroRecord.userId
     this.createTransferUri = new URL(debtroRecord.createTransfer.uri, debtroRecord.uri).href
     this.noteMaxBytes = Number(debtroRecord.noteMaxBytes)
-    this.updateScheduler = new UpdateScheduler(update.bind(undefined, server))
     this.scheduleUpdate = this.updateScheduler.schedule.bind(this.updateScheduler)
     this.getActionRecords = db.getActionRecords.bind(db, this.userId)
     this.getTransferRecords = db.getTransferRecords.bind(db, this.userId)
