@@ -4,7 +4,7 @@ import type { Document } from '../src/debtor-info'
 
 export function createServerMock(debtor: Debtor, transfers: Transfer[] = [], _document?: Document): any {
   let documentId = 0
-  let document = _document ? { ..._document, uri: `${debtor.saveDocument.uri}0` } : undefined
+  let document = _document ? { ..._document, uri: `${debtor.saveDocument.uri}0/public` } : undefined
 
   function create200Response(url: string, data: any, headers: any = {}): HttpResponse {
     return {
@@ -117,7 +117,7 @@ export function createServerMock(debtor: Debtor, transfers: Transfer[] = [], _do
         case debtor.saveDocument.uri:
           const contentType = config?.headers['content-type']
           document = {
-            uri: `${debtor.saveDocument.uri}${++documentId}`,
+            uri: `${debtor.saveDocument.uri}${++documentId}/public`,
             content: data,
             contentType,
           }

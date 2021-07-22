@@ -3,6 +3,7 @@ import { AbortTransferActionWithId, db } from '../src/operations/db'
 import { login, logout, update, obtainUserContext } from '../src/operations'
 import { createServerMock } from './server-mock'
 import { generatePr0Blob } from '../src/payment-requests'
+import { generateCoinInfoDocument } from '../src/debtor-info'
 
 const updatSchedulerMock = {
   latestUpdateAt: new Date(),
@@ -27,7 +28,7 @@ const debtor = {
     uri: 'https://example.com/debtors/1/config',
     latestUpdateAt: '2020-01-01T00:00:00Z',
     latestUpdateId: 1n,
-    configData: '{"info": {"iri": "https://example.com/1/documents/123"}}',
+    configData: '{"rate": 5, "info": {"iri": "https://example.com/1/documents/0/public"}}',
     debtor: { uri: 'https://example.com/1/' }
   },
 }
@@ -65,6 +66,21 @@ const delayedTranfer = {
   note: '124\nPayee Name\n.\nhttp://example.com/link',
   noteFormat: 'payment0',
   initiatedAt: new Date(0).toISOString(),
+}
+
+const debtorData = {
+  uri: 'https:/example.com/1/documents/0/public',
+  revision: 0,
+  willNotChangeUntil: new Date('2021-01-01T10:00:00Z'),
+  latestDebtorInfo: { uri: 'https:/example.com/1/public' },
+  summary: "bla-bla",
+  debtorIdentity: { type: 'DebtorIdentity' as const, uri: 'swpt:1' },
+  debtorName: 'USA',
+  debtorHomepage: { uri: 'https://example.com/USA' },
+  amountDivisor: 100.0,
+  decimalPlaces: 2,
+  unit: 'USD',
+  peg: undefined,
 }
 
 const paymentRequest = {
@@ -158,7 +174,7 @@ test("Cancel a payment draft", async () => {
   expect(equal(await uc.getTransferRecords(), [])).toBeTruthy()
 })
 
-test("Abort unsuccessful transfer", async () => {
+test("Dismiss unsuccessful transfer", async () => {
   const serverMock = createServerMock(debtor, [unsuccessfulTransfer])
   const uc = await obtainUserContext(serverMock, updatSchedulerMock)
   assert(uc)
@@ -198,7 +214,7 @@ test("Abort unsuccessful transfer", async () => {
   expect((await uc.getActionRecords()).length).toBe(2)
 })
 
-test("Abort delayed transfer", async () => {
+test("Cancel and dismiss delayed transfer", async () => {
   const serverMock = createServerMock(debtor, [delayedTranfer])
   const uc = await obtainUserContext(serverMock, updatSchedulerMock)
   assert(uc)
@@ -240,4 +256,29 @@ test("Abort delayed transfer", async () => {
 
   // dismiss the delayed transfer again (works, but does nothing)
   expect(equal(transferRecord, await uc.dismissTransfer(abortTransferAction))).toBeTruthy()
+})
+
+test("Create and delete update config action", async () => {
+  const serverMock = createServerMock(debtor, [], await generateCoinInfoDocument(debtorData))
+  const uc = await obtainUserContext(serverMock, updatSchedulerMock)
+  assert(uc)
+
+  // get debtor's config data
+  const debtorConfigData = await uc.getDebtorConfigData()
+  expect(debtorConfigData.interestRate).toBe(5)
+  expect(debtorConfigData.debtorInfo?.summary).toBe(debtorData.summary)
+  expect(debtorConfigData.debtorInfo?.debtorName).toBe(debtorData.debtorName)
+  expect(debtorConfigData.debtorInfo?.debtorHomepage).toEqual(debtorData.debtorHomepage)
+  expect(debtorConfigData.debtorInfo?.amountDivisor).toBe(debtorData.amountDivisor)
+  expect(debtorConfigData.debtorInfo?.decimalPlaces).toBe(debtorData.decimalPlaces)
+  expect(debtorConfigData.debtorInfo?.unit).toBe(debtorData.unit)
+  expect(debtorConfigData.debtorInfo?.peg).toEqual(debtorData.peg)
+
+  // create an update config action
+  const updateConfigAction = await uc.editDebtorConfigData(debtorConfigData)
+  expect(await uc.getActionRecords()).toEqual([updateConfigAction])
+
+  // delete the created update config action
+  await uc.deleteUpdateConfigAction(updateConfigAction)
+  expect(await uc.getActionRecords()).toEqual([])
 })
