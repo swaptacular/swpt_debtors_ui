@@ -99,6 +99,7 @@ export function createServerMock(debtor: Debtor, transfers: Transfer[] = [], _do
           }
           transfers.push(transfer)
           return create201Response(url, uri, transfer)
+
         case debtor.saveDocument.uri:
           const contentType = config?.headers['content-type']
           document = {
@@ -109,6 +110,9 @@ export function createServerMock(debtor: Debtor, transfers: Transfer[] = [], _do
           return create201Response(url, document.uri, data, contentType)
 
         default:
+          if (transfer.uri === url) {
+            return createErrorResponse(url, 403)
+          }
           return createErrorResponse(url, 404)
       }
     },
@@ -126,6 +130,7 @@ export function createServerMock(debtor: Debtor, transfers: Transfer[] = [], _do
           } else {
             return createErrorResponse(url, 409)
           }
+
         default:
           return createErrorResponse(url, 404)
       }

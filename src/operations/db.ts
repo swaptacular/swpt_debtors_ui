@@ -10,13 +10,6 @@ import type {
 import { PaymentInfo, parseTransferNote } from '../payment-requests'
 import type { ResourceReference, DocumentWithHash, BaseDebtorData } from '../debtor-info'
 
-type ListQueryOptions = {
-  before?: number,
-  after?: number,
-  limit?: number,
-  latestFirst?: boolean,
-}
-
 type UserReference = {
   userId: number,
 }
@@ -28,6 +21,13 @@ type ActionData =
     actionType: string,
     createdAt: Date,
   }
+
+export type ListQueryOptions = {
+  before?: number,
+  after?: number,
+  limit?: number,
+  latestFirst?: boolean,
+}
 
 export type UserData = {
   collectedAfter: Date,

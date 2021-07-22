@@ -27,6 +27,17 @@ const debtor = {
   },
 }
 
+const requestBlob = generatePr0Blob({
+  payeeName: 'Payee Name',
+  payeeReference: 'payee-reference',
+  description: {
+    contentFormat: '',
+    content: 'test payment',
+  },
+  accountUri: 'swpt:1/2',
+  amount: 1000n,
+})
+
 beforeEach(async () => {
   await db.clearAllTables()
 })
@@ -45,33 +56,42 @@ test("Logout", async () => {
 
 test("Get debtor's record", async () => {
   const serverMock = createServerMock(debtor)
-  const userContext = await obtainUserContext(serverMock)
-  assert(userContext)
+  const uc = await obtainUserContext(serverMock)
+  assert(uc)
 
-  const debtorRecord = await userContext.getDebtorRecord()
-  expect(debtorRecord.userId).toBe(userContext.userId)
+  const debtorRecord = await uc.getDebtorRecord()
+  expect(debtorRecord.userId).toBe(uc.userId)
   expect(debtorRecord.config).toEqual({ uri: debtor.config.uri })
 })
 
 test("Make a payment", async () => {
   const serverMock = createServerMock(debtor)
-  const userContext = await obtainUserContext(serverMock)
-  assert(userContext)
+  const uc = await obtainUserContext(serverMock)
+  assert(uc)
 
-  const requestBlob = generatePr0Blob({
-    payeeName: 'Payee Name',
-    payeeReference: '123',
-    description: {
-      contentFormat: '',
-      content: 'test payment',
-    },
-    accountUri: 'swpt:1/2',
-    amount: 1000n,
-  })
-  const action = await userContext.processPaymentRequest(requestBlob)
+  const action = await uc.processPaymentRequest(requestBlob)
   expect(action.actionId).toBeDefined()
-  const transferRecord = await userContext.executeCreateTransferAction(action)
-  expect(transferRecord).toBeDefined()
+  expect(equal(await uc.getActionRecords(), [action])).toBeTruthy()
+  expect(equal(await uc.getTransferRecords(), [])).toBeTruthy()
+  const transferRecord = await uc.executeCreateTransferAction(action)
+  expect(equal(await uc.getActionRecords(), [])).toBeTruthy()
+  expect(equal(await uc.getTransferRecords(), [transferRecord])).toBeTruthy()
+  expect(transferRecord.originatesHere).toBe(true)
+  expect(transferRecord.aborted).toBe(false)
+  expect(transferRecord.recipient.uri).toBe('swpt:1/2')
+  expect(transferRecord.amount).toBe(1000n)
+  expect(transferRecord.note).toContain('payee-reference')
+  expect(transferRecord.paymentInfo.payeeName).toBe('Payee Name')
+})
 
-  // TODO: make some asserts
+
+test("Cancel a payment draft", async () => {
+  const serverMock = createServerMock(debtor)
+  const uc = await obtainUserContext(serverMock)
+  assert(uc)
+
+  const action = await uc.processPaymentRequest(requestBlob)
+  await uc.deleteCreateTransferAction(action)
+  expect(equal(await uc.getActionRecords(), [])).toBeTruthy()
+  expect(equal(await uc.getTransferRecords(), [])).toBeTruthy()
 })

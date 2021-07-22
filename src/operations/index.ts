@@ -11,6 +11,7 @@ import {
 import {
   db,
   DebtorRecordWithId,
+  ActionRecordWithId,
   CreateTransferAction,
   CreateTransferActionWithId,
   AbortTransferActionWithId,
@@ -19,6 +20,7 @@ import {
   UpdateConfigActionWithId,
   ExecutionState,
   DebtorConfigData,
+  ListQueryOptions,
   getCreateTransferActionStatus,
 } from './db'
 import {
@@ -39,6 +41,7 @@ export {
 }
 
 export type {
+  ListQueryOptions,
   DebtorRecordWithId,
   CreateTransferAction,
   CreateTransferActionWithId,
@@ -111,15 +114,19 @@ class UserContext {
 
   readonly userId: number
   readonly scheduleUpdate: UpdateScheduler['schedule']
+  readonly getActionRecords: (options?: ListQueryOptions) => Promise<ActionRecordWithId[]>
+  readonly getTransferRecords: (options?: ListQueryOptions) => Promise<TransferRecord[]>
   readonly getCreateTransferActionStatus = getCreateTransferActionStatus
 
   constructor(server: ServerSession, debtroRecord: DebtorRecordWithId) {
     this.server = server
-    this.updateScheduler = new UpdateScheduler(update.bind(undefined, server))
-    this.scheduleUpdate = this.updateScheduler.schedule.bind(this.updateScheduler)
     this.userId = debtroRecord.userId
     this.createTransferUri = new URL(debtroRecord.createTransfer.uri, debtroRecord.uri).href
     this.noteMaxBytes = Number(debtroRecord.noteMaxBytes)
+    this.updateScheduler = new UpdateScheduler(update.bind(undefined, server))
+    this.scheduleUpdate = this.updateScheduler.schedule.bind(this.updateScheduler)
+    this.getActionRecords = db.getActionRecords.bind(db, this.userId)
+    this.getTransferRecords = db.getTransferRecords.bind(db, this.userId)
   }
 
   async getDebtorRecord(): Promise<DebtorRecordWithId> {
