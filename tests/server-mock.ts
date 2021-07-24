@@ -7,42 +7,36 @@ export function createServerMock(debtor: Debtor, transfers: Transfer[] = [], _do
   let document = _document ? { ..._document, uri: `${debtor.saveDocument.uri}0/public` } : undefined
 
   function create200Response(url: string, data: any, headers: any = {}): HttpResponse {
-    return {
-      url,
+    return new HttpResponse({
+      status: 200,
+      statusText: `${status} response`,
+      request: { responseURL: url },
       data,
       headers,
-      status: 200,
-      time: new Date(),
-      buildUri(uriReference: string): string {
-        return new URL(uriReference, this.url).href
-      },
-    }
+      config: {},
+    })
   }
 
   function create201Response(url: string, location: string, data: any, contentType?: 'application/json'): HttpResponse {
-    return {
-      url,
-      data,
+    return new HttpResponse({
       status: 201,
+      statusText: `${status} response`,
+      request: { responseURL: url },
+      data,
       headers: { location, 'content-type': contentType },
-      time: new Date(),
-      buildUri(uriReference: string): string {
-        return new URL(uriReference, this.url).href
-      },
-    }
+      config: {},
+    })
   }
 
   function create204Response(url: string): HttpResponse {
-    return {
-      url,
-      data: undefined,
+    return new HttpResponse({
       status: 204,
+      statusText: `${status} response`,
+      request: { responseURL: url },
+      data: undefined,
       headers: {},
-      time: new Date(),
-      buildUri(uriReference: string): string {
-        return new URL(uriReference, this.url).href
-      },
-    }
+      config: {},
+    })
   }
 
   function createErrorResponse(url: string, status: number): never {
