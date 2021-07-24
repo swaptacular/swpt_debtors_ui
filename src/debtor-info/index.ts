@@ -63,7 +63,6 @@ export type BaseDebtorData = {
 }
 
 export type DebtorData = BaseDebtorData & {
-  uri: string,
   debtorIdentity: DebtorIdentity,
   revision: number,
   latestDebtorInfo: ResourceReference,

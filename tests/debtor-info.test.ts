@@ -14,7 +14,6 @@ test("Validate CoinInfo schema", () => {
   expect(validate({ 'type': 'CoinInfo' })).toEqual(false)
   let data = {
     type: 'CoinInfo-v1',
-    uri: 'https://example.com/0',
     revision: 0,
     willNotChangeUntil: '2021-01-01T10:00:00Z',
     latestDebtorInfo: { uri: 'http://example.com/' },
@@ -46,7 +45,7 @@ test("Validate CoinInfo schema", () => {
 })
 
 test("Parse CoinInfo document", async () => {
-  const text = `{"uri":"https://example.com/0","revision":0,"willNotChangeUntil":"INVALID","latestDebtorInfo":{"uri":"http://example.com/"},"summary":"bla-bla","debtorIdentity":{"type":"DebtorIdentity","uri":"swpt:123"},"debtorName":"USA","debtorHomepage":{"uri":"https://example.com/USA"},"amountDivisor":100,"decimalPlaces":2,"unit":"USD","peg":{"type":"Peg","exchangeRate":1,"debtorIdentity":{"type":"DebtorIdentity","uri":"swpt:321"},"latestDebtorInfo":{"uri":"http://example.com/"}},"type":"CoinInfo"} `
+  const text = `{"revision":0,"willNotChangeUntil":"INVALID","latestDebtorInfo":{"uri":"http://example.com/"},"summary":"bla-bla","debtorIdentity":{"type":"DebtorIdentity","uri":"swpt:123"},"debtorName":"USA","debtorHomepage":{"uri":"https://example.com/USA"},"amountDivisor":100,"decimalPlaces":2,"unit":"USD","peg":{"type":"Peg","exchangeRate":1,"debtorIdentity":{"type":"DebtorIdentity","uri":"swpt:321"},"latestDebtorInfo":{"uri":"http://example.com/"}},"type":"CoinInfo"} `
   const document = {
     contentType: MIME_TYPE_COIN_INFO,
     content: (new TextEncoder()).encode(text),
@@ -74,7 +73,6 @@ test("Parse CoinInfo document", async () => {
 
 test("Generate and parse CoinInfo document", async () => {
   const debtorData = {
-    uri: 'https://example.com/0',
     revision: 0,
     willNotChangeUntil: new Date('2021-01-01T10:00:00Z'),
     latestDebtorInfo: { uri: 'http://example.com/' },
