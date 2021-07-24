@@ -316,8 +316,9 @@ test("Edit and execute an update config action", async () => {
   expect(serverMock.post.mock.calls.length).toBe(1)
   expect(serverMock.post.mock.calls[0][0]).toBe(debtor.saveDocument.uri)
   expect(serverMock.post.mock.calls[0][1].buffer instanceof ArrayBuffer).toBeTruthy()
-  const location = (await serverMock.post.mock.results[0].value).headers.location
-  expect(location).toContain(debtor.uri)
+  const headers = (await serverMock.post.mock.results[0].value).headers
+  expect(headers.location).toContain(debtor.uri)
+  expect(headers['content-type']).toBe(MIME_TYPE_COIN_INFO)
 
   // assert a config update request is made to the server
   expect(serverMock.patch.mock.calls.length).toBe(1)
@@ -325,5 +326,5 @@ test("Edit and execute an update config action", async () => {
   expect(serverMock.patch.mock.calls[0][1].type).toBe('DebtorConfig')
   expect(serverMock.patch.mock.calls[0][1].latestUpdateId).toBe(2n)
   expect(serverMock.patch.mock.calls[0][1].configData).toContain('"rate":6')
-  expect(serverMock.patch.mock.calls[0][1].configData).toContain(location)
+  expect(serverMock.patch.mock.calls[0][1].configData).toContain(headers.location)
 })

@@ -93,7 +93,7 @@ export function createServerMock(debtor: Debtor, transfers: Transfer[] = [], _do
             content: data,
             contentType,
           }
-          return createResponse(201, url, data, { location: document.uri, 'content-Type': contentType })
+          return createResponse(201, url, data, { location: document.uri, 'content-type': contentType })
 
         default:
           for (const transfer of transfers) {
@@ -140,7 +140,7 @@ export function createServerMock(debtor: Debtor, transfers: Transfer[] = [], _do
 
     async postDocument(url: string, contentType: string, content: ArrayBuffer): Promise<HttpResponse> {
       const config = {
-        headers: { 'Content-Type': contentType },
+        headers: { 'content-type': contentType },
       }
       return await this.post(url, content, config)
     },
