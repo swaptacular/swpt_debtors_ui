@@ -3,7 +3,7 @@ import { AbortTransferActionWithId, db } from '../src/operations/db'
 import { login, logout, update, obtainUserContext } from '../src/operations'
 import { createServerMock } from './server-mock'
 import { generatePr0Blob } from '../src/payment-requests'
-import { generateCoinInfoDocument } from '../src/debtor-info'
+import { generateCoinInfoDocument, MIME_TYPE_COIN_INFO } from '../src/debtor-info'
 
 const updatSchedulerMock = {
   latestUpdateAt: new Date(),
@@ -15,12 +15,12 @@ const updatSchedulerMock = {
 const debtor = {
   type: 'Debtor',
   uri: 'https://example.com/debtors/1/',
-  createTransfer: { uri: 'https://example.com/1/transfers/' },
-  saveDocument: { uri: 'https://example.com/1/documents/' },
-  publicInfoDocument: { uri: 'https:/example.com/1/public' },
-  transfersList: { uri: 'https://example.com/1/transfers/' },
+  createTransfer: { uri: 'https://example.com/debtors/1/transfers/' },
+  saveDocument: { uri: 'https://example.com/debtors/1/documents/' },
+  publicInfoDocument: { uri: 'https:/example.com/debtors/1/public' },
+  transfersList: { uri: 'https://example.com/debtors/1/transfers/' },
   noteMaxBytes: 200n,
-  identity: { type: 'DebtorIdentity', uri: 'swpt:1234' },
+  identity: { type: 'DebtorIdentity', uri: 'swpt:1' },
   balance: 20000n,
   createdAt: '2020-01-01T00:00:00Z',
   config: {
@@ -28,8 +28,8 @@ const debtor = {
     uri: 'https://example.com/debtors/1/config',
     latestUpdateAt: '2020-01-01T00:00:00Z',
     latestUpdateId: 1n,
-    configData: '{"rate": 5, "info": {"iri": "https://example.com/1/documents/0/public"}}',
-    debtor: { uri: 'https://example.com/1/' }
+    configData: '{"rate": 5, "info": {"iri": "https://example.com/debtors/1/documents/0/public"}}',
+    debtor: { uri: 'https://example.com/debtors/1/' }
   },
 }
 
@@ -72,7 +72,7 @@ const debtorData = {
   uri: 'https:/example.com/1/documents/0/public',
   revision: 0,
   willNotChangeUntil: new Date('2021-01-01T10:00:00Z'),
-  latestDebtorInfo: { uri: 'https:/example.com/1/public' },
+  latestDebtorInfo: { uri: 'https://example.com/example.com/1/public' },
   summary: "bla-bla",
   debtorIdentity: { type: 'DebtorIdentity' as const, uri: 'swpt:1' },
   debtorName: 'USA',
@@ -273,6 +273,7 @@ test("Create and delete update config action", async () => {
   expect(debtorConfigData.debtorInfo?.decimalPlaces).toBe(debtorData.decimalPlaces)
   expect(debtorConfigData.debtorInfo?.unit).toBe(debtorData.unit)
   expect(debtorConfigData.debtorInfo?.peg).toEqual(debtorData.peg)
+  expect(debtorConfigData.debtorInfoRevision).toBe(0)
 
   // create an update config action
   const updateConfigAction = await uc.editDebtorConfigData(debtorConfigData)
@@ -281,4 +282,48 @@ test("Create and delete update config action", async () => {
   // delete the created update config action
   await uc.deleteUpdateConfigAction(updateConfigAction)
   expect(await uc.getActionRecords()).toEqual([])
+})
+
+test("Edit and execute an update config action", async () => {
+  const serverMock = createServerMock(debtor, [], await generateCoinInfoDocument(debtorData))
+  const uc = await obtainUserContext(serverMock, updatSchedulerMock)
+  assert(uc)
+
+  const debtorConfigData = await uc.getDebtorConfigData()
+  const updateConfigAction = await uc.editDebtorConfigData(debtorConfigData)
+  assert(updateConfigAction.debtorInfo)
+
+  // edit the config
+  const editedUpdateConfigAction = {
+    ...updateConfigAction,
+    interestRate: 6,
+    debtorInfo: {
+      ...updateConfigAction.debtorInfo,
+      debtorName: 'Updated name',
+    }
+  }
+  await uc.replaceActionRecord(updateConfigAction, editedUpdateConfigAction)
+
+  // execute the update config action
+  await uc.executeUpdateConfigAction(editedUpdateConfigAction)
+  expect(await uc.getActionRecords()).toEqual([])
+  const editedDebtorConfigData = await uc.getDebtorConfigData()
+  expect(editedDebtorConfigData.interestRate).toBe(6)
+  expect(editedDebtorConfigData.debtorInfo?.debtorName).toBe('Updated name')
+  expect(editedDebtorConfigData.debtorInfoRevision).toEqual(debtorConfigData.debtorInfoRevision + 1)
+
+  // assert a new docuemnt is saved to the server
+  expect(serverMock.post.mock.calls.length).toBe(1)
+  expect(serverMock.post.mock.calls[0][0]).toBe(debtor.saveDocument.uri)
+  expect(serverMock.post.mock.calls[0][1].buffer instanceof ArrayBuffer).toBeTruthy()
+  const location = (await serverMock.post.mock.results[0].value).headers.location
+  expect(location).toContain(debtor.uri)
+
+  // assert a config update request is made to the server
+  expect(serverMock.patch.mock.calls.length).toBe(1)
+  expect(serverMock.patch.mock.calls[0][0]).toBe(debtor.config.uri)
+  expect(serverMock.patch.mock.calls[0][1].type).toBe('DebtorConfig')
+  expect(serverMock.patch.mock.calls[0][1].latestUpdateId).toBe(2n)
+  expect(serverMock.patch.mock.calls[0][1].configData).toContain('"rate":6')
+  expect(serverMock.patch.mock.calls[0][1].configData).toContain(location)
 })

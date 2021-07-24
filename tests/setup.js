@@ -13,7 +13,7 @@ globalThis.TextDecoder = require("util").TextDecoder
 globalThis.crypto = {
   subtle: {
     async digest() {
-      return new ArrayBuffer()
+      return Int8Array.from({length: 32}).map(() => 0).buffer
     }
   }
 }

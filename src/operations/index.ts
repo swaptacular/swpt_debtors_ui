@@ -6,6 +6,7 @@ import {
   HttpResponse,
   HttpError,
   Transfer,
+  DebtorConfig,
   Error as WebApiError,
 } from './server'
 import {
@@ -30,8 +31,18 @@ import {
 } from '../payment-requests'
 import { UpdateScheduler } from '../update-scheduler'
 import { getUserData } from './utils'
-import { parseRootConfigData, InvalidRootConfigData } from '../root-config-data';
-import { parseDebtorInfoDocument, InvalidDocument } from '../debtor-info';
+import {
+  parseRootConfigData,
+  InvalidRootConfigData,
+  stringifyRootConfigData,
+  RootConfigData,
+} from '../root-config-data'
+import {
+  parseDebtorInfoDocument,
+  InvalidDocument,
+  generateCoinInfoDocument,
+  BaseDebtorData,
+} from '../debtor-info'
 
 
 export {
@@ -112,7 +123,11 @@ export async function update(server: ServerSession, getTransfers = true): Promis
 class UserContext {
   private server: ServerSession
   private updateScheduler: UpdateScheduler
+  private configUri: string
+  private debtorIdentityUri: string
   private createTransferUri: string
+  private publicInfoDocumentUri: string
+  private saveDocumentUri: string
   private noteMaxBytes: number
 
   readonly userId: number
@@ -121,12 +136,17 @@ class UserContext {
   readonly getTransferRecords: (options?: ListQueryOptions) => Promise<TransferRecord[]>
   readonly getTransferRecord = db.getTransferRecord.bind(db)
   readonly getCreateTransferActionStatus = getCreateTransferActionStatus
+  readonly replaceActionRecord = db.replaceActionRecord.bind(db)
 
   constructor(server: ServerSession, updateScheduler: UpdateScheduler, debtroRecord: DebtorRecordWithId) {
     this.server = server
     this.updateScheduler = updateScheduler
     this.userId = debtroRecord.userId
+    this.configUri = new URL(debtroRecord.config.uri, debtroRecord.uri).href
+    this.debtorIdentityUri = new URL(debtroRecord.identity.uri, debtroRecord.uri).href
     this.createTransferUri = new URL(debtroRecord.createTransfer.uri, debtroRecord.uri).href
+    this.publicInfoDocumentUri = new URL(debtroRecord.publicInfoDocument.uri, debtroRecord.uri).href
+    this.saveDocumentUri = new URL(debtroRecord.saveDocument.uri, debtroRecord.uri).href
     this.noteMaxBytes = Number(debtroRecord.noteMaxBytes)
     this.scheduleUpdate = this.updateScheduler.schedule.bind(this.updateScheduler)
     this.getActionRecords = db.getActionRecords.bind(db, this.userId)
@@ -137,7 +157,7 @@ class UserContext {
     return await db.getDebtorRecord(this.userId)
   }
 
-  async getDebtorConfigData(): Promise<DebtorConfigData> {
+  async getDebtorConfigData(): Promise<DebtorConfigData & { debtorInfoRevision: number }> {
     const configRecord = await db.getConfigRecord(this.userId)
     let configData
     try {
@@ -146,7 +166,9 @@ class UserContext {
       if (!(e instanceof InvalidRootConfigData)) throw e
     }
     const interestRate = configData?.rate
+
     let debtorInfo
+    let debtorInfoRevision = 0
     if (configData?.info) {
       const document = await db.getDocumentRecord(configData.info.iri)
       if (
@@ -156,21 +178,46 @@ class UserContext {
       ) {
         try {
           debtorInfo = await parseDebtorInfoDocument(document)
+          debtorInfoRevision = debtorInfo.revision
         } catch (e: unknown) {
           if (!(e instanceof InvalidDocument)) throw e
         }
       }
     }
-    return { interestRate, debtorInfo }
+    return { interestRate, debtorInfo, debtorInfoRevision }
   }
 
   async editDebtorConfigData(data: DebtorConfigData): Promise<UpdateConfigActionWithId> {
     return await db.ensureUpdateConfigAction(this.userId, data)
   }
 
-  async executeUpdateConfigAction(action: UpdateConfigActionWithId): Promise<boolean> {
-    // TODO:
-    return true
+  async executeUpdateConfigAction(action: UpdateConfigActionWithId): Promise<void> {
+    let attemptsLeft = 10
+    while (true) {
+      await update(this.server)
+
+      try {
+        const response = await this.server.patch(
+          this.configUri,
+          {
+            type: 'DebtorConfig',
+            latestUpdateId: (await db.getConfigRecord(this.userId)).latestUpdateId + 1n,
+            configData: stringifyRootConfigData({
+              rate: action.interestRate,
+              info: action.debtorInfo ? await this.createDocument(action.debtorInfo) : undefined
+            }),
+          },
+          { attemptLogin: true },
+        ) as HttpResponse<DebtorConfig>
+        await db.updateConfigRecord(this.userId, response.data)
+        break
+
+      } catch (e: unknown) {
+        if (e instanceof HttpError && e.status === 409 && attemptsLeft--) continue
+        else throw e
+      }
+    }
+    await db.replaceActionRecord(action, null)
   }
 
   /* Deletes the given update config action. The caller must be
@@ -355,6 +402,29 @@ class UserContext {
     }
     await db.storeTransfer(action.userId, transfer)
     return true
+  }
+
+  private async createDocument(data: BaseDebtorData): Promise<RootConfigData['info']> {
+    const currentRevision = (await this.getDebtorConfigData()).debtorInfoRevision
+    const document = await generateCoinInfoDocument({
+      ...data,
+      debtorIdentity: { type: 'DebtorIdentity', uri: this.debtorIdentityUri },
+      revision: currentRevision + 1,
+      latestDebtorInfo: { uri: this.publicInfoDocumentUri },
+    })
+    const response = await this.server.postDocument(
+      this.saveDocumentUri,
+      document.contentType,
+      document.content,
+    )
+    const iri = response.headers.location
+    assert(typeof iri === 'string', 'missing document location')
+    await db.putDocumentRecord({ ...document, uri: iri, userId: this.userId })
+    return {
+      iri,
+      contentType: document.contentType,
+      sha256: document.sha256,
+    }
   }
 
 }

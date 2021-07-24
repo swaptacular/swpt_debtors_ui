@@ -339,7 +339,8 @@ class DebtorsDb extends Dexie {
         .first()
       if (!action) {
         action = {
-          ...data,
+          interestRate: data.interestRate,
+          debtorInfo: data.debtorInfo,
           userId,
           actionType: 'UpdateConfig' as const,
           createdAt: new Date(),
