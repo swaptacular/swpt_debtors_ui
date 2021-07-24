@@ -33,8 +33,8 @@ export function createServerMock(debtor: Debtor, transfers: Transfer[] = [], _do
     login: jest.fn(),
     logout: jest.fn(),
 
-    getEntrypointResponse: jest.fn(async (): Promise<HttpResponse> => {
-      return createResponse(200, debtor.uri, debtor)
+    getEntrypointResponse: jest.fn(async function(this: any): Promise<HttpResponse> {
+      return await this.get(debtor.uri)
     }),
 
     get: jest.fn(async (url: string): Promise<HttpResponse> => {
