@@ -6,35 +6,13 @@ export function createServerMock(debtor: Debtor, transfers: Transfer[] = [], _do
   let documentId = 0
   let document = _document ? { ..._document, uri: `${debtor.saveDocument.uri}0/public` } : undefined
 
-  function create200Response(url: string, data: any, headers: any = {}): HttpResponse {
+  function createResponse(status: number, url: string, data: any = undefined, headers: any = {}): HttpResponse {
     return new HttpResponse({
-      status: 200,
-      statusText: `${status} response`,
-      request: { responseURL: url },
+      status,
       data,
       headers,
-      config: {},
-    })
-  }
-
-  function create201Response(url: string, location: string, data: any, contentType?: 'application/json'): HttpResponse {
-    return new HttpResponse({
-      status: 201,
       statusText: `${status} response`,
       request: { responseURL: url },
-      data,
-      headers: { location, 'content-type': contentType },
-      config: {},
-    })
-  }
-
-  function create204Response(url: string): HttpResponse {
-    return new HttpResponse({
-      status: 204,
-      statusText: `${status} response`,
-      request: { responseURL: url },
-      data: undefined,
-      headers: {},
       config: {},
     })
   }
@@ -56,16 +34,16 @@ export function createServerMock(debtor: Debtor, transfers: Transfer[] = [], _do
     logout: jest.fn(),
 
     getEntrypointResponse: jest.fn(async (): Promise<HttpResponse> => {
-      return create200Response(debtor.uri, debtor)
+      return createResponse(200, debtor.uri, debtor)
     }),
 
     get: jest.fn(async (url: string): Promise<HttpResponse> => {
       switch (url) {
         case debtor.uri:
-          return create200Response(url, debtor)
+          return createResponse(200, url, debtor)
 
         case debtor.transfersList.uri:
-          return create200Response(url, {
+          return createResponse(200, url, {
             type: 'TransfersList',
             uri: debtor.transfersList.uri,
             first: '',
@@ -75,18 +53,18 @@ export function createServerMock(debtor: Debtor, transfers: Transfer[] = [], _do
           })
 
         case debtor.config.uri:
-          return create200Response(url, debtor.config)
+          return createResponse(200, url, debtor.config)
 
         case debtor.publicInfoDocument.uri:
         case document?.uri:
           if (document) {
-            return create200Response(url, document.content, { 'content-type': document.contentType })
+            return createResponse(200, url, document.content, { 'content-type': document.contentType })
           }
           return createErrorResponse(url, 404)
 
         default:
           for (const transfer of transfers) {
-            if (transfer.uri === url) return create200Response(url, transfer)
+            if (transfer.uri === url) return createResponse(200, url, transfer)
           }
           return createErrorResponse(url, 404)
       }
@@ -106,7 +84,7 @@ export function createServerMock(debtor: Debtor, transfers: Transfer[] = [], _do
             initiatedAt: new Date(now).toISOString(),
           }
           transfers.push(transfer)
-          return create201Response(url, uri, transfer)
+          return createResponse(201, url, transfer, { location: uri })
 
         case debtor.saveDocument.uri:
           const contentType = config?.headers['content-type']
@@ -115,7 +93,7 @@ export function createServerMock(debtor: Debtor, transfers: Transfer[] = [], _do
             content: data,
             contentType,
           }
-          return create201Response(url, document.uri, data, contentType)
+          return createResponse(201, url, data, { location: document.uri, 'content-Type': contentType })
 
         default:
           for (const transfer of transfers) {
@@ -136,7 +114,7 @@ export function createServerMock(debtor: Debtor, transfers: Transfer[] = [], _do
             debtor.config.configData = data.configData
             debtor.config.latestUpdateId = data.latestUpdateId
             debtor.config.latestUpdateAt = isNext ? new Date().toISOString() : debtor.config.latestUpdateAt
-            return create200Response(url, debtor.config)
+            return createResponse(200, url, debtor.config)
           } else {
             return createErrorResponse(url, 409)
           }
@@ -150,7 +128,7 @@ export function createServerMock(debtor: Debtor, transfers: Transfer[] = [], _do
       for (const transfer of transfers) {
         if (transfer.uri === url) {
           transfers = transfers.filter(t => t.uri !== url)
-          return create204Response(url)
+          return createResponse(204, url)
         }
       }
       return createErrorResponse(url, 404)
