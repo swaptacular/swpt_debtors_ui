@@ -289,6 +289,7 @@ test("Edit and execute an update config action", async () => {
   const uc = await obtainUserContext(serverMock, updatSchedulerMock)
   assert(uc)
 
+  const originalLatestUpdateId = debtor.config.latestUpdateId
   const debtorConfigData = await uc.getDebtorConfigData()
   const updateConfigAction = await uc.editDebtorConfigData(debtorConfigData)
   assert(updateConfigAction.debtorInfo)
@@ -324,7 +325,7 @@ test("Edit and execute an update config action", async () => {
   expect(serverMock.patch.mock.calls.length).toBe(1)
   expect(serverMock.patch.mock.calls[0][0]).toBe(debtor.config.uri)
   expect(serverMock.patch.mock.calls[0][1].type).toBe('DebtorConfig')
-  expect(serverMock.patch.mock.calls[0][1].latestUpdateId).toBe(2n)
+  expect(serverMock.patch.mock.calls[0][1].latestUpdateId).toBe(originalLatestUpdateId + 1n)
   expect(serverMock.patch.mock.calls[0][1].configData).toContain('"rate":6')
   expect(serverMock.patch.mock.calls[0][1].configData).toContain(headers.location)
 })
