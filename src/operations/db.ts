@@ -299,6 +299,18 @@ class DebtorsDb extends Dexie {
     })
   }
 
+  async getTasks(userId: number, scheduledFor: Date = new Date(), limit = 1e9): Promise<TaskRecordWithId[]> {
+    let collection = this.tasks
+      .where('[userId+scheduledFor]')
+      .between([userId, Dexie.minKey], [userId, scheduledFor], false, true)
+      .limit(limit)
+    return await collection.toArray() as TaskRecordWithId[]
+  }
+
+  async removeTask(taskId: number): Promise<void> {
+    await this.tasks.delete(taskId)
+  }
+
   async getActionRecords(userId: number, options: ListQueryOptions = {}): Promise<ActionRecordWithId[]> {
     const { before = Dexie.maxKey, after = Dexie.minKey, limit = 1e9, latestFirst = true } = options
     let collection = this.actions

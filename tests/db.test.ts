@@ -274,6 +274,8 @@ test("Perform a create transfer action", async () => {
 
 test("Store transfers", async () => {
   const userId = await db.storeUserData(minimalUserData)
+  const distantFuture = new Date(Date.now() + 1e12)
+  expect(db.getTasks(userId, distantFuture)).resolves.toEqual([])
 
   // fails to store transfer for a non-existing user
   await expect(db.storeTransfer(-1, successfulTransfer)).rejects.toBeInstanceOf(UserDoesNotExist)
@@ -285,6 +287,9 @@ test("Store transfers", async () => {
   expect(equal(await db.getTransferRecord(successfulTransferRecord.uri), successfulTransferRecord)).toBeTruthy()
   expect(equal(await db.getTransferRecords(userId), [successfulTransferRecord]))
   await expect(db.getActionRecords(userId)).resolves.toEqual([])
+  const tasks = await db.getTasks(userId, distantFuture)
+  expect(tasks.length).toBe(1)
+  expect(tasks[0].transferUri).toBe(successfulTransfer.uri)
 
   // storing the same transfer again does nothing
   expect(equal(await db.getTransferRecords(userId), [successfulTransferRecord]))
@@ -297,6 +302,7 @@ test("Store transfers", async () => {
   expect(notFinalizedTransferRecord.aborted).toBe(false)
   expect(equal(await db.getTransferRecord(notFinalizedTransferRecord.uri), notFinalizedTransferRecord)).toBeTruthy()
   await expect(db.getActionRecords(userId)).resolves.toEqual([])
+  expect((await db.getTasks(userId, distantFuture)).length).toBe(1)
 
   // the not finalized transfer becomes unsuccessful
   const unsuccessfulTransferRecord = await db.storeTransfer(userId, unsuccessfulTransfer)
@@ -306,6 +312,7 @@ test("Store transfers", async () => {
     await db.getTransferRecord(unsuccessfulTransferRecord.uri),
     unsuccessfulTransferRecord
   )).toBeTruthy()
+  expect((await db.getTasks(userId, distantFuture)).length).toBe(1)
 
   // ensure that an abort transfer action has been automatically
   // created for the unsuccessful transfer
@@ -316,13 +323,21 @@ test("Store transfers", async () => {
   expect(abortTransferAction.transferUri).toBe(unsuccessfulTransferRecord.uri)
 
   // ensure that once the abort transfer action has been deleted, the
-  // transfer is marked as aborted.
+  // transfer is marked as aborted, and a transfer deletion task is
+  // scheduled.
   await db.replaceActionRecord(abortTransferAction, null)
   await expect(db.getActionRecord(abortTransferAction.actionId)).resolves.toBe(undefined)
   expect(equal(
     await db.getTransferRecord(unsuccessfulTransferRecord.uri),
     { ...unsuccessfulTransferRecord, aborted: true }
   )).toBeTruthy()
+  expect((await db.getTasks(userId, distantFuture)).length).toBe(2)
+
+  // Remove all scheduled tasks
+  for (const task of await db.getTasks(userId, distantFuture)) {
+    await db.removeTask(task.taskId)
+  }
+  expect(db.getTasks(userId, distantFuture)).resolves.toEqual([])
 })
 
 test("Create update config action", async () => {
