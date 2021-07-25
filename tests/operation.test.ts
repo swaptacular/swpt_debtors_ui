@@ -335,7 +335,7 @@ test("Delete old successful transfer", async () => {
     ...delayedTranfer,
     result: {
       type: 'TransferResult',
-      finalizedAt: '1970-01-02T00:00:00.000Z',
+      finalizedAt: '1970-01-01T00:00:00.000Z',
       committedAmount: 666n,
     }
   }

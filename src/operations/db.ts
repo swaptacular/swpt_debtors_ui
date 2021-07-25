@@ -379,7 +379,7 @@ class DebtorsDb extends Dexie {
       let transferRecord = await this.transfers.get(transferUri)
       if (transferRecord && transferRecord.userId === userId) {
         if (getTransferState(transferRecord) !== 'successful') {
-          const initiationTime = new Date(transferRecord.initiatedAt).getTime() || Date.now()
+          const initiationTime = getIsoTimeOrNow(transferRecord.initiatedAt)
           transferRecord.aborted = true
           await this.transfers.put(transferRecord)
           await this.tasks.put({
@@ -487,7 +487,7 @@ class DebtorsDb extends Dexie {
         const { time, paymentInfo, originatesHere, aborted } = existingTransferRecord
         transferRecord = { ...transfer, userId, time, paymentInfo, originatesHere, aborted }
       } else {
-        const time = new Date(initiatedAt).getTime() || Date.now()
+        const time = getIsoTimeOrNow(initiatedAt)
         const paymentInfo = parseTransferNote(transfer)
         const originatesHere = await matchCreateTransferAction()
         transferRecord = { ...transfer, userId, time, paymentInfo, originatesHere, aborted: false }
@@ -506,7 +506,7 @@ class DebtorsDb extends Dexie {
     }
 
     const scheduleTransferDeletion = async (): Promise<void> => {
-      const finalizationTime = result && new Date(result.finalizedAt).getTime() || Date.now()
+      const finalizationTime = getIsoTimeOrNow(result?.finalizedAt)
       await this.tasks.put({
         userId,
         taskType: 'DeleteTransfer',
@@ -628,6 +628,11 @@ class DebtorsDb extends Dexie {
     return [this.debtors, this.configs, this.transfers, this.documents, this.actions, this.tasks]
   }
 
+}
+
+function getIsoTimeOrNow(isoTime?: string): number {
+  const time = isoTime ? new Date(isoTime).getTime() : NaN
+  return Number.isFinite(time) ? time : Date.now()
 }
 
 export const db = new DebtorsDb()
