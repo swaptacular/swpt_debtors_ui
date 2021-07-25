@@ -329,3 +329,28 @@ test("Edit and execute an update config action", async () => {
   expect(serverMock.patch.mock.calls[0][1].configData).toContain('"rate":6')
   expect(serverMock.patch.mock.calls[0][1].configData).toContain(headers.location)
 })
+
+test("Delete old successful transfer", async () => {
+  const oldSuccessfulTransfer = {
+    ...delayedTranfer,
+    result: {
+      type: 'TransferResult',
+      finalizedAt: '1970-01-02T00:00:00.000Z',
+      committedAmount: 666n,
+    }
+  }
+  const serverMock = createServerMock(debtor, [oldSuccessfulTransfer])
+  const uc = await obtainUserContext(serverMock, updatSchedulerMock)
+  assert(uc)
+
+  // fetch the old unsuccessful transfer from the server, and ensure
+  // that it has been deleted from the server
+  await update(serverMock)
+  expect(serverMock.delete.mock.calls.length).toBe(1)
+  expect(serverMock.delete.mock.calls[0][0]).toBe(oldSuccessfulTransfer.uri)
+
+  // ensure that executing another update does not try to delete the
+  // transfer from the server once again
+  await update(serverMock)
+  expect(serverMock.delete.mock.calls.length).toBe(1)
+})

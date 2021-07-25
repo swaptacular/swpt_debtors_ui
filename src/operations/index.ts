@@ -26,6 +26,7 @@ import {
   DebtorConfigData,
   ListQueryOptions,
   getCreateTransferActionStatus,
+  DeleteTransferTaskWithId,
 } from './db'
 import {
   parsePaymentRequest,
@@ -114,13 +115,14 @@ export async function update(server: ServerSession, getTransfers = true): Promis
   let data
   try {
     data = await getUserData(server, getTransfers)
+    const userId = await db.storeUserData(data)
+    await executeReadyTasks(server, userId)
   } catch (e: unknown) {
     if (e instanceof ServerSessionError) console.log(e)
     else if (e instanceof HttpError) console.error(e)
     else throw e
     return
   }
-  await db.storeUserData(data)
 }
 
 class UserContext {
@@ -519,4 +521,32 @@ async function getUserData(server: ServerSession, getTransfers = true): Promise<
     transfers,
     document: await getDebtorInfoDocument(server, debtor.config.configData),
   }
+}
+
+async function executeReadyTasks(server: ServerSession, userId: number): Promise<void> {
+  const limit = 1000
+  let tasks
+  do {
+    tasks = await db.getTasks(userId, new Date(), limit)
+    let deleteTransferTasks: DeleteTransferTaskWithId[] = []
+    for (const task of tasks) {
+      switch (task.taskType) {
+        case 'DeleteTransfer':
+          deleteTransferTasks.push(task)
+          break
+        default:
+          console.warn('Unknown task type', task)
+      }
+    }
+    const timeout = calcParallelTimeout(deleteTransferTasks.length)
+    await Promise.all(deleteTransferTasks.map(async (task) => {
+      try {
+        await server.delete(task.transferUri, { timeout })
+      } catch (e: unknown) {
+        if (!(e instanceof HttpError && e.status === 404)) throw e
+      }
+      await db.removeTask(task.taskId)
+    }))
+
+  } while (tasks.length >= limit)
 }

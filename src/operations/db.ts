@@ -150,6 +150,10 @@ export type DeleteTransferTask =
     transferUri: string,
   }
 
+export type DeleteTransferTaskWithId =
+  & TaskRecordWithId
+  & DeleteTransferTask
+
 export class UserDoesNotExist extends Error {
   name = 'UserDoesNotExist'
 }
