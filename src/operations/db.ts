@@ -564,11 +564,15 @@ class DebtorsDb extends Dexie {
       return userId
     }
 
-    const deleteIrrelevantAbortTransferActions = async (userId: number): Promise<void> => {
+    const deleteIrrelevantActionsAndTasks = async (userId: number): Promise<void> => {
       const uris = new Set(transferUris)
       await this.actions
         .where({ userId })
         .filter(action => action.actionType === 'AbortTransfer' && !uris.has(action.transferUri))
+        .delete()
+      await this.tasks
+        .where({ userId })
+        .filter(task => task.taskType === 'DeleteTransfer' && !uris.has(task.transferUri))
         .delete()
     }
 
@@ -601,7 +605,7 @@ class DebtorsDb extends Dexie {
 
     return await this.transaction('rw', this.allTables, async () => {
       const userId = await storeDebtorAndConfigRecords()
-      await deleteIrrelevantAbortTransferActions(userId)
+      await deleteIrrelevantActionsAndTasks(userId)
       await storeTransferRecords(userId)
       return userId
     })
