@@ -30,7 +30,7 @@ import {
   generatePayment0TransferNote,
 } from '../payment-requests'
 import { UpdateScheduler } from '../update-scheduler'
-import { getUserData } from './utils'
+import { getUserData, getDebtorInfoDocument } from './utils'
 import {
   parseRootConfigData,
   InvalidRootConfigData,
@@ -194,7 +194,7 @@ class UserContext {
   async executeUpdateConfigAction(action: UpdateConfigActionWithId): Promise<void> {
     let attemptsLeft = 10
     while (true) {
-      await update(this.server)
+      await this.fetchDebtorConfig()
 
       try {
         const response = await this.server.patch(
@@ -427,6 +427,14 @@ class UserContext {
     }
   }
 
+  private async fetchDebtorConfig(): Promise<void> {
+    const response = await this.server.get(this.configUri, { attemptLogin: true }) as HttpResponse<DebtorConfig>
+    await db.updateConfigRecord(this.userId, response.data)
+    const document = await getDebtorInfoDocument(this.server, response.data.configData)
+    if (document) {
+      await db.putDocumentRecord({ ...document, userId: this.userId })
+    }
+  }
 }
 
 async function updateExecutionState(action: CreateTransferActionWithId, execution: ExecutionState): Promise<void> {

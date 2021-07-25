@@ -3,9 +3,9 @@ import { ServerSession, Debtor, Transfer, HttpResponse, TransfersList, HttpError
 import { calcSha256 } from '../debtor-info'
 import { parseRootConfigData, InvalidRootConfigData } from '../root-config-data'
 
-async function getDebtorInfoDocument(server: ServerSession, debtor: Debtor): Promise<UserData['document']> {
+export async function getDebtorInfoDocument(server: ServerSession, configData: string): Promise<UserData['document']> {
   try {
-    const rootConfigData = parseRootConfigData(debtor.config.configData)
+    const rootConfigData = parseRootConfigData(configData)
     const uri = rootConfigData.info?.iri
     if (uri !== undefined) {
       const documentRecord = await db.getDocumentRecord(uri)
@@ -75,6 +75,6 @@ export async function getUserData(server: ServerSession, getTransfers = true): P
     debtor,
     transferUris,
     transfers,
-    document: await getDebtorInfoDocument(server, debtor),
+    document: await getDebtorInfoDocument(server, debtor.config.configData),
   }
 }
