@@ -8,6 +8,7 @@ import {
   CreateTransferActionWithId,
   AbortTransferActionWithId,
   UpdateConfigActionWithId,
+  DeleteTransferTask,
   getCreateTransferActionStatus,
 } from '../src/operations/db'
 
@@ -289,7 +290,9 @@ test("Store transfers", async () => {
   await expect(db.getActionRecords(userId)).resolves.toEqual([])
   const tasks = await db.getTasks(userId, distantFuture)
   expect(tasks.length).toBe(1)
-  expect(tasks[0].transferUri).toBe(successfulTransfer.uri)
+  const task = tasks[0] as DeleteTransferTask
+  expect(task.taskType).toBe('DeleteTransfer')
+  expect(task.transferUri).toBe(successfulTransfer.uri)
 
   // storing the same transfer again does nothing
   expect(equal(await db.getTransferRecords(userId), [successfulTransferRecord]))
