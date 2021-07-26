@@ -326,8 +326,10 @@ test("Edit and execute an update config action", async () => {
   expect(serverMock.patch.mock.calls[0][0]).toBe(debtor.config.uri)
   expect(serverMock.patch.mock.calls[0][1].type).toBe('DebtorConfig')
   expect(serverMock.patch.mock.calls[0][1].latestUpdateId).toBe(originalLatestUpdateId + 1n)
-  expect(serverMock.patch.mock.calls[0][1].configData).toContain('"rate":6')
-  expect(serverMock.patch.mock.calls[0][1].configData).toContain(headers.location)
+  expect(serverMock.patch.mock.calls[0][1].configData).toContain('"rate":6,')
+  expect(serverMock.patch.mock.calls[0][1].configData).toContain(`"iri":"${headers.location}",`)
+  expect(serverMock.patch.mock.calls[0][1].configData).toContain('"sha256":"')
+  expect(serverMock.patch.mock.calls[0][1].configData).toContain(`"contentType":"${MIME_TYPE_COIN_INFO}",`)
 })
 
 test("Delete old successful transfer", async () => {
