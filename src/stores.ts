@@ -19,13 +19,14 @@ export async function createStore<T>(observable: Observable<T>) {
   return {
     subscribe(next: (value: T) => void): (() => void) {
       let called = false
-      const subscription = observable.subscribe(
-        value => { next(currentValue = value); called = true },
-        error => { console.error(error) },
-      )
-      if (!called) {
-        next(currentValue)
+      const callNext = (value: T) => {
+        if (!(called && currentValue === value)) {
+          next(currentValue = value)
+          called = true
+        }
       }
+      const subscription = observable.subscribe(callNext, error => { console.error(error) })
+      callNext(currentValue)
       return subscription.unsubscribe
     }
   }
