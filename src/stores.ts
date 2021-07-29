@@ -74,6 +74,14 @@ class AppState {
     }
   }
 
+  async showActions() {
+    const route = this.route = `/actions`
+    const actions = await createLiveQuery(() => this.uc.getActionRecords())
+    if (this.route === route) {
+      this.page.set({ type: 'Actions', actions })
+    }
+  }
+
   async showAction(actionId: number) {
     const route = this.route = `/actions/${actionId}`
     const action = await createLiveQuery(() => this.uc.getActionRecord(actionId))
