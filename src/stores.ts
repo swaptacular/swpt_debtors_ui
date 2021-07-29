@@ -3,8 +3,6 @@ import { Writable, writable } from 'svelte/store'
 import { UserContext, IvalidPaymentRequest, obtainUserContext } from './operations'
 import type { ActionRecordWithId } from './operations/db'
 
-const UNEXPECTED_ERROR = 'Unexpected error occurred.'
-
 export type Store<T> = {
   subscribe(next: (value: T) => void): (() => void)
 }
@@ -51,51 +49,52 @@ class AppState {
   }
 
   addAlert(alert: Alert): void {
-    this.alerts.update(arr => [...arr, alert])
+    this.attempt(async () => {
+      this.alerts.update(arr => [...arr, alert])
+    })
   }
 
   dismissAlert(alert: Alert): void {
-    this.alerts.update(arr => arr.filter(a => a !== alert))
+    this.attempt(async () => {
+      this.alerts.update(arr => arr.filter(a => a !== alert))
+    })
   }
 
-  async initiatePayment(paymentRequestFile: Promise<Blob>) {
-    const route = this.route
-    const action = await this.attempt(
-      async () => {
-        const blob = await paymentRequestFile
-        return await this.uc.processPaymentRequest(blob)
-      },
-      [
-        [IvalidPaymentRequest, 'Invalid payment request.'],
-      ]
-    )
-    if (this.route === route) {
-      this.showAction(action.actionId)
-    }
+  initiatePayment(paymentRequestFile: Promise<Blob>): void {
+    this.attempt(async () => {
+      const route = this.route
+      const blob = await paymentRequestFile
+      const action = await this.uc.processPaymentRequest(blob)
+      if (this.route === route) {
+        this.showAction(action.actionId)
+      }
+    }, [
+      [IvalidPaymentRequest, 'Invalid payment request.'],
+    ])
   }
 
-  async showActions() {
-    const route = this.route = `/actions`
-    const actions = await this.attempt(
-      () => createLiveQuery(() => this.uc.getActionRecords()),
-    )
-    if (this.route === route) {
-      this.page.set({ type: 'Actions', actions })
-    }
+  showActions(): void {
+    this.attempt(async () => {
+      const route = this.route = `/actions`
+      const actions = await createLiveQuery(() => this.uc.getActionRecords())
+      if (this.route === route) {
+        this.page.set({ type: 'Actions', actions })
+      }
+    })
   }
 
-  async showAction(actionId: number) {
-    const route = this.route = `/actions/${actionId}`
-    const action = await this.attempt(
-      () => createLiveQuery(() => this.uc.getActionRecord(actionId)),
-    )
-    if (this.route === route) {
-      this.page.set({ type: 'Action', action })
-    }
+  showAction(actionId: number): void {
+    this.attempt(async () => {
+      const route = this.route = `/actions/${actionId}`
+      const action = await createLiveQuery(() => this.uc.getActionRecord(actionId))
+      if (this.route === route) {
+        this.page.set({ type: 'Action', action })
+      }
+    })
   }
 
-  private async attempt<T>(func: () => Promise<T>, alerts: [Function, Alert][] = []): Promise<T> {
-    const alertFromError = (error: unknown): Alert | undefined => {
+  private async attempt(func: () => unknown, alerts: [Function, Alert | null][] = []): Promise<void> {
+    const alertFromError = (error: unknown): Alert | null | undefined => {
       let alert
       if (error && typeof error === 'object') {
         const errorConstructor = error.constructor
@@ -104,16 +103,21 @@ class AppState {
       return alert
     }
     try {
-      return await func()
+      await func()
     } catch (e: unknown) {
       const alert = alertFromError(e)
-      if (alert) {
-        this.addAlert(alert)
-      } else {
-        this.addAlert(UNEXPECTED_ERROR)
-        console.error(e)
+      switch (alert) {
+        case null:
+          // ignore the error
+          return
+        case undefined:
+          console.error(e)
+          this.addAlert('Unexpected error occurred.')
+          throw e
+        default:
+          this.addAlert(alert)
+          throw e
       }
-      throw e
     }
   }
 
