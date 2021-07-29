@@ -125,7 +125,7 @@ export async function update(server: ServerSession, getTransfers = true): Promis
   }
 }
 
-class UserContext {
+export class UserContext {
   private server: ServerSession
   private updateScheduler: UpdateScheduler
   private configUri: string
@@ -141,6 +141,7 @@ class UserContext {
   readonly getTransferRecords: (options?: ListQueryOptions) => Promise<TransferRecord[]>
   readonly getTransferRecord = db.getTransferRecord.bind(db)
   readonly getCreateTransferActionStatus = getCreateTransferActionStatus
+  readonly getActionRecord = db.getActionRecord.bind(db)
   readonly replaceActionRecord = db.replaceActionRecord.bind(db)
 
   constructor(server: ServerSession, updateScheduler: UpdateScheduler, debtroRecord: DebtorRecordWithId) {
