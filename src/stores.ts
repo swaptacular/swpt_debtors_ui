@@ -60,19 +60,15 @@ class AppState {
 
   async initiatePayment(paymentRequestFile: Promise<Blob>) {
     const route = this.route
-    let action
-    try {
-      action = await this.uc.processPaymentRequest(await paymentRequestFile)
-    } catch (e: unknown) {
-      let message = UNEXPECTED_ERROR
-      if (e instanceof IvalidPaymentRequest) {
-        message = 'Invalid payment request.'
-      } else {
-        console.error(e)
-      }
-      this.addAlert(message)
-      throw e
-    }
+    const action = await this.attempt(
+      async () => {
+        const blob = await paymentRequestFile
+        return await this.uc.processPaymentRequest(blob)
+      },
+      [
+        [IvalidPaymentRequest, 'Invalid payment request.'],
+      ]
+    )
     if (this.route === route) {
       this.showAction(action.actionId)
     }
@@ -83,6 +79,29 @@ class AppState {
     const action = await createLiveQuery(() => this.uc.getActionRecord(actionId))
     if (this.route === route) {
       this.page.set({ type: 'Action', action })
+    }
+  }
+
+  private async attempt<T>(func: () => Promise<T>, alerts: [Function, Alert][] = []): Promise<T> {
+    const alertFromError = (error: unknown): Alert | undefined => {
+      let alert
+      if (error && typeof error === 'object') {
+        const errorConstructor = error.constructor
+        alert = alerts.find(element => element[0] === errorConstructor)?.[1]
+      }
+      return alert
+    }
+    try {
+      return await func()
+    } catch (e: unknown) {
+      const alert = alertFromError(e)
+      if (alert) {
+        this.addAlert(alert)
+      } else {
+        this.addAlert(UNEXPECTED_ERROR)
+        console.error(e)
+      }
+      throw e
     }
   }
 
