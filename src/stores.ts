@@ -76,7 +76,9 @@ class AppState {
 
   async showActions() {
     const route = this.route = `/actions`
-    const actions = await createLiveQuery(() => this.uc.getActionRecords())
+    const actions = await this.attempt(
+      () => createLiveQuery(() => this.uc.getActionRecords()),
+    )
     if (this.route === route) {
       this.page.set({ type: 'Actions', actions })
     }
@@ -84,7 +86,9 @@ class AppState {
 
   async showAction(actionId: number) {
     const route = this.route = `/actions/${actionId}`
-    const action = await createLiveQuery(() => this.uc.getActionRecord(actionId))
+    const action = await this.attempt(
+      () => createLiveQuery(() => this.uc.getActionRecord(actionId)),
+    )
     if (this.route === route) {
       this.page.set({ type: 'Action', action })
     }
