@@ -2,13 +2,15 @@
   import { login } from '../operations'
   import { createAppState } from '../stores'
   import Router from './Router.svelte'
+
+  const appStatePromise = createAppState()
 </script>
 
-{#await createAppState()}
+{#await appStatePromise}
   <h1>Launching...</h1>
 {:then appState}
   {#if appState }
-    <Router appState={appState}/>
+    <Router {appState}/>
   {:else}
     <button on:click={() => login()}>Login</button>
   {/if}

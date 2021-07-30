@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { setContext } from 'svelte';
   import type {AppState} from '../stores'
   import { logout } from '../operations'
   import Alerts from './Alerts.svelte'
@@ -6,14 +7,15 @@
   import ActionsPage from './ActionsPage.svelte'
 
   export let appState: AppState
-  let page = appState.page
-  let alerts = appState.alerts
+  const page = appState.page
+  const alerts = appState.alerts
+  setContext('appState', appState)
 
   function getPageComponent(pageType: string) {
     switch (pageType) {
-    case 'Action':
+    case 'ActionPage':
       return ActionPage
-    case 'Actions':
+    case 'ActionsPage':
       return ActionsPage
     default:
       throw new Error('unknown page type')

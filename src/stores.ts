@@ -19,12 +19,12 @@ export type ViewModel =
   | ActionModel
 
 export type ActionsModel = {
-  type: 'Actions',
+  type: 'ActionsPage',
   actions: Store<ActionRecordWithId[]>,
 }
 
 export type ActionModel = {
-  type: 'Action',
+  type: 'ActionPage',
   action: Store<ActionRecordWithId | undefined>,
 }
 
@@ -45,7 +45,7 @@ export class AppState {
 
   constructor(private uc: UserContext, actions: Store<ActionRecordWithId[]>) {
     this.alerts = writable([])
-    this.page = writable({ type: 'Actions', actions })
+    this.page = writable({ type: 'ActionsPage', actions })
   }
 
   addAlert(alert: Alert): void {
@@ -78,7 +78,7 @@ export class AppState {
       const route = this.route = `/actions`
       const actions = await createLiveQuery(() => this.uc.getActionRecords())
       if (this.route === route) {
-        this.page.set({ type: 'Actions', actions })
+        this.page.set({ type: 'ActionsPage', actions })
       }
     })
   }
@@ -88,7 +88,7 @@ export class AppState {
       const route = this.route = `/actions/${actionId}`
       const action = await createLiveQuery(() => this.uc.getActionRecord(actionId))
       if (this.route === route) {
-        this.page.set({ type: 'Action', action })
+        this.page.set({ type: 'ActionPage', action })
       }
     })
   }
