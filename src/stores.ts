@@ -57,7 +57,7 @@ export class AppState {
     this.page = writable({ type: 'ActionsPage', actions })
   }
 
-  changeRoute(): number {
+  private changeRoute(): number {
     return ++this.route
   }
 
