@@ -67,13 +67,13 @@ export class AppState {
   addAlert(alert: Alert): Promise<void> {
     return this.attempt(async () => {
       this.alerts.update(arr => [...arr, alert])
-    })
+    }, { showHourglass: false })
   }
 
   dismissAlert(alert: Alert): Promise<void> {
     return this.attempt(async () => {
       this.alerts.update(arr => arr.filter(a => !equal(a, alert)))
-    })
+    }, { showHourglass: false })
   }
 
   initiatePayment(paymentRequestFile: Promise<Blob>): Promise<void> {
@@ -87,7 +87,7 @@ export class AppState {
     }, {
       alerts: [
         [IvalidPaymentRequest, new Alert('Invalid payment request.')],
-      ]
+      ],
     })
   }
 
