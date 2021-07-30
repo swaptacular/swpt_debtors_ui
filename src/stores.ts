@@ -38,7 +38,7 @@ export async function createAppState(): Promise<AppState | undefined> {
   return appState
 }
 
-class AppState {
+export class AppState {
   route = '/actions'
   readonly alerts: Writable<Alert[]>
   readonly page: Writable<ViewModel>
