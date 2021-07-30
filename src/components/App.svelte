@@ -4,6 +4,11 @@
   import Router from './Router.svelte'
 
   const appStatePromise = createAppState()
+
+  function logError(error: unknown): string {
+    console.error(error)
+    return 'An unexpected error has occured.'
+  }
 </script>
 
 <main>
@@ -16,6 +21,6 @@
       <button on:click={() => login()}>Login</button>
     {/if}
   {:catch error}
-    <h1>{console.error(error), 'An unexpected error has occured.'}</h1>
+    <h1>{logError(error)}</h1>
   {/await}
 </main>

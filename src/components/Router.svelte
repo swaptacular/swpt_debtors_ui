@@ -21,9 +21,9 @@
       throw new Error('unknown page type')
     }
   }
-  $: component = getPageComponent($page.type)
+  $: pageComponent = getPageComponent($page.type)
 </script>
 
 <button on:click={() => logout()}>Logout</button>
 <Alerts alerts={$alerts} />
-<svelte:component this={component} page={$page} />
+<svelte:component this={pageComponent} page={$page} />

@@ -1,7 +1,18 @@
+import equal from 'fast-deep-equal'
 import { Observable, liveQuery } from 'dexie'
 import { Writable, writable } from 'svelte/store'
 import { UserContext, IvalidPaymentRequest, obtainUserContext } from './operations'
 import type { ActionRecordWithId } from './operations/db'
+
+let nextAlertId = 1
+
+export class Alert {
+  readonly id: number
+
+  constructor(public message: string) {
+    this.id = nextAlertId++
+  }
+}
 
 export type Store<T> = {
   subscribe(next: (value: T) => void): (() => void)
@@ -11,8 +22,6 @@ export type RootState = {
   alerts: Alert[],
   model: Store<ViewModel>,
 }
-
-export type Alert = string
 
 export type ViewModel =
   | ActionsModel
@@ -56,7 +65,7 @@ export class AppState {
 
   dismissAlert(alert: Alert): void {
     this.attempt(async () => {
-      this.alerts.update(arr => arr.filter(a => a !== alert))
+      this.alerts.update(arr => arr.filter(a => !equal(a, alert)))
     })
   }
 
@@ -69,7 +78,7 @@ export class AppState {
         this.showAction(action.actionId)
       }
     }, [
-      [IvalidPaymentRequest, 'Invalid payment request.'],
+      [IvalidPaymentRequest, new Alert('Invalid payment request.')],
     ])
   }
 
@@ -107,16 +116,16 @@ export class AppState {
     } catch (e: unknown) {
       const alert = alertFromError(e)
       switch (alert) {
+        case undefined:
+          console.error(e)
+          this.addAlert(new Alert('An unexpected error has occurred.'))
+          throw e
         case null:
           // ignore the error
           return
-        case undefined:
-          console.error(e)
-          this.addAlert('An unexpected error has occurred.')
-          throw e
         default:
           this.addAlert(alert)
-          throw e
+          return
       }
     }
   }
