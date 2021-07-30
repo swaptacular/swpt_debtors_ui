@@ -3,12 +3,14 @@
   import type {AppState} from '../stores'
   import { logout } from '../operations'
   import Alerts from './Alerts.svelte'
+  import Hourglass from './Hourglass.svelte'
   import ActionPage from './ActionPage.svelte'
   import ActionsPage from './ActionsPage.svelte'
 
   export let appState: AppState
   const page = appState.page
   const alerts = appState.alerts
+  const waitingAttempts = appState.waitingAttempts
   setContext('appState', appState)
 
   function getPageComponent(pageType: string) {
@@ -26,4 +28,5 @@
 
 <button on:click={() => logout()}>Logout</button>
 <Alerts alerts={$alerts} />
+<Hourglass waitingAttempts={$waitingAttempts} />
 <svelte:component this={pageComponent} page={$page} />

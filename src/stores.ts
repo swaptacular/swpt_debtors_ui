@@ -4,6 +4,11 @@ import { Writable, writable } from 'svelte/store'
 import { UserContext, IvalidPaymentRequest, obtainUserContext } from './operations'
 import type { ActionRecordWithId } from './operations/db'
 
+type AttemptOptions = {
+  alerts?: [Function, Alert | null][],
+  showHourglass?: boolean
+}
+
 let nextAlertId = 1
 
 export class Alert {
@@ -49,10 +54,12 @@ export async function createAppState(): Promise<AppState | undefined> {
 
 export class AppState {
   private route: number = 0
+  readonly waitingAttempts: Writable<number>
   readonly alerts: Writable<Alert[]>
   readonly page: Writable<ViewModel>
 
   constructor(private uc: UserContext, actions: Store<ActionRecordWithId[]>) {
+    this.waitingAttempts = writable(0)
     this.alerts = writable([])
     this.page = writable({ type: 'ActionsPage', actions })
   }
@@ -77,9 +84,11 @@ export class AppState {
       if (this.route === route) {
         this.showAction(action.actionId)
       }
-    }, [
-      [IvalidPaymentRequest, new Alert('Invalid payment request.')],
-    ])
+    }, {
+      alerts: [
+        [IvalidPaymentRequest, new Alert('Invalid payment request.')],
+      ]
+    })
   }
 
   showActions(): void {
@@ -103,10 +112,27 @@ export class AppState {
   }
 
   private changeRoute(): number {
+    this.waitingAttempts.set(0)
     return ++this.route
   }
 
-  private async attempt(func: () => unknown, alerts: [Function, Alert | null][] = []): Promise<void> {
+  private async attempt(func: () => unknown, options: AttemptOptions = {}): Promise<void> {
+    const { alerts = [], showHourglass = true } = options
+    let timeoutId: number | undefined
+    let incremented = false
+
+    const incrementWaitingAttempts = () => {
+      this.waitingAttempts.update(n => n + 1)
+      incremented = true
+    }
+    const restoreWaitingAttempts = () => {
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId)
+      }
+      if (incremented) {
+        this.waitingAttempts.update(n => Math.max(n - 1, 0))
+      }
+    }
     const alertFromError = (error: unknown): Alert | null | undefined => {
       let alert
       if (error && typeof error === 'object') {
@@ -115,6 +141,10 @@ export class AppState {
       }
       return alert
     }
+    if (showHourglass) {
+      timeoutId = setTimeout(incrementWaitingAttempts, 250)
+    }
+
     try {
       await func()
     } catch (e: unknown) {
@@ -126,11 +156,12 @@ export class AppState {
           throw e
         case null:
           // ignore the error
-          return
+          break
         default:
           this.addAlert(alert)
-          return
       }
+    } finally {
+      restoreWaitingAttempts()
     }
   }
 
