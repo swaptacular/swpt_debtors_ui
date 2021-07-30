@@ -64,20 +64,20 @@ export class AppState {
     this.page = writable({ type: 'ActionsPage', actions })
   }
 
-  addAlert(alert: Alert): void {
-    this.attempt(async () => {
+  addAlert(alert: Alert): Promise<void> {
+    return this.attempt(async () => {
       this.alerts.update(arr => [...arr, alert])
     })
   }
 
-  dismissAlert(alert: Alert): void {
-    this.attempt(async () => {
+  dismissAlert(alert: Alert): Promise<void> {
+    return this.attempt(async () => {
       this.alerts.update(arr => arr.filter(a => !equal(a, alert)))
     })
   }
 
-  initiatePayment(paymentRequestFile: Promise<Blob>): void {
-    this.attempt(async () => {
+  initiatePayment(paymentRequestFile: Promise<Blob>): Promise<void> {
+    return this.attempt(async () => {
       const route = this.route
       const blob = await paymentRequestFile
       const action = await this.uc.processPaymentRequest(blob)
@@ -91,8 +91,8 @@ export class AppState {
     })
   }
 
-  showActions(): void {
-    this.attempt(async () => {
+  showActions(): Promise<void> {
+    return this.attempt(async () => {
       const route = this.changeRoute()
       const actions = await createLiveQuery(() => this.uc.getActionRecords())
       if (this.route === route) {
@@ -101,8 +101,8 @@ export class AppState {
     })
   }
 
-  showAction(actionId: number): void {
-    this.attempt(async () => {
+  showAction(actionId: number): Promise<void> {
+    return this.attempt(async () => {
       const route = this.changeRoute()
       const action = await createLiveQuery(() => this.uc.getActionRecord(actionId))
       if (this.route === route) {
