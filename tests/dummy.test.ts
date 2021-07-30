@@ -1,4 +1,4 @@
-import App from '../src/App.svelte'
+import App from '../src/components/App.svelte'
 
 test.skip("Instantiate svelte app", () => {
   const el = document.body

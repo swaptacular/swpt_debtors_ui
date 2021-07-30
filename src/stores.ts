@@ -112,7 +112,7 @@ export class AppState {
           return
         case undefined:
           console.error(e)
-          this.addAlert('Unexpected error occurred.')
+          this.addAlert('An unexpected error has occurred.')
           throw e
         default:
           this.addAlert(alert)
