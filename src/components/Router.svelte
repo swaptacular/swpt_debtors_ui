@@ -27,6 +27,8 @@
 </script>
 
 <button on:click={() => logout()}>Logout</button>
+{#if $alerts.length === 0 && $waitingAttempts > 0 }
+  <Hourglass />
+{/if}
 <Alerts alerts={$alerts} />
-<Hourglass waitingAttempts={$waitingAttempts} />
 <svelte:component this={pageComponent} page={$page} />
