@@ -57,10 +57,6 @@ export class AppState {
     this.page = writable({ type: 'ActionsPage', actions })
   }
 
-  private changeRoute(): number {
-    return ++this.route
-  }
-
   addAlert(alert: Alert): void {
     this.attempt(async () => {
       this.alerts.update(arr => [...arr, alert])
@@ -104,6 +100,10 @@ export class AppState {
         this.page.set({ type: 'ActionPage', action })
       }
     })
+  }
+
+  private changeRoute(): number {
+    return ++this.route
   }
 
   private async attempt(func: () => unknown, alerts: [Function, Alert | null][] = []): Promise<void> {
