@@ -48,13 +48,17 @@ export async function createAppState(): Promise<AppState | undefined> {
 }
 
 export class AppState {
-  route = '/actions'
+  private route: number = 0
   readonly alerts: Writable<Alert[]>
   readonly page: Writable<ViewModel>
 
   constructor(private uc: UserContext, actions: Store<ActionRecordWithId[]>) {
     this.alerts = writable([])
     this.page = writable({ type: 'ActionsPage', actions })
+  }
+
+  changeRoute(): number {
+    return ++this.route
   }
 
   addAlert(alert: Alert): void {
@@ -84,7 +88,7 @@ export class AppState {
 
   showActions(): void {
     this.attempt(async () => {
-      const route = this.route = `/actions`
+      const route = this.changeRoute()
       const actions = await createLiveQuery(() => this.uc.getActionRecords())
       if (this.route === route) {
         this.page.set({ type: 'ActionsPage', actions })
@@ -94,7 +98,7 @@ export class AppState {
 
   showAction(actionId: number): void {
     this.attempt(async () => {
-      const route = this.route = `/actions/${actionId}`
+      const route = this.changeRoute()
       const action = await createLiveQuery(() => this.uc.getActionRecord(actionId))
       if (this.route === route) {
         this.page.set({ type: 'ActionPage', action })
