@@ -4,8 +4,6 @@
   export let app: AppState
   export let model: ActionsModel
 
-  $: actions = model.actions
-
   const blob = new Blob([
     'PR0\n',
     '\n',
@@ -17,6 +15,8 @@
     '.\n',
     'http://example.com'
   ])
+
+  $: actions = model.actions
 </script>
 
 <h1>Actions Page</h1>
