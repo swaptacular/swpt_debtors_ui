@@ -204,11 +204,10 @@ export function createLiveQuery<T>(querier: () => T | Promise<T>): Promise<Store
 }
 
 export async function createAppState(): Promise<AppState | undefined> {
-  let appState
   const uc = await obtainUserContext()
   if (uc) {
     const actions = await createLiveQuery(() => uc.getActionRecords())
-    appState = new AppState(uc, actions)
+    return new AppState(uc, actions)
   }
-  return appState
+  return undefined
 }
