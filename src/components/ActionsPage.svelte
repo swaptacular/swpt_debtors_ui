@@ -3,7 +3,7 @@
 
   export let app: AppState
   export let model: ActionsModel
-  const actions = model.actions
+  $: actions = model.actions
 
   const blob = new Blob([
     'PR0\n',

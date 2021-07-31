@@ -3,7 +3,7 @@
 
   export let app: AppState
   export let model: ActionModel
-  const action = model.action
+  $: action = model.action
 </script>
 
 <h1>Action Page</h1>
