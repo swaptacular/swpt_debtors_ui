@@ -104,6 +104,11 @@ export class AppState {
     return ++this.interactionId
   }
 
+  /* Awaits `func()`, catching and logging thrown
+   * errors. `options.alerts` determines what alert should be shown on
+   * what error. `option.startInteraction` determines whether a
+   * hourglass should be shown when the operation had not been
+   * completed after some time. */
   private async attempt(func: () => unknown, options: AttemptOptions = {}): Promise<void> {
     const { alerts = [], startInteraction = true } = options
     const addWaitingInteraction = () => {
