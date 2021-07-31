@@ -197,31 +197,41 @@ export class UserContext {
     return await db.ensureUpdateConfigAction(this.userId, data)
   }
 
+  /* Tries to perform the given update config action and remove
+   * it. The caller must be prepared this method to throw
+   * `ServerSessionError`, or `RecordDoesNotExist` in case of a
+   * failure due to concurrent execution/deletion of the action.*/
   async executeUpdateConfigAction(action: UpdateConfigActionWithId): Promise<void> {
-    let attemptsLeft = 10
-    while (true) {
-      await this.fetchDebtorConfig()
+    try {
+      let attemptsLeft = 10
+      while (true) {
+        await this.fetchDebtorConfig()
 
-      try {
-        const response = await this.server.patch(
-          this.configUri,
-          {
-            type: 'DebtorConfig',
-            latestUpdateId: (await db.getConfigRecord(this.userId)).latestUpdateId + 1n,
-            configData: stringifyRootConfigData({
-              rate: action.interestRate,
-              info: action.debtorInfo ? await this.createDocument(action.debtorInfo) : undefined
-            }),
-          },
-          { attemptLogin: true },
-        ) as HttpResponse<DebtorConfig>
-        await db.updateConfigRecord(this.userId, response.data)
-        break
+        try {
+          const response = await this.server.patch(
+            this.configUri,
+            {
+              type: 'DebtorConfig',
+              latestUpdateId: (await db.getConfigRecord(this.userId)).latestUpdateId + 1n,
+              configData: stringifyRootConfigData({
+                rate: action.interestRate,
+                info: action.debtorInfo ? await this.createDocument(action.debtorInfo) : undefined
+              }),
+            },
+            { attemptLogin: true },
+          ) as HttpResponse<DebtorConfig>
+          await db.updateConfigRecord(this.userId, response.data)
+          break
 
-      } catch (e: unknown) {
-        if (e instanceof HttpError && e.status === 409 && attemptsLeft--) continue
-        else throw e
+        } catch (e: unknown) {
+          if (e instanceof HttpError && e.status === 409 && attemptsLeft--) continue
+          else throw e
+        }
       }
+
+    } catch (e: unknown) {
+      if (e instanceof HttpError) throw new ServerSessionError(`unexpected status code (${e.status})`)
+      else throw e
     }
     await db.replaceActionRecord(action, null)
   }
@@ -403,7 +413,10 @@ export class UserContext {
       ) as HttpResponse<Transfer>
       transfer = response.data
     } catch (e: unknown) {
-      if (e instanceof HttpError && (e.status === 403 || e.status === 404)) return false
+      if (e instanceof HttpError) {
+        if (e.status === 403 || e.status === 404) return false
+        throw new ServerSessionError(`unexpected status code (${e.status})`)
+      }
       throw e
     }
     await db.storeTransfer(action.userId, transfer)
