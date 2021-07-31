@@ -6,21 +6,21 @@ import type { ActionRecordWithId } from './operations/db'
 
 let nextAlertId = 1
 
-export class Alert {
-  readonly id: number
-
-  constructor(public message: string, public options: AlertOptions = {}) {
-    this.id = nextAlertId++
-  }
+type AttemptOptions = {
+  alerts?: [Function, Alert | null][],
+  startInteraction?: boolean
 }
 
 export type AlertOptions = {
   continue?: () => void,
 }
 
-type AttemptOptions = {
-  alerts?: [Function, Alert | null][],
-  startInteraction?: boolean
+export class Alert {
+  readonly id: number
+
+  constructor(public message: string, public options: AlertOptions = {}) {
+    this.id = nextAlertId++
+  }
 }
 
 export type Store<T> = {
