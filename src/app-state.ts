@@ -104,10 +104,6 @@ export class AppState {
     })
   }
 
-  startInteraction(): number {
-    return ++this.interactionId
-  }
-
   /* Awaits `func()`, catching and logging thrown
    * errors. `options.alerts` determines what alert should be shown on
    * what error. `option.startInteraction` determines whether a
@@ -149,7 +145,7 @@ export class AppState {
     let timeoutId: number | undefined
     let interactionId: number
     if (startInteraction) {
-      interactionId = this.startInteraction()
+      interactionId = ++this.interactionId
       timeoutId = setTimeout(addWaitingInteraction, 250)
     } else {
       interactionId = this.interactionId
