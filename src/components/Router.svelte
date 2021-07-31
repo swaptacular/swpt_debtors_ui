@@ -10,7 +10,7 @@
   export let appState: AppState
   const page = appState.page
   const alerts = appState.alerts
-  const waitingAttempts = appState.waitingAttempts
+  const waitingInteractions = appState.waitingInteractions
   setContext('appState', appState)
 
   function getPageComponent(pageType: string) {
@@ -27,7 +27,7 @@
 </script>
 
 <button on:click={() => logout()}>Logout</button>
-{#if $alerts.length === 0 && $waitingAttempts > 0 }
+{#if $alerts.length === 0 && $waitingInteractions.size > 0 }
   <Hourglass />
 {/if}
 <Alerts alerts={$alerts} />

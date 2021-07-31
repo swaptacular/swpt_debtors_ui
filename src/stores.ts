@@ -6,7 +6,7 @@ import type { ActionRecordWithId } from './operations/db'
 
 type AttemptOptions = {
   alerts?: [Function, Alert | null][],
-  showHourglass?: boolean
+  startInteraction?: boolean
 }
 
 let nextAlertId = 1
@@ -53,13 +53,13 @@ export async function createAppState(): Promise<AppState | undefined> {
 }
 
 export class AppState {
-  private route: number = 0
-  readonly waitingAttempts: Writable<number>
+  private interactionId: number = 0
+  readonly waitingInteractions: Writable<Set<number>>
   readonly alerts: Writable<Alert[]>
   readonly page: Writable<ViewModel>
 
   constructor(private uc: UserContext, actions: Store<ActionRecordWithId[]>) {
-    this.waitingAttempts = writable(0)
+    this.waitingInteractions = writable(new Set())
     this.alerts = writable([])
     this.page = writable({ type: 'ActionsPage', actions })
   }
@@ -67,21 +67,21 @@ export class AppState {
   addAlert(alert: Alert): Promise<void> {
     return this.attempt(async () => {
       this.alerts.update(arr => [...arr, alert])
-    }, { showHourglass: false })
+    }, { startInteraction: false })
   }
 
   dismissAlert(alert: Alert): Promise<void> {
     return this.attempt(async () => {
       this.alerts.update(arr => arr.filter(a => !equal(a, alert)))
-    }, { showHourglass: false })
+    }, { startInteraction: false })
   }
 
   initiatePayment(paymentRequestFile: Promise<Blob>): Promise<void> {
     return this.attempt(async () => {
-      const route = this.route
+      const interactionId = this.interactionId
       const blob = await paymentRequestFile
       const action = await this.uc.processPaymentRequest(blob)
-      if (this.route === route) {
+      if (this.interactionId === interactionId) {
         this.showAction(action.actionId)
       }
     }, {
@@ -93,9 +93,9 @@ export class AppState {
 
   showActions(): Promise<void> {
     return this.attempt(async () => {
-      const route = this.changeRoute()
+      const interactionId = this.interactionId
       const actions = await createLiveQuery(() => this.uc.getActionRecords())
-      if (this.route === route) {
+      if (this.interactionId === interactionId) {
         this.page.set({ type: 'ActionsPage', actions })
       }
     })
@@ -103,34 +103,38 @@ export class AppState {
 
   showAction(actionId: number): Promise<void> {
     return this.attempt(async () => {
-      const route = this.changeRoute()
+      const interactionId = this.interactionId
       const action = await createLiveQuery(() => this.uc.getActionRecord(actionId))
-      if (this.route === route) {
+      if (this.interactionId === interactionId) {
         this.page.set({ type: 'ActionPage', action })
       }
     })
   }
 
-  private changeRoute(): number {
-    this.waitingAttempts.set(0)
-    return ++this.route
+  startInteraction(): number {
+    return ++this.interactionId
   }
 
   private async attempt(func: () => unknown, options: AttemptOptions = {}): Promise<void> {
-    const { alerts = [], showHourglass = true } = options
-    let timeoutId: number | undefined
-    let incremented = false
-
-    const incrementWaitingAttempts = () => {
-      this.waitingAttempts.update(n => n + 1)
-      incremented = true
+    const { alerts = [], startInteraction = true } = options
+    const addWaitingInteraction = () => {
+      this.waitingInteractions.update(originalSet => {
+        const updatedSet = new Set(originalSet)
+        updatedSet.add(interactionId)
+        return updatedSet
+      })
+      addedWaitingInteraction = true
     }
-    const restoreWaitingAttempts = () => {
+    const clearWaitingInteraction = () => {
       if (timeoutId !== undefined) {
         clearTimeout(timeoutId)
       }
-      if (incremented) {
-        this.waitingAttempts.update(n => Math.max(n - 1, 0))
+      if (addedWaitingInteraction) {
+        this.waitingInteractions.update(originalSet => {
+          const updatedSet = new Set(originalSet)
+          updatedSet.delete(interactionId)
+          return updatedSet
+        })
       }
     }
     const alertFromError = (error: unknown): Alert | null | undefined => {
@@ -141,8 +145,15 @@ export class AppState {
       }
       return alert
     }
-    if (showHourglass) {
-      timeoutId = setTimeout(incrementWaitingAttempts, 250)
+
+    let addedWaitingInteraction = false
+    let timeoutId: number | undefined
+    let interactionId: number
+    if (startInteraction) {
+      interactionId = this.startInteraction()
+      timeoutId = setTimeout(addWaitingInteraction, 250)
+    } else {
+      interactionId = this.interactionId
     }
 
     try {
@@ -161,7 +172,7 @@ export class AppState {
           this.addAlert(alert)
       }
     } finally {
-      restoreWaitingAttempts()
+      clearWaitingInteraction()
     }
   }
 
