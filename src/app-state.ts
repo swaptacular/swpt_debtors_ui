@@ -56,13 +56,17 @@ export class AppState {
   addAlert(alert: Alert): Promise<void> {
     return this.attempt(async () => {
       this.alerts.update(arr => [...arr, alert])
-    }, { startInteraction: false })
+    }, {
+      startInteraction: false,
+    })
   }
 
   dismissAlert(alert: Alert): Promise<void> {
     return this.attempt(async () => {
       this.alerts.update(arr => arr.filter(a => !equal(a, alert)))
-    }, { startInteraction: false })
+    }, {
+      startInteraction: false,
+    })
   }
 
   initiatePayment(paymentRequestFile: Blob | Promise<Blob>): Promise<void> {
