@@ -8,22 +8,22 @@
   import ActionsPage from './ActionsPage.svelte'
 
   export let appState: AppState
-  const page = appState.page
+  const model = appState.model
   const alerts = appState.alerts
   const waitingInteractions = appState.waitingInteractions
   setContext('appState', appState)
 
-  function getPageComponent(pageType: string) {
-    switch (pageType) {
-    case 'ActionPage':
+  function getPageComponent(modelType: string) {
+    switch (modelType) {
+    case 'ActionModel':
       return ActionPage
-    case 'ActionsPage':
+    case 'ActionsModel':
       return ActionsPage
     default:
-      throw new Error('unknown page type')
+      throw new Error('unknown model type')
     }
   }
-  $: pageComponent = getPageComponent($page.type)
+  $: pageComponent = getPageComponent($model.type)
 </script>
 
 <button on:click={() => logout()}>Logout</button>
@@ -31,4 +31,4 @@
   <Hourglass />
 {/if}
 <Alerts alerts={$alerts} />
-<svelte:component this={pageComponent} page={$page} />
+<svelte:component this={pageComponent} model={$model} />

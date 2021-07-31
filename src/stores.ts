@@ -4,16 +4,7 @@ import { Writable, writable } from 'svelte/store'
 import { UserContext, IvalidPaymentRequest, obtainUserContext } from './operations'
 import type { ActionRecordWithId } from './operations/db'
 
-type AttemptOptions = {
-  alerts?: [Function, Alert | null][],
-  startInteraction?: boolean
-}
-
 let nextAlertId = 1
-
-export type AlertOptions = {
-  continue?: () => void,
-}
 
 export class Alert {
   readonly id: number
@@ -23,13 +14,17 @@ export class Alert {
   }
 }
 
-export type Store<T> = {
-  subscribe(next: (value: T) => void): (() => void)
+export type AlertOptions = {
+  continue?: () => void,
 }
 
-export type RootState = {
-  alerts: Alert[],
-  model: Store<ViewModel>,
+type AttemptOptions = {
+  alerts?: [Function, Alert | null][],
+  startInteraction?: boolean
+}
+
+export type Store<T> = {
+  subscribe(next: (value: T) => void): (() => void)
 }
 
 export type ViewModel =
@@ -37,35 +32,25 @@ export type ViewModel =
   | ActionModel
 
 export type ActionsModel = {
-  type: 'ActionsPage',
+  type: 'ActionsModel',
   actions: Store<ActionRecordWithId[]>,
 }
 
 export type ActionModel = {
-  type: 'ActionPage',
+  type: 'ActionModel',
   action: ActionRecordWithId,
-}
-
-export async function createAppState(): Promise<AppState | undefined> {
-  let appState
-  const userContext = await obtainUserContext()
-  if (userContext) {
-    const actions = await createLiveQuery(() => userContext.getActionRecords())
-    appState = new AppState(userContext, actions)
-  }
-  return appState
 }
 
 export class AppState {
   private interactionId: number = 0
   readonly waitingInteractions: Writable<Set<number>>
   readonly alerts: Writable<Alert[]>
-  readonly page: Writable<ViewModel>
+  readonly model: Writable<ViewModel>
 
   constructor(private uc: UserContext, actions: Store<ActionRecordWithId[]>) {
     this.waitingInteractions = writable(new Set())
     this.alerts = writable([])
-    this.page = writable({ type: 'ActionsPage', actions })
+    this.model = writable({ type: 'ActionsModel', actions })
   }
 
   addAlert(alert: Alert): Promise<void> {
@@ -100,7 +85,7 @@ export class AppState {
       const interactionId = this.interactionId
       const actions = await createLiveQuery(() => this.uc.getActionRecords())
       if (this.interactionId === interactionId) {
-        this.page.set({ type: 'ActionsPage', actions })
+        this.model.set({ type: 'ActionsModel', actions })
       }
     })
   }
@@ -110,7 +95,7 @@ export class AppState {
       const interactionId = this.interactionId
       const action = await this.uc.getActionRecord(actionId)
       if (this.interactionId === interactionId && action !== undefined) {
-        this.page.set({ type: 'ActionPage', action })
+        this.model.set({ type: 'ActionModel', action })
       }
     })
   }
@@ -216,4 +201,14 @@ export async function createStore<T>(observable: Observable<T>): Promise<Store<T
 
 export function createLiveQuery<T>(querier: () => T | Promise<T>): Promise<Store<T>> {
   return createStore(liveQuery(querier))
+}
+
+export async function createAppState(): Promise<AppState | undefined> {
+  let appState
+  const uc = await obtainUserContext()
+  if (uc) {
+    const actions = await createLiveQuery(() => uc.getActionRecords())
+    appState = new AppState(uc, actions)
+  }
+  return appState
 }

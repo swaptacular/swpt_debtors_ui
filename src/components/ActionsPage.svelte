@@ -2,8 +2,8 @@
   import { getContext } from 'svelte';
   import type {AppState, ActionsModel} from '../stores'
 
-  export let page: ActionsModel
-  const actions = page.actions
+  export let model: ActionsModel
+  const actions = model.actions
   const appState: AppState = getContext('appState')
 
   const blob = Promise.resolve(new Blob([
