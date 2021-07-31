@@ -1,10 +1,9 @@
 <script lang="ts">
-  import { getContext } from 'svelte';
   import type {AppState, ActionsModel} from '../app-state'
 
+  export let app: AppState
   export let model: ActionsModel
   const actions = model.actions
-  const appState: AppState = getContext('appState')
 
   const blob = new Blob([
     'PR0\n',
@@ -22,7 +21,7 @@
 <h1>Actions Page</h1>
 <ol>
   {#each $actions as action }
-    <li>{action.actionType} <button on:click={() => appState.showAction(action.actionId)}>Show</button></li>
+    <li>{action.actionType} <button on:click={() => app.showAction(action.actionId)}>Show</button></li>
   {/each}
 </ol>
-<button on:click={() => appState.initiatePayment(blob)}>Make Payment</button>
+<button on:click={() => app.initiatePayment(blob)}>Make Payment</button>

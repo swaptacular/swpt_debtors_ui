@@ -1,13 +1,12 @@
 <script lang="ts">
-  import { getContext } from 'svelte';
   import type {AppState, Alert} from '../app-state'
 
+  export let app: AppState
   export let alerts: Alert[]
-  const appState: AppState = getContext('appState')
 </script>
 
 <ol>
   {#each alerts as alert }
-    <li>{alert.message} <button on:click={() => appState.dismissAlert(alert)}>Dismiss</button></li>
+    <li>{alert.message} <button on:click={() => app.dismissAlert(alert)}>Dismiss</button></li>
   {/each}
 </ol>

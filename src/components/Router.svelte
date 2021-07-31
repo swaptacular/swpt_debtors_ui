@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { setContext } from 'svelte';
   import type { AppState } from '../app-state'
   import { logout } from '../operations'
   import Alerts from './Alerts.svelte'
@@ -9,7 +8,6 @@
 
   export let appState: AppState
   const { waitingInteractions, alerts, pageModel } = appState
-  setContext('appState', appState)
 
   function getPageComponent(pageModelType: string) {
     switch (pageModelType) {
@@ -28,5 +26,5 @@
 {#if $alerts.length === 0 && $waitingInteractions.size > 0 }
   <Hourglass />
 {/if}
-<Alerts alerts={$alerts} />
-<svelte:component this={pageComponent} model={$pageModel} />
+<Alerts alerts={$alerts} app={appState}/>
+<svelte:component this={pageComponent} model={$pageModel} app={appState} />
