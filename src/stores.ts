@@ -27,7 +27,7 @@ export type Store<T> = {
   subscribe(next: (value: T) => void): (() => void)
 }
 
-export type ViewModel =
+export type PageModel =
   | ActionsModel
   | ActionModel
 
@@ -45,12 +45,12 @@ export class AppState {
   private interactionId: number = 0
   readonly waitingInteractions: Writable<Set<number>>
   readonly alerts: Writable<Alert[]>
-  readonly model: Writable<ViewModel>
+  readonly pageModel: Writable<PageModel>
 
   constructor(private uc: UserContext, actions: Store<ActionRecordWithId[]>) {
     this.waitingInteractions = writable(new Set())
     this.alerts = writable([])
-    this.model = writable({ type: 'ActionsModel', actions })
+    this.pageModel = writable({ type: 'ActionsModel', actions })
   }
 
   addAlert(alert: Alert): Promise<void> {
@@ -85,7 +85,7 @@ export class AppState {
       const interactionId = this.interactionId
       const actions = await createLiveQuery(() => this.uc.getActionRecords())
       if (this.interactionId === interactionId) {
-        this.model.set({ type: 'ActionsModel', actions })
+        this.pageModel.set({ type: 'ActionsModel', actions })
       }
     })
   }
@@ -95,7 +95,7 @@ export class AppState {
       const interactionId = this.interactionId
       const action = await this.uc.getActionRecord(actionId)
       if (this.interactionId === interactionId && action !== undefined) {
-        this.model.set({ type: 'ActionModel', action })
+        this.pageModel.set({ type: 'ActionModel', action })
       }
     })
   }
