@@ -3,6 +3,7 @@
 
   export let app: AppState
   export let model: ActionModel
+
   $: action = model.action
 </script>
 

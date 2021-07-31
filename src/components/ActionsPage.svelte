@@ -3,6 +3,7 @@
 
   export let app: AppState
   export let model: ActionsModel
+
   $: actions = model.actions
 
   const blob = new Blob([
