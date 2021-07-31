@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { setContext } from 'svelte'
   import type { AppState } from '../app-state'
   import { logout } from '../operations'
   import Alerts from './Alerts.svelte'
@@ -7,6 +8,7 @@
   import ActionsPage from './ActionsPage.svelte'
 
   export let app: AppState
+  setContext('app', app)
 
   function getPageComponent(pageModelType: string) {
     switch (pageModelType) {
