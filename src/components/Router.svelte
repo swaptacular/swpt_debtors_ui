@@ -9,6 +9,14 @@
 
   export let app: AppState
 
+  const { waitingInteractions, alerts, pageModel } = app
+  const originalAppState = app
+  setContext('app', app)
+
+  function enusreOriginalAppState(appState: AppState): void {
+    if (appState !== originalAppState) throw new Error('unoriginal app state')
+  }
+
   function getPageComponent(pageModelType: string) {
     switch (pageModelType) {
     case 'ActionModel':
@@ -20,10 +28,7 @@
     }
   }
 
-  $: setContext('app', app)
-  $: waitingInteractions = app.waitingInteractions
-  $: alerts = app.alerts
-  $: pageModel = app.pageModel
+  $: enusreOriginalAppState(app)
   $: pageComponent = getPageComponent($pageModel.type)
 </script>
 
