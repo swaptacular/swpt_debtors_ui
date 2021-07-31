@@ -111,6 +111,7 @@ export class AppState {
    * completed after some time. */
   private async attempt(func: () => unknown, options: AttemptOptions = {}): Promise<void> {
     const { alerts = [], startInteraction = true } = options
+
     const addWaitingInteraction = () => {
       this.waitingInteractions.update(originalSet => {
         const updatedSet = new Set(originalSet)
