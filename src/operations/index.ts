@@ -58,9 +58,13 @@ export {
 export type {
   ListQueryOptions,
   DebtorRecordWithId,
+  TransferRecord,
+  ActionRecordWithId,
   CreateTransferAction,
   CreateTransferActionWithId,
-  TransferRecord,
+  AbortTransferActionWithId,
+  UpdateConfigActionWithId,
+  DebtorConfigData,
 }
 
 export class TransferCreationTimeout extends Error {

@@ -1,8 +1,12 @@
 import equal from 'fast-deep-equal'
 import { Observable, liveQuery } from 'dexie'
 import { Writable, writable } from 'svelte/store'
-import { UserContext, IvalidPaymentRequest, obtainUserContext } from './operations'
-import type { ActionRecordWithId } from './operations/db'
+import {
+  obtainUserContext,
+  UserContext,
+  ActionRecordWithId,
+  IvalidPaymentRequest,
+} from './operations'
 
 let nextAlertId = 1
 
