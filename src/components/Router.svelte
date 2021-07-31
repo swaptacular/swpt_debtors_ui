@@ -8,7 +8,6 @@
   import ActionsPage from './ActionsPage.svelte'
 
   export let app: AppState
-  setContext('app', app)
 
   function getPageComponent(pageModelType: string) {
     switch (pageModelType) {
@@ -21,6 +20,7 @@
     }
   }
 
+  $: setContext('app', app)
   $: waitingInteractions = app.waitingInteractions
   $: alerts = app.alerts
   $: pageModel = app.pageModel
