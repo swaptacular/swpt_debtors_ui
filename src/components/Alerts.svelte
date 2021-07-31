@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type {AppState, Alert} from '../app-state'
+  import type { AppState, Alert } from '../app-state'
 
   export let app: AppState
   export let alerts: Alert[]

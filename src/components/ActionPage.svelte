@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type {AppState, ActionModel} from '../app-state'
+  import type { AppState, ActionModel } from '../app-state'
 
   export let app: AppState
   export let model: ActionModel

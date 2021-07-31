@@ -3,8 +3,6 @@
   import { createAppState } from '../app-state'
   import Router from './Router.svelte'
 
-  const appStatePromise = createAppState()
-
   function logError(e: unknown): string {
     console.error(e)
     return 'An unexpected error has occured.'
@@ -12,7 +10,7 @@
 </script>
 
 <main>
-  {#await appStatePromise}
+  {#await createAppState()}
     <h1>Launching...</h1>
   {:then appState}
     {#if appState === undefined }
