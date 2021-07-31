@@ -6,7 +6,7 @@
   const actions = model.actions
   const appState: AppState = getContext('appState')
 
-  const blob = Promise.resolve(new Blob([
+  const blob = new Blob([
     'PR0\n',
     '\n',
     'swpt:112233445566778899/998877665544332211\n',
@@ -16,7 +16,7 @@
     '12d3a45642665544\n',
     '.\n',
     'http://example.com'
-  ]))
+  ])
 </script>
 
 <h1>Actions Page</h1>

@@ -65,7 +65,7 @@ export class AppState {
     }, { startInteraction: false })
   }
 
-  initiatePayment(paymentRequestFile: Promise<Blob>): Promise<void> {
+  initiatePayment(paymentRequestFile: Blob | Promise<Blob>): Promise<void> {
     return this.attempt(async () => {
       const interactionId = this.interactionId
       const blob = await paymentRequestFile
