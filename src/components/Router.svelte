@@ -6,8 +6,7 @@
   import ActionPage from './ActionPage.svelte'
   import ActionsPage from './ActionsPage.svelte'
 
-  export let appState: AppState
-  const { waitingInteractions, alerts, pageModel } = appState
+  export let app: AppState
 
   function getPageComponent(pageModelType: string) {
     switch (pageModelType) {
@@ -19,6 +18,10 @@
       throw new Error('unknown page model type')
     }
   }
+
+  $: waitingInteractions = app.waitingInteractions
+  $: alerts = app.alerts
+  $: pageModel = app.pageModel
   $: pageComponent = getPageComponent($pageModel.type)
 </script>
 
@@ -26,5 +29,5 @@
 {#if $alerts.length === 0 && $waitingInteractions.size > 0 }
   <Hourglass />
 {/if}
-<Alerts alerts={$alerts} app={appState}/>
-<svelte:component this={pageComponent} model={$pageModel} app={appState} />
+<Alerts alerts={$alerts} {app} />
+<svelte:component this={pageComponent} model={$pageModel} {app} />

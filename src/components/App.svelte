@@ -16,7 +16,7 @@
     {#if appState === undefined }
       <button on:click={() => login()}>Login</button>
     {:else}
-      <Router {appState}/>
+      <Router app={appState}/>
     {/if}
   {:catch error}
     <h1>{logError(error)}</h1>
