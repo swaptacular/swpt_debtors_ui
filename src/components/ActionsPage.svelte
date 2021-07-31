@@ -1,6 +1,6 @@
 <script lang="ts">
   import { getContext } from 'svelte';
-  import type {AppState, ActionsModel} from '../stores'
+  import type {AppState, ActionsModel} from '../app-state'
 
   export let model: ActionsModel
   const actions = model.actions

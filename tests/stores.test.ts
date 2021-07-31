@@ -1,5 +1,5 @@
 import { liveQuery } from 'dexie'
-import { createStore } from '../src/stores'
+import { createStore } from '../src/app-state'
 import { db } from '../src/operations/db'
 
 test("Create store from live query", async () => {

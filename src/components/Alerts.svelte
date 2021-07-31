@@ -1,6 +1,6 @@
 <script lang="ts">
   import { getContext } from 'svelte';
-  import type {AppState, Alert} from '../stores'
+  import type {AppState, Alert} from '../app-state'
 
   export let alerts: Alert[]
   const appState: AppState = getContext('appState')

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { login } from '../operations'
-  import { createAppState } from '../stores'
+  import { createAppState } from '../app-state'
   import Router from './Router.svelte'
 
   const appStatePromise = createAppState()

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { setContext } from 'svelte';
-  import type { AppState } from '../stores'
+  import type { AppState } from '../app-state'
   import { logout } from '../operations'
   import Alerts from './Alerts.svelte'
   import Hourglass from './Hourglass.svelte'
