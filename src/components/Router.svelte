@@ -1,6 +1,6 @@
 <script lang="ts">
   import { setContext } from 'svelte';
-  import type {AppState} from '../stores'
+  import type { AppState } from '../stores'
   import { logout } from '../operations'
   import Alerts from './Alerts.svelte'
   import Hourglass from './Hourglass.svelte'
@@ -8,9 +8,7 @@
   import ActionsPage from './ActionsPage.svelte'
 
   export let appState: AppState
-  const waitingInteractions = appState.waitingInteractions
-  const alerts = appState.alerts
-  const pageModel = appState.pageModel
+  const { waitingInteractions, alerts, pageModel } = appState
   setContext('appState', appState)
 
   function getPageComponent(pageModelType: string) {

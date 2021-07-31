@@ -5,8 +5,8 @@
 
   const appStatePromise = createAppState()
 
-  function logError(error: unknown): string {
-    console.error(error)
+  function logError(e: unknown): string {
+    console.error(e)
     return 'An unexpected error has occured.'
   }
 </script>
@@ -15,10 +15,10 @@
   {#await appStatePromise}
     <h1>Launching...</h1>
   {:then appState}
-    {#if appState }
-      <Router {appState}/>
-    {:else}
+    {#if appState === undefined }
       <button on:click={() => login()}>Login</button>
+    {:else}
+      <Router {appState}/>
     {/if}
   {:catch error}
     <h1>{logError(error)}</h1>
