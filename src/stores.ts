@@ -11,10 +11,14 @@ type AttemptOptions = {
 
 let nextAlertId = 1
 
+export type AlertOptions = {
+  continue?: () => void,
+}
+
 export class Alert {
   readonly id: number
 
-  constructor(public message: string) {
+  constructor(public message: string, public options: AlertOptions = {}) {
     this.id = nextAlertId++
   }
 }
@@ -39,7 +43,7 @@ export type ActionsModel = {
 
 export type ActionModel = {
   type: 'ActionPage',
-  action: Store<ActionRecordWithId | undefined>,
+  action: ActionRecordWithId,
 }
 
 export async function createAppState(): Promise<AppState | undefined> {
@@ -104,8 +108,8 @@ export class AppState {
   showAction(actionId: number): Promise<void> {
     return this.attempt(async () => {
       const interactionId = this.interactionId
-      const action = await createLiveQuery(() => this.uc.getActionRecord(actionId))
-      if (this.interactionId === interactionId) {
+      const action = await this.uc.getActionRecord(actionId)
+      if (this.interactionId === interactionId && action !== undefined) {
         this.page.set({ type: 'ActionPage', action })
       }
     })

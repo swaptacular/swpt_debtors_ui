@@ -8,13 +8,9 @@
 </script>
 
 <h1>Action Page</h1>
-{#if $action }
-  <dl>
-    <dt>actionId:</dt> <dd>{$action.actionId}</dd>
-    <dt>actionType:</dt> <dd>{$action.actionType}</dd>
-    <dt>createdAt:</dt> <dd>{$action.createdAt.toISOString()}</dd>
-  </dl>
-{:else}
-  <p>Deleted action</p>
-{/if}
+<dl>
+  <dt>actionId:</dt> <dd>{action.actionId}</dd>
+  <dt>actionType:</dt> <dd>{action.actionType}</dd>
+  <dt>createdAt:</dt> <dd>{action.createdAt.toISOString()}</dd>
+</dl>
 <button on:click={() => appState.showActions()}>Back</button>
