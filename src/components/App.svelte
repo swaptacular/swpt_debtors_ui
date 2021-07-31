@@ -7,10 +7,11 @@
     console.error(e)
     return 'An unexpected error has occured.'
   }
+  const appStatePromise = createAppState()
 </script>
 
 <main>
-  {#await createAppState()}
+  {#await appStatePromise}
     <h1>Launching...</h1>
   {:then appState}
     {#if appState === undefined }
