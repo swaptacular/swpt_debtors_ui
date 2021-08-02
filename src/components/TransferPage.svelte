@@ -7,6 +7,8 @@
   $: transfer = model.transfer
 </script>
 
+<button on:click={() => model.goBack()}>Back</button>
+
 <h1>Transfer Page</h1>
 <dl>
   <dt>UUID:</dt> <dd>{$transfer.transferUuid}</dd>
@@ -19,4 +21,3 @@
   <dt>finalizedAt:</dt> <dd>{$transfer.result ? new Date($transfer.result.finalizedAt).toISOString() : ''}</dd>
   <dt>error:</dt> <dd>{$transfer.result?.error?.errorCode}</dd>
 </dl>
-<button on:click={() => model.goBack()}>Back</button>

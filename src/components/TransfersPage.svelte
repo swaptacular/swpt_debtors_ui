@@ -7,6 +7,8 @@
   $: transfers = model.transfers
 </script>
 
+<button on:click={() => app.showActions()}>Back</button>
+
 <h1>Transfers Page</h1>
 <ol>
   {#each $transfers as transfer }
@@ -16,4 +18,3 @@
     </li>
   {/each}
 </ol>
-<button on:click={() => app.showActions()}>Back</button>
