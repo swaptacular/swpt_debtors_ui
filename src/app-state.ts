@@ -6,6 +6,7 @@ import {
   UserContext,
   ActionRecordWithId,
   CreateTransferActionWithId,
+  AbortTransferActionWithId,
   TransferRecord,
   IvalidPaymentRequest,
   ServerSessionError,
@@ -158,6 +159,16 @@ export class AppState {
         } else {
           this.addAlert(new Alert('The requested transfer does not exist.', { continue: goBack }))
         }
+      }
+    })
+  }
+
+  dismissTransfer(action: AbortTransferActionWithId): Promise<void> {
+    return this.attempt(async () => {
+      const interactionId = this.interactionId
+      await this.uc.dismissTransfer(action)
+      if (this.interactionId === interactionId) {
+        this.showActions()
       }
     })
   }

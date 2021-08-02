@@ -18,6 +18,7 @@
   <dt>amount:</dt> <dd>{$transfer.amount}</dd>
   <dt>noteFormat:</dt> <dd>{$transfer.noteFormat}</dd>
   <dt>note:</dt> <dd>{$transfer.note}</dd>
+  <dt>aborted:</dt> <dd>{$transfer.aborted}</dd>
   <dt>finalizedAt:</dt> <dd>{$transfer.result ? new Date($transfer.result.finalizedAt).toISOString() : ''}</dd>
   <dt>error:</dt> <dd>{$transfer.result?.error?.errorCode}</dd>
 </dl>

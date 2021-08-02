@@ -12,6 +12,5 @@
   <dt>createdAt:</dt> <dd>{action.createdAt.toISOString()}</dd>
 </dl>
 
-<!-- TODO: Show buttons depending on transaction's state. -->
-<!-- <button on:click={() => app.deleteCreateTransferAction(action)}>Dismiss</button> -->
-<!-- <button on:click={() => app.executeCreateTransferAction(action)}>Send</button> -->
+<!-- TODO: Show a cancel button for delayed transfers instead. -->
+<button on:click={() => app.dismissTransfer(action)}>Dismiss</button>
