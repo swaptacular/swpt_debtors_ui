@@ -7,7 +7,7 @@
   const blob = new Blob([
     'PR0\n',
     '\n',
-    'swpt:112233445566778899/998877665544332211\n',
+    'swpt:6199429176/998877665544332211\n',
     'Payee Name\n',
     '1000\n',
     '2001-01-01\n',
@@ -26,3 +26,4 @@
   {/each}
 </ol>
 <button on:click={() => app.initiatePayment(blob)}>Make Payment</button>
+<button on:click={() => app.showTransfers()}>Show Transfers</button>

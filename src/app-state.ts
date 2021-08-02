@@ -5,7 +5,14 @@ import {
   obtainUserContext,
   UserContext,
   ActionRecordWithId,
+  CreateTransferActionWithId,
+  TransferRecord,
   IvalidPaymentRequest,
+  ServerSessionError,
+  ForbiddenOperation,
+  WrongTransferData,
+  TransferCreationTimeout,
+  RecordDoesNotExist,
 } from './operations'
 
 let nextAlertId = 1
@@ -34,6 +41,8 @@ export type Store<T> = {
 export type PageModel =
   | ActionsModel
   | ActionModel
+  | TransfersModel
+  | TransferModel
 
 export type ActionsModel = {
   type: 'ActionsModel',
@@ -43,6 +52,17 @@ export type ActionsModel = {
 export type ActionModel = {
   type: 'ActionModel',
   action: ActionRecordWithId,
+}
+
+export type TransfersModel = {
+  type: 'TransfersModel',
+  transfers: Store<TransferRecord[]>,
+}
+
+export type TransferModel = {
+  type: 'TransferModel',
+  transfer: Store<TransferRecord>,
+  goBack: () => void,
 }
 
 export class AppState {
@@ -68,6 +88,7 @@ export class AppState {
   dismissAlert(alert: Alert): Promise<void> {
     return this.attempt(async () => {
       this.alerts.update(arr => arr.filter(a => !equal(a, alert)))
+      alert.options.continue?.()
     }, {
       startInteraction: false,
     })
@@ -83,7 +104,7 @@ export class AppState {
       }
     }, {
       alerts: [
-        [IvalidPaymentRequest, new Alert('Invalid payment request.')],
+        [IvalidPaymentRequest, new Alert('Invalid payment request')],
       ],
     })
   }
@@ -102,9 +123,92 @@ export class AppState {
     return this.attempt(async () => {
       const interactionId = this.interactionId
       const action = await this.uc.getActionRecord(actionId)
-      if (this.interactionId === interactionId && action !== undefined) {
-        this.pageModel.set({ type: 'ActionModel', action })
+      if (this.interactionId === interactionId) {
+        if (action !== undefined) {
+          this.pageModel.set({ type: 'ActionModel', action })
+        } else {
+          this.addAlert(new Alert('The requested action does not exist.', { continue: () => this.showActions() }))
+        }
       }
+    })
+  }
+
+  showTransfers(): Promise<void> {
+    return this.attempt(async () => {
+      const interactionId = this.interactionId
+      const transfers = await createLiveQuery(() => this.uc.getTransferRecords())
+      if (this.interactionId === interactionId) {
+        this.pageModel.set({ type: 'TransfersModel', transfers })
+      }
+    })
+  }
+
+  showTransfer(transferUri: string, back?: () => void): Promise<void> {
+    return this.attempt(async () => {
+      const interactionId = this.interactionId
+      const transfer = await createLiveQuery(() => this.uc.getTransferRecord(transferUri))
+      if (this.interactionId === interactionId) {
+        const goBack = back ?? (() => { this.showTransfers() })
+        if (getStoreValue(transfer) !== undefined) {
+          this.pageModel.set({
+            type: 'TransferModel',
+            transfer: transfer as Store<TransferRecord>,
+            goBack,
+          })
+        } else {
+          this.addAlert(new Alert('The requested transfer does not exist.', { continue: goBack }))
+        }
+      }
+    })
+  }
+
+  executeCreateTransferAction(action: CreateTransferActionWithId): Promise<void> {
+    let interactionId: number
+    const showActions = () => {
+      if (this.interactionId === interactionId) {
+        this.showActions()
+      }
+    }
+    const reloadAction = () => {
+      if (this.interactionId === interactionId) {
+        this.showAction(action.actionId)
+      }
+    }
+    const showTransfer = (transferUri: string) => {
+      if (this.interactionId === interactionId) {
+        this.showTransfer(transferUri, () => { this.showActions() })
+      }
+    }
+
+    return this.attempt(async () => {
+      interactionId = this.interactionId
+      const transferRecord = await this.uc.executeCreateTransferAction(action)
+      showTransfer(transferRecord.uri)
+    }, {
+      alerts: [
+        [ServerSessionError, new Alert('Network error', { continue: reloadAction })],
+        [ForbiddenOperation, new Alert('Forbidden operation', { continue: reloadAction })],
+        [WrongTransferData, new Alert('Wrong transfer data', { continue: reloadAction })],
+        [TransferCreationTimeout, new Alert('Transfer creation timeout.', { continue: reloadAction })],
+        [RecordDoesNotExist, new Alert('Deleted action', { continue: showActions })],
+      ],
+    })
+  }
+
+  deleteCreateTransferAction(action: CreateTransferActionWithId): Promise<void> {
+    let interactionId: number
+    const showActions = () => {
+      if (this.interactionId === interactionId) this.showActions()
+    }
+
+    return this.attempt(async () => {
+      interactionId = this.interactionId
+      await this.uc.deleteCreateTransferAction(action)
+      showActions()
+    }, {
+      alerts: [
+        [RecordDoesNotExist, new Alert('Deleted action', { continue: showActions })],
+      ],
     })
   }
 
@@ -220,4 +324,11 @@ export async function createAppState(): Promise<AppState | undefined> {
     return new AppState(uc, actions)
   }
   return undefined
+}
+
+function getStoreValue<T>(store: Store<T>): T {
+  let value: T | undefined
+  const unsubscribe = store.subscribe(v => { value = v })
+  unsubscribe()
+  return value as T
 }

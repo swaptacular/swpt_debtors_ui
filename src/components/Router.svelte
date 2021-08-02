@@ -6,6 +6,8 @@
   import Hourglass from './Hourglass.svelte'
   import ActionPage from './ActionPage.svelte'
   import ActionsPage from './ActionsPage.svelte'
+  import TransferPage from './TransferPage.svelte'
+  import TransfersPage from './TransfersPage.svelte'
 
   export let app: AppState
 
@@ -23,6 +25,10 @@
       return ActionPage
     case 'ActionsModel':
       return ActionsPage
+    case 'TransferModel':
+      return TransferPage
+    case 'TransfersModel':
+      return TransfersPage
     default:
       throw new Error('unknown page model type')
     }
