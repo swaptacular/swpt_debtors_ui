@@ -393,12 +393,7 @@ export class UserContext {
 
   /* Dismisses an unsuccessful or delayed transfer.*/
   async dismissTransfer(action: AbortTransferActionWithId): Promise<TransferRecord> {
-    try {
-      await db.replaceActionRecord(action, null)
-    } catch (e: unknown) {
-      if (e instanceof RecordDoesNotExist) assert(!await db.getActionRecord(action.actionId))
-      else throw e
-    }
+    await db.removeActionRecord(action.actionId)
     const transferRecord = await db.getTransferRecord(action.transferUri)
     assert(transferRecord, 'missing transfer record')
     return transferRecord

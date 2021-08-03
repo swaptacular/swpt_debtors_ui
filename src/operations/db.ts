@@ -1,5 +1,5 @@
 import equal from 'fast-deep-equal'
-import Dexie from 'dexie'
+import { Dexie, Collection } from 'dexie'
 import type {
   Debtor,
   DebtorConfig,
@@ -122,6 +122,7 @@ export type AbortTransferAction =
   & {
     actionType: 'AbortTransfer',
     transferUri: string,
+    transfer: TransferRecord,
   }
 
 export type AbortTransferActionWithId =
@@ -367,32 +368,42 @@ class DebtorsDb extends Dexie {
     })
   }
 
+  async removeActionRecord(actionId: number): Promise<void> {
+    await this.transaction('rw', [this.transfers, this.actions, this.tasks], async () => {
+      const action = await this.actions.get(actionId)
+      if (action) {
+        const abortTransfer = async (transferUri: string): Promise<void> => {
+          let transferRecord = await this.transfers.get(transferUri)
+          if (transferRecord && transferRecord.userId === action.userId) {
+            if (getTransferState(transferRecord) !== 'successful') {
+              const initiationTime = getIsoTimeOrNow(transferRecord.initiatedAt)
+              transferRecord.aborted = true
+              await this.transfers.put(transferRecord)
+              await this.tasks.put({
+                userId: action.userId,
+                taskType: 'DeleteTransfer',
+                scheduledFor: new Date(initiationTime + 1000 * TRANSFER_DELETION_MIN_DELAY_SECONDS),
+                transferUri,
+              })
+            }
+          }
+        }
+        await this.actions.delete(actionId)
+        if (action.actionType === 'AbortTransfer') {
+          await abortTransfer(action.transferUri)
+        }
+      }
+    })
+  }
+
   /* Replaces, updates, or deletes the passed action record. Will
    * throw `RecordDoesNotExist` if the original action record does not
    * exist, or has been changed. Note that an `actionId` field will be
    * added to the passed `replacement` object if it does not have
    * one. */
   async replaceActionRecord(original: ActionRecordWithId, replacement: ActionRecord | null): Promise<void> {
-    const { actionId, userId } = original
-
-    const abortTransfer = async (transferUri: string): Promise<void> => {
-      let transferRecord = await this.transfers.get(transferUri)
-      if (transferRecord && transferRecord.userId === userId) {
-        if (getTransferState(transferRecord) !== 'successful') {
-          const initiationTime = getIsoTimeOrNow(transferRecord.initiatedAt)
-          transferRecord.aborted = true
-          await this.transfers.put(transferRecord)
-          await this.tasks.put({
-            userId,
-            taskType: 'DeleteTransfer',
-            scheduledFor: new Date(initiationTime + 1000 * TRANSFER_DELETION_MIN_DELAY_SECONDS),
-            transferUri,
-          })
-        }
-      }
-    }
-
     await this.transaction('rw', [this.transfers, this.actions, this.tasks], async () => {
+      const { actionId, userId } = original
       const existing = await this.actions.get(actionId)
       if (!equal(existing, original)) {
         throw new RecordDoesNotExist()
@@ -405,10 +416,8 @@ class DebtorsDb extends Dexie {
         await this.actions.put(replacement)
       } else {
         // Delete the original record.
-        await this.actions.delete(actionId)
-        if (original.actionType === 'AbortTransfer') {
-          await abortTransfer(original.transferUri)
-        }
+        await this.removeActionRecord(actionId)
+
         // Put a replacement, if available.
         if (replacement) {
           await this.actions.add(replacement)
@@ -464,7 +473,9 @@ class DebtorsDb extends Dexie {
 
     const getAbortTransferActionQuery = () => this.actions
       .where({ transferUri })
-      .filter(action => action.actionType === 'AbortTransfer' && action.userId === userId)
+      .filter(
+        action => action.actionType === 'AbortTransfer' && action.userId === userId
+      ) as Collection<AbortTransferActionWithId, number>
 
     const matchCreateTransferAction = async (): Promise<boolean> => {
       const matched = await this.actions
@@ -515,13 +526,24 @@ class DebtorsDb extends Dexie {
       })
     }
 
-    const ensureAbortTransferActionExists = async (): Promise<void> => {
-      await getAbortTransferActionQuery().first() ?? await this.actions.add({
-        userId,
-        transferUri,
-        actionType: 'AbortTransfer',
-        createdAt: new Date(),
-      })
+    const putAbortTransferAction = async (transfer: TransferRecord): Promise<void> => {
+      let abortTransferAction: AbortTransferAction | undefined
+      const existingAbortTransferAction = await getAbortTransferActionQuery().first()
+      if (!existingAbortTransferAction) {
+        abortTransferAction = {
+          userId,
+          actionType: 'AbortTransfer',
+          createdAt: new Date(),
+          transferUri,
+          transfer,
+        }
+      } else if (!existingAbortTransferAction.transfer.result && transfer.result) {
+        existingAbortTransferAction.transfer.result = transfer.result
+        abortTransferAction = existingAbortTransferAction
+      }
+      if (abortTransferAction) {
+        await this.actions.put(abortTransferAction)
+      }
     }
 
     return await this.transaction('rw', this.allTables, async () => {
@@ -537,7 +559,7 @@ class DebtorsDb extends Dexie {
         case 'delayed':
         case 'unsuccessful':
           if (!transferRecord.aborted) {
-            await ensureAbortTransferActionExists()
+            await putAbortTransferAction(transferRecord)
           }
           break
       }

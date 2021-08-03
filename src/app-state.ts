@@ -173,6 +173,27 @@ export class AppState {
     })
   }
 
+  cancelTransfer(action: AbortTransferActionWithId, onFailure: () => void): Promise<void> {
+    return this.attempt(async () => {
+      const interactionId = this.interactionId
+      const canceled = await this.uc.cancelTransfer(action)
+      if (canceled) {
+        await this.uc.dismissTransfer(action)
+      }
+      if (this.interactionId === interactionId) {
+        if (canceled) {
+          this.showActions()
+        } else {
+          onFailure()
+        }
+      }
+    }, {
+      alerts: [
+        [ServerSessionError, new Alert('Network error')],
+      ],
+    })
+  }
+
   executeCreateTransferAction(action: CreateTransferActionWithId): Promise<void> {
     let interactionId: number
     const showActions = () => {
