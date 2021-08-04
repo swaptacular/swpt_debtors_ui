@@ -23,4 +23,4 @@
   <dt>error:</dt> <dd>{$transfer.result?.error?.errorCode}</dd>
 </dl>
 
-<button on:click={() => app.retryTransfer($transfer)}>Retry</button>
+<button on:click={() => app.retryTransfer($transfer)}>Make a new payment</button>

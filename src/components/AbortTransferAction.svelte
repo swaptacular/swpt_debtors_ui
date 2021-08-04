@@ -6,6 +6,19 @@
   export let action: AbortTransferActionWithId
   let showFailedCancellationDialog = false
 
+  function retry() {
+    app.retryTransfer(action)
+  }
+  function dismiss() {
+    app.dismissTransfer(action)
+  }
+  function cancel() {
+    app.cancelTransfer(action, () => { showFailedCancellationDialog = true })
+  }
+  function closeDialog() {
+    showFailedCancellationDialog = false
+  }
+
   $: transfer = action.transfer
 </script>
 
@@ -17,13 +30,13 @@
 
 {#if showFailedCancellationDialog}
   <h1>Failed Cancellation Dialog</h1>
-  <button on:click={() => showFailedCancellationDialog = false}>OK</button>
-  <button on:click={() => app.dismissTransfer(action)}>Get rid of this payment</button>
+  <button on:click={closeDialog}>OK</button>
+  <button on:click={dismiss}>Get rid of this payment</button>
 {/if}
 
 {#if transfer.result}
-  <button on:click={() => app.retryTransfer(action)}>Retry</button>
-  <button on:click={() => app.dismissTransfer(action)}>Dismiss</button>
+  <button on:click={retry}>Retry</button>
+  <button on:click={dismiss}>Dismiss</button>
 {:else}
-  <button on:click={() => app.cancelTransfer(action, () => showFailedCancellationDialog = true)}>Cancel</button>
+  <button on:click={cancel}>Cancel</button>
 {/if}
