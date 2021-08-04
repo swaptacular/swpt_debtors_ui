@@ -22,3 +22,5 @@
   <dt>finalizedAt:</dt> <dd>{$transfer.result ? new Date($transfer.result.finalizedAt).toISOString() : ''}</dd>
   <dt>error:</dt> <dd>{$transfer.result?.error?.errorCode}</dd>
 </dl>
+
+<button on:click={() => app.retryTransfer($transfer)}>Retry</button>

@@ -22,7 +22,7 @@
 {/if}
 
 {#if transfer.result}
-  <!-- TODO: Show a retry transfer button here. -->
+  <button on:click={() => app.retryTransfer(action)}>Retry</button>
   <button on:click={() => app.dismissTransfer(action)}>Dismiss</button>
 {:else}
   <button on:click={() => app.cancelTransfer(action, () => showFailedCancellationDialog = true)}>Cancel</button>

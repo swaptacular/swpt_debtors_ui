@@ -194,6 +194,18 @@ export class AppState {
     })
   }
 
+  async retryTransfer(transferRecord: TransferRecord): Promise<void>
+  async retryTransfer(abortTransferAction: AbortTransferActionWithId): Promise<void>
+  async retryTransfer(param: TransferRecord | AbortTransferActionWithId): Promise<void> {
+    return this.attempt(async () => {
+      const interactionId = this.interactionId
+      const createTransferAction = await this.uc.retryTransfer(param as any)
+      if (this.interactionId === interactionId) {
+        this.showAction(createTransferAction.actionId)
+      }
+    })
+  }
+
   executeCreateTransferAction(action: CreateTransferActionWithId): Promise<void> {
     let interactionId: number
     const showActions = () => {

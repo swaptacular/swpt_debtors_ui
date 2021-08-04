@@ -346,10 +346,7 @@ export class UserContext {
     await db.replaceActionRecord(action, null)
   }
 
-  /* Retries an unsuccessful transfer. When passing an abort transfer
-   * action, the caller must be prepared this method to throw
-   * `RecordDoesNotExist` in case of a failure due to concurrent
-   * execution/deletion of the action. */
+  /* Retries an unsuccessful transfer. */
   async retryTransfer(transferRecord: TransferRecord): Promise<CreateTransferActionWithId>
   async retryTransfer(abortTransferAction: AbortTransferActionWithId): Promise<CreateTransferActionWithId>
   async retryTransfer(param: TransferRecord | AbortTransferActionWithId): Promise<CreateTransferActionWithId> {
