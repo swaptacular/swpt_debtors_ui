@@ -8,6 +8,7 @@
   import ActionsPage from './ActionsPage.svelte'
   import TransferPage from './TransferPage.svelte'
   import TransfersPage from './TransfersPage.svelte'
+  import ConfigDataPage from './ConfigDataPage.svelte'
 
   export let app: AppState
 
@@ -29,6 +30,8 @@
       return TransferPage
     case 'TransfersModel':
       return TransfersPage
+    case 'ConfigDataModel':
+      return ConfigDataPage
     default:
       throw new Error('unknown page model type')
     }

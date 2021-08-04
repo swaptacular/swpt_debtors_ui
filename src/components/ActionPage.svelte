@@ -2,6 +2,7 @@
   import type { AppState, ActionModel } from '../app-state'
   import CreateTransferAction from './CreateTransferAction.svelte'
   import AbortTransferAction from './AbortTransferAction.svelte'
+  import UpdateConfigAction from './UpdateConfigAction.svelte'
 
   export let app: AppState
   export let model: ActionModel
@@ -15,11 +16,6 @@
   <CreateTransferAction {action} {app} />
 {:else if action.actionType === 'AbortTransfer'}
   <AbortTransferAction {action} {app} />
-{:else}
-  <h1>Unknown Action</h1>
-  <dl>
-    <dt>actionType:</dt> <dd>{action.actionType}</dd>
-    <dt>actionId:</dt> <dd>{action.actionId}</dd>
-    <dt>createdAt:</dt> <dd>{action.createdAt.toISOString()}</dd>
-  </dl>
+{:else if action.actionType === 'UpdateConfig'}
+  <UpdateConfigAction {action} {app} />
 {/if}

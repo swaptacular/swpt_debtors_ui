@@ -25,5 +25,6 @@
     <li>{action.actionType} <button on:click={() => app.showAction(action.actionId)}>Show</button></li>
   {/each}
 </ol>
-<button on:click={() => app.initiatePayment(blob)}>Make Payment</button>
+<button on:click={() => app.showConfig()}>Configuration</button>
 <button on:click={() => app.showTransfers()}>Show Transfers</button>
+<button on:click={() => app.initiatePayment(blob)}>Make Payment</button>
