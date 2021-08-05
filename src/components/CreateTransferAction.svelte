@@ -21,5 +21,5 @@
 </dl>
 
 <!-- TODO: Change the buttons depending on the `status`. -->
-<button on:click={() => app.deleteCreateTransferAction(action)}>Dismiss</button>
+<button on:click={() => app.dismissCreateTransferAction(action)}>Dismiss</button>
 <button on:click={() => app.executeCreateTransferAction(action)}>Send</button>

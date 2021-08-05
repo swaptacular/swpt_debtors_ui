@@ -247,7 +247,7 @@ export class AppState {
     })
   }
 
-  deleteCreateTransferAction(action: CreateTransferActionWithId): Promise<void> {
+  dismissCreateTransferAction(action: CreateTransferActionWithId): Promise<void> {
     let interactionId: number
     const showActions = () => {
       if (this.interactionId === interactionId) this.showActions()
@@ -284,32 +284,47 @@ export class AppState {
     })
   }
 
-  replaceUpdateConfigAction(original: UpdateConfigActionWithId, current: UpdateConfigActionWithId): Promise<void> {
-    // TODO:
-  }
-
-  executeUpdateConfigAction(original: UpdateConfigActionWithId, current: UpdateConfigActionWithId): Promise<void> {
-    // TODO:
-    let interactionId: number
-    const showActions = () => {
-      if (this.interactionId === interactionId) this.showActions()
+  updateActionRecord(original: ActionRecordWithId, updated: ActionRecordWithId): Promise<void> {
+    assert(original.actionId === updated.actionId)
+    if (equal(original, updated)) {
+      return Promise.resolve()
     }
 
     return this.attempt(async () => {
-      interactionId = this.interactionId
-      await this.uc.replaceActionRecord(original, current)
-      await this.uc.executeUpdateConfigAction(current)
-      showActions()
+      await this.uc.replaceActionRecord(original, updated)
     }, {
       alerts: [
-        [ServerSessionError, new Alert('Network error')],
-        [RecordDoesNotExist, new Alert('Deleted action', { continue: showActions })],
+        [RecordDoesNotExist, null],
       ],
     })
   }
 
-  deleteUpdateConfigAction(original: UpdateConfigActionWithId, current: UpdateConfigActionWithId): Promise<void> {
-    // TODO:
+  executeUpdateConfigAction(action: UpdateConfigActionWithId): Promise<void> {
+    let interactionId: number
+    const showActions = () => {
+      if (this.interactionId === interactionId) {
+        this.showActions()
+      }
+    }
+    const reloadAction = () => {
+      if (this.interactionId === interactionId) {
+        this.showAction(action.actionId)
+      }
+    }
+
+    return this.attempt(async () => {
+      interactionId = this.interactionId
+      await this.uc.executeUpdateConfigAction(action)
+      showActions()
+    }, {
+      alerts: [
+        [ServerSessionError, new Alert('Network error')],
+        [RecordDoesNotExist, new Alert('The requested configuration changes can not be saved.', { continue: reloadAction })],
+      ],
+    })
+  }
+
+  dismissUpdateConfigAction(action: UpdateConfigActionWithId): Promise<void> {
     let interactionId: number
     const showActions = () => {
       if (this.interactionId === interactionId) this.showActions()
@@ -317,12 +332,11 @@ export class AppState {
 
     return this.attempt(async () => {
       interactionId = this.interactionId
-      await this.uc.replaceActionRecord(original, current)
-      await this.uc.deleteUpdateConfigAction(current)
+      await this.uc.deleteUpdateConfigAction(action)
       showActions()
     }, {
       alerts: [
-        [RecordDoesNotExist, new Alert('Deleted action', { continue: showActions })],
+        [RecordDoesNotExist, new Alert('The action can not be dismissed.', { continue: showActions })],
       ],
     })
   }
@@ -382,13 +396,14 @@ export class AppState {
         case undefined:
           console.error(e)
           this.addAlert(new Alert('An unexpected error has occurred.'))
-          throw e
+          break
         case null:
           // ignore the error
           break
         default:
           this.addAlert(alert)
       }
+      throw e
     } finally {
       clearWaitingInteraction()
     }

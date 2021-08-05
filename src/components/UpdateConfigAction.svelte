@@ -12,5 +12,5 @@
   <dt>createdAt:</dt> <dd>{action.createdAt.toISOString()}</dd>
 </dl>
 
-<button on:click={() => app.deleteUpdateConfigAction(action)}>Dismiss</button>
+<button on:click={() => app.dismissUpdateConfigAction(action)}>Dismiss</button>
 <button on:click={() => app.executeUpdateConfigAction(action)}>Save</button>
