@@ -1,3 +1,4 @@
+import clone from 'just-clone'
 import equal from 'fast-deep-equal'
 import { Observable, liveQuery } from 'dexie'
 import { Writable, writable } from 'svelte/store'
@@ -18,7 +19,40 @@ import {
   RecordDoesNotExist,
 } from './operations'
 
-let nextAlertId = 1
+type PendingUpdate<T> = {
+  promise: Promise<void>,
+  queued?: T,
+}
+
+class ActionUpdater<T extends ActionRecordWithId> {
+  private pendingUpdate: PendingUpdate<T> | undefined
+
+  constructor(private app: AppState, private action: T, private onFailure?: () => void) { }
+
+  async update(updatedAction: T): Promise<void> {
+    if (this.pendingUpdate) {
+      this.pendingUpdate.queued = this.action
+    } else {
+      this.pendingUpdate = {
+        promise: this.app.updateActionRecord(this.action, this.action = clone(updatedAction)),
+        queued: undefined,
+      }
+    }
+    let queued
+    try {
+      await this.pendingUpdate.promise
+      queued = this.pendingUpdate?.queued
+    } catch (e: unknown) {
+      if (e instanceof RecordDoesNotExist) { this.onFailure?.() }
+      throw e
+    } finally {
+      this.pendingUpdate = undefined
+    }
+    if (queued) {
+      await this.update(updatedAction)
+    }
+  }
+}
 
 type AttemptOptions = {
   alerts?: [Function, Alert | null][],
@@ -28,6 +62,8 @@ type AttemptOptions = {
 export type AlertOptions = {
   continue?: () => void,
 }
+
+let nextAlertId = 1
 
 export class Alert {
   readonly id: number
@@ -339,6 +375,10 @@ export class AppState {
         [RecordDoesNotExist, new Alert('The action can not be dismissed.', { continue: showActions })],
       ],
     })
+  }
+
+  createActionUpdater<T extends ActionRecordWithId>(action: T, onFailure?: () => void): ActionUpdater<T> {
+    return new ActionUpdater(this, action, onFailure)
   }
 
   /* Awaits `func()`, catching and logging thrown
