@@ -6,14 +6,17 @@
   export let action: UpdateConfigActionWithId
   let showFailedUpdateDialog = false
 
-  async function save(): Promise<void> {
-    await actionUpdater.update(updatedAction)
+  async function execute(): Promise<void> {
+    await saveAction(updatedAction)
     await app.executeUpdateConfigAction(updatedAction)
+  }
+  async function dismiss(): Promise<void> {
+    await saveAction(updatedAction)
+    await app.dismissUpdateConfigAction(updatedAction)
   }
 
   $: updatedAction = action
-  $: actionUpdater = app.createActionUpdater(action, () => { showFailedUpdateDialog = true })
-  //$: init(action)
+  $: saveAction = app.createActionUpdater(action, () => { showFailedUpdateDialog = true })
 </script>
 
 <h1>Update Config Action</h1>
@@ -22,5 +25,5 @@
   <dt>createdAt:</dt> <dd>{action.createdAt.toISOString()}</dd>
 </dl>
 
-<button on:click={() => app.dismissUpdateConfigAction(action)}>Dismiss</button>
-<button on:click={save}>Save</button>
+<button on:click={dismiss}>Dismiss</button>
+<button on:click={execute}>Save</button>

@@ -19,41 +19,6 @@ import {
   RecordDoesNotExist,
 } from './operations'
 
-type PendingUpdate<T> = {
-  promise: Promise<void>,
-  queued?: T,
-}
-
-class ActionUpdater<T extends ActionRecordWithId> {
-  private pendingUpdate: PendingUpdate<T> | undefined
-
-  constructor(private app: AppState, private action: T, private onFailure?: () => void) { }
-
-  async update(updatedAction: T): Promise<void> {
-    if (this.pendingUpdate) {
-      this.pendingUpdate.queued = this.action
-    } else {
-      this.pendingUpdate = {
-        promise: this.app.updateActionRecord(this.action, this.action = clone(updatedAction)),
-        queued: undefined,
-      }
-    }
-    let queued
-    try {
-      await this.pendingUpdate.promise
-      queued = this.pendingUpdate?.queued
-    } catch (e: unknown) {
-      if (e instanceof RecordDoesNotExist) { this.onFailure?.() }
-      throw e
-    } finally {
-      this.pendingUpdate = undefined
-    }
-    if (queued) {
-      await this.update(updatedAction)
-    }
-  }
-}
-
 type AttemptOptions = {
   alerts?: [Function, Alert | null][],
   startInteraction?: boolean
@@ -377,8 +342,28 @@ export class AppState {
     })
   }
 
-  createActionUpdater<T extends ActionRecordWithId>(action: T, onFailure?: () => void): ActionUpdater<T> {
-    return new ActionUpdater(this, action, onFailure)
+  createActionUpdater<T extends ActionRecordWithId>(action: T, onFailure?: () => void) {
+    let updatePromise = Promise.resolve()
+
+    const replace = async (next: T): Promise<void> => {
+      await updatePromise
+      if (!equal(action, next)) {
+        assert(action.actionId === next.actionId)
+        try {
+          await this.uc.replaceActionRecord(action, action = next)
+        } catch (e: unknown) {
+          if (e instanceof RecordDoesNotExist) onFailure?.()
+          throw e
+        }
+      }
+    }
+    // TODO: show hourglass?
+    const update = async (updatedAction: T): Promise<void> => {
+      updatePromise = replace(clone(updatedAction))
+      await updatePromise
+    }
+
+    return update
   }
 
   /* Awaits `func()`, catching and logging thrown
