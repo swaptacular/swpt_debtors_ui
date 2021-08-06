@@ -4,19 +4,21 @@
 
   export let app: AppState
   export let action: UpdateConfigActionWithId
-  let showFailedUpdateDialog = false
 
-  async function execute(): Promise<void> {
-    await saveAction(updatedAction)
-    await app.executeUpdateConfigAction(updatedAction)
+  // TODO: call this on change, and when leaving the page.
+  function save() {
+    actionManager.save(updatedAction)
   }
-  async function dismiss(): Promise<void> {
-    await saveAction(updatedAction)
-    await app.dismissUpdateConfigAction(updatedAction)
+  function execute() {
+    save()
+    actionManager.execute()
+  }
+  function dismiss() {
+    actionManager.remove()
   }
 
   $: updatedAction = action
-  $: saveAction = app.createActionUpdater(action, () => { showFailedUpdateDialog = true })
+  $: actionManager = app.createActionManager(action)
 </script>
 
 <h1>Update Config Action</h1>

@@ -28,6 +28,12 @@ export type AlertOptions = {
   continue?: () => void,
 }
 
+export type ActionManager<T extends ActionRecordWithId> = {
+  save: (action: T) => Promise<void>,
+  remove: () => Promise<void>,
+  execute: () => Promise<void>,
+}
+
 let nextAlertId = 1
 
 export class Alert {
@@ -215,7 +221,7 @@ export class AppState {
     })
   }
 
-  executeCreateTransferAction(action: CreateTransferActionWithId): Promise<void> {
+  executeCreateTransferAction(action: CreateTransferActionWithId, prepare?: Promise<void>): Promise<void> {
     let interactionId: number
     const showActions = () => {
       if (this.interactionId === interactionId) {
@@ -235,6 +241,7 @@ export class AppState {
 
     return this.attempt(async () => {
       interactionId = this.interactionId
+      await prepare
       const transferRecord = await this.uc.executeCreateTransferAction(action)
       showTransfer(transferRecord.uri)
     }, {
@@ -243,7 +250,7 @@ export class AppState {
         [ForbiddenOperation, new Alert('Forbidden operation', { continue: reloadAction })],
         [WrongTransferData, new Alert('Wrong transfer data', { continue: reloadAction })],
         [TransferCreationTimeout, new Alert('Transfer creation timeout.', { continue: reloadAction })],
-        [RecordDoesNotExist, new Alert('Deleted action', { continue: showActions })],
+        [RecordDoesNotExist, new Alert('The requested action can not be performed.', { continue: showActions })],
       ],
     })
   }
@@ -300,7 +307,7 @@ export class AppState {
     })
   }
 
-  executeUpdateConfigAction(action: UpdateConfigActionWithId): Promise<void> {
+  executeUpdateConfigAction(action: UpdateConfigActionWithId, prepare?: Promise<void>): Promise<void> {
     let interactionId: number
     const showActions = () => {
       if (this.interactionId === interactionId) {
@@ -315,12 +322,13 @@ export class AppState {
 
     return this.attempt(async () => {
       interactionId = this.interactionId
+      await prepare
       await this.uc.executeUpdateConfigAction(action)
       showActions()
     }, {
       alerts: [
         [ServerSessionError, new Alert('Network error')],
-        [RecordDoesNotExist, new Alert('The requested configuration changes can not be saved.', { continue: reloadAction })],
+        [RecordDoesNotExist, new Alert('The requested action can not be performed.', { continue: reloadAction })],
       ],
     })
   }
@@ -342,28 +350,61 @@ export class AppState {
     })
   }
 
-  createActionUpdater<T extends ActionRecordWithId>(action: T, onFailure?: () => void) {
+  createActionManager<T extends ActionRecordWithId>(action: T): ActionManager<T> {
     let updatePromise = Promise.resolve()
+    let latestValue = action
 
-    const replace = async (next: T): Promise<void> => {
+    const store = async (value: T): Promise<void> => {
       await updatePromise
-      if (!equal(action, next)) {
-        assert(action.actionId === next.actionId)
-        try {
-          await this.uc.replaceActionRecord(action, action = next)
-        } catch (e: unknown) {
-          if (e instanceof RecordDoesNotExist) onFailure?.()
-          throw e
-        }
+      if (!equal(action, value)) {
+        assert(action.actionId === value.actionId)
+        assert(action.actionType === value.actionType)
+        await this.uc.replaceActionRecord(action, action = value)
       }
     }
-    // TODO: show hourglass?
-    const update = async (updatedAction: T): Promise<void> => {
-      updatePromise = replace(clone(updatedAction))
-      await updatePromise
+    const save = (value: T): Promise<void> => {
+      latestValue = clone(value)
+      updatePromise = store(latestValue)
+      return updatePromise
+    }
+    const remove = async (): Promise<void> => {
+      let interactionId: number
+      const showActions = () => {
+        if (this.interactionId === interactionId) {
+          this.showActions()
+        }
+      }
+      const reloadAction = () => {
+        if (this.interactionId === interactionId) {
+          this.showAction(action.actionId)
+        }
+      }
+      return this.attempt(async () => {
+        interactionId = this.interactionId
+        await store(latestValue)
+        await this.uc.replaceActionRecord(latestValue, null)
+        showActions()
+      }, {
+        alerts: [
+          [RecordDoesNotExist, new Alert('The action can not be removed.', { continue: reloadAction })],
+        ],
+      })
+    }
+    const execute = (): Promise<void> => {
+      switch (latestValue.actionType) {
+        case 'CreateTransfer':
+          return this.executeCreateTransferAction(latestValue as CreateTransferActionWithId, store(latestValue))
+        case 'UpdateConfig':
+          return this.executeUpdateConfigAction(latestValue as UpdateConfigActionWithId, store(latestValue))
+        default:
+          const e = new Error('unknown action type')
+          console.error(e)
+          this.addAlert(new Alert('An unexpected error has occurred.'))
+          throw e
+      }
     }
 
-    return update
+    return { save, remove, execute }
   }
 
   /* Awaits `func()`, catching and logging thrown
