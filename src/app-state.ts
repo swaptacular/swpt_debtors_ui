@@ -436,12 +436,12 @@ export class AppState {
       }
     }
     const alertFromError = (error: unknown): Alert | null | undefined => {
-      let alert
-      if (error && typeof error === 'object') {
-        const errorConstructor = error.constructor
-        alert = alerts.find(element => element[0] === errorConstructor)?.[1]
+      for (const [errorConstructor, alert] of alerts) {
+        if (error instanceof errorConstructor) {
+          return alert
+        }
       }
-      return alert
+      return undefined
     }
 
     let addedWaitingInteraction = false
