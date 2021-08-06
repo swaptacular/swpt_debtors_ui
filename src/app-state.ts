@@ -462,14 +462,13 @@ export class AppState {
         case undefined:
           console.error(e)
           this.addAlert(new Alert('An unexpected error has occurred.'))
-          break
+          throw e
         case null:
           // ignore the error
           break
         default:
           this.addAlert(alert)
       }
-      throw e
     } finally {
       clearWaitingInteraction()
     }
