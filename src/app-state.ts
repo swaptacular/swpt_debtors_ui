@@ -354,6 +354,14 @@ export class AppState {
     let updatePromise = Promise.resolve()
     let latestValue = action
 
+    const ignoreRecordDoesNotExistErrors = (error: unknown) => {
+      if (error instanceof RecordDoesNotExist) {
+        console.log('A "RecordDoesNotExist" error has occured during saving.')
+        return Promise.resolve()
+      } else {
+        return Promise.reject(error)
+      }
+    }
     const store = async (value: T): Promise<void> => {
       await updatePromise
       if (!equal(action, value)) {
@@ -364,7 +372,7 @@ export class AppState {
     }
     const save = (value: T): Promise<void> => {
       latestValue = clone(value)
-      updatePromise = store(latestValue)
+      updatePromise = store(latestValue).catch(ignoreRecordDoesNotExistErrors)
       return updatePromise
     }
     const remove = async (): Promise<void> => {
