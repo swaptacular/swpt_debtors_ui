@@ -4,7 +4,6 @@
 
   export let app: AppState
   export let action: UpdateConfigActionWithId
-  let isDirty = false
   let interestRate = action.interestRate ?? 0
   let summary = action.debtorInfo?.summary ?? ''
   let debtorName = action.debtorInfo?.debtorName ?? ''
@@ -14,8 +13,8 @@
   let unit = action.debtorInfo?.unit ?? ''
   let peg = action.debtorInfo?.peg
 
-  function save() {
-    actionManager.save({
+  function createUpdatedAction(): UpdateConfigActionWithId {
+    return {
       ...action,
       interestRate,
       debtorInfo: {
@@ -27,30 +26,14 @@
         unit,
         peg,
       }
-    })
-    isDirty = false
-    removeEventListener('beforeunload', save, {capture: true})
-  }
-  function execute() {
-    save()
-    actionManager.execute()
-  }
-  function dismiss() {
-    actionManager.remove()
-  }
-  function markDirty() {
-    if (!isDirty) {
-      isDirty = true
-      addEventListener('beforeunload', save, {capture: true})
-      setTimeout(save, 10000)
     }
   }
 
-  $: actionManager = app.createActionManager(action)
+  $: actionManager = app.createActionManager(action, createUpdatedAction)
 </script>
 
 <h1>Update Config Action</h1>
-<form on:input={markDirty} on:change={save}>
+<form on:input={() => actionManager.markDirty()} on:change={() => actionManager.save()}>
   <p><label>interestRate:<input required type=number bind:value={interestRate}></label></p>
   <p><label>debtorName:<input required minlength="1" maxlength="40" bind:value={debtorName}></label></p>
   <p><label>Summary:<textarea bind:value={summary} maxlength="1000"></textarea></label></p>
@@ -60,5 +43,5 @@
   <p><label>unit:<input required minlength="1" maxlength="40" bind:value={unit}></label></p>
 </form>
 
-<button on:click={dismiss}>Dismiss</button>
-<button on:click={execute}>Save</button>
+<button on:click={() => actionManager.remove()}>Dismiss</button>
+<button on:click={() => actionManager.execute()}>Save</button>

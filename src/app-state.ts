@@ -1,4 +1,3 @@
-import clone from 'just-clone'
 import equal from 'fast-deep-equal'
 import { Observable, liveQuery } from 'dexie'
 import { Writable, writable } from 'svelte/store'
@@ -28,8 +27,9 @@ export type AlertOptions = {
   continue?: () => void,
 }
 
-export type ActionManager<T extends ActionRecordWithId> = {
-  save: (action: T) => Promise<void>,
+export type ActionManager = {
+  markDirty: () => void
+  save: () => Promise<void>,
   remove: () => Promise<void>,
   execute: () => Promise<void>,
 }
@@ -350,9 +350,10 @@ export class AppState {
     })
   }
 
-  createActionManager<T extends ActionRecordWithId>(action: T): ActionManager<T> {
+  createActionManager<T extends ActionRecordWithId>(action: T, createValue: () => T): ActionManager {
     let updatePromise = Promise.resolve()
     let latestValue = action
+    let isDirty = false
 
     const ignoreRecordDoesNotExistErrors = (error: unknown) => {
       if (error instanceof RecordDoesNotExist) {
@@ -370,9 +371,18 @@ export class AppState {
         await this.uc.replaceActionRecord(action, action = value)
       }
     }
-    const save = (value: T): Promise<void> => {
-      latestValue = clone(value)
+    const markDirty = (): void => {
+      if (!isDirty) {
+        isDirty = true
+        addEventListener('beforeunload', save, { capture: true })
+        setTimeout(save, 10000)
+      }
+    }
+    const save = (): Promise<void> => {
+      latestValue = createValue()
       updatePromise = store(latestValue).catch(ignoreRecordDoesNotExistErrors)
+      isDirty = false
+      removeEventListener('beforeunload', save, { capture: true })
       return updatePromise
     }
     const remove = async (): Promise<void> => {
@@ -399,11 +409,12 @@ export class AppState {
       })
     }
     const execute = (): Promise<void> => {
+      const prepare = save()
       switch (latestValue.actionType) {
         case 'CreateTransfer':
-          return this.executeCreateTransferAction(latestValue as CreateTransferActionWithId, store(latestValue))
+          return this.executeCreateTransferAction(latestValue as CreateTransferActionWithId, prepare)
         case 'UpdateConfig':
-          return this.executeUpdateConfigAction(latestValue as UpdateConfigActionWithId, store(latestValue))
+          return this.executeUpdateConfigAction(latestValue as UpdateConfigActionWithId, prepare)
         default:
           const e = new Error('unknown action type')
           console.error(e)
@@ -412,7 +423,7 @@ export class AppState {
       }
     }
 
-    return { save, remove, execute }
+    return { markDirty, save, remove, execute }
   }
 
   /* Awaits `func()`, catching and logging thrown
