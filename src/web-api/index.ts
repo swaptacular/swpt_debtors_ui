@@ -25,7 +25,7 @@ type UserData = {
   tokenHash: string,
 }
 
-const LOCALSTORAGE_KEY = 'web-api-user'
+const LOCALSTORAGE_KEY = 'debtors.web-api-user'
 
 
 function buffer2hex(buffer: ArrayBuffer, options = { toUpperCase: true }) {

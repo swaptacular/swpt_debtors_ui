@@ -92,7 +92,7 @@ function createErrorInstance(rawError: string): OAuth2Error {
   return new (ERROR_STRING_TO_ERROR_CLASS_MAP[rawError] || UnknownError)();
 }
 
-const LOCALSTORAGE_ID = `oauth2`;
+const LOCALSTORAGE_ID = `debtors.oauth2`;
 const LOCALSTORAGE_STATE = `${LOCALSTORAGE_ID}-state`;
 
 /**
