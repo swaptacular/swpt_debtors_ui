@@ -164,7 +164,7 @@ test("Create and replace action records", async () => {
     actionId: undefined,
     userId,
     actionType: 'AbortTransfer',
-    createdAt: new Date(),
+    time: Date.now(),
     transferUri: 'NOT UPDATED',
   } as const
   let actionRecord = { ...originalActionRecord } as any as AbortTransferActionWithId
@@ -228,7 +228,7 @@ test("Perform a create transfer action", async () => {
     userId,
     paymentInfo,
     actionType: 'CreateTransfer' as const,
-    createdAt: new Date(),
+    time: Date.now(),
     creationRequest: {
       recipient: { uri: 'swpt:1/2' },
       amount: 777n,
@@ -427,7 +427,7 @@ test("Get create transfer action status", async () => {
   let createTransferAction = {
     userId: -1,
     actionType: 'CreateTransfer' as const,
-    createdAt: new Date(now),
+    time: Date.now(),
     paymentInfo: {
       payeeName: '',
       payeeReference: '',

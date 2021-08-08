@@ -12,7 +12,7 @@
 <h1>Create Transfer Action</h1>
 <dl>
   <dt>actionId:</dt> <dd>{action.actionId}</dd>
-  <dt>createdAt:</dt> <dd>{action.createdAt.toISOString()}</dd>
+  <dt>createdAt:</dt> <dd>{new Date(action.time).toISOString()}</dd>
   <dt>amount:</dt> <dd>{action.creationRequest.amount}</dd>
   <dt>payeeName:</dt> <dd>{action.paymentInfo.payeeName}</dd>
   <dt>descriptionFormat:</dt> <dd>{action.paymentInfo.description.contentFormat}</dd>

@@ -25,7 +25,7 @@
 <h1>Abort Transfer Action</h1>
 <dl>
   <dt>actionId:</dt> <dd>{action.actionId}</dd>
-  <dt>createdAt:</dt> <dd>{action.createdAt.toISOString()}</dd>
+  <dt>createdAt:</dt> <dd>{new Date(action.time).toISOString()}</dd>
 </dl>
 
 {#if showFailedCancellationDialog}

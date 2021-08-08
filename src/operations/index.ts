@@ -255,7 +255,7 @@ export class UserContext {
     const actionRecord = {
       userId: this.userId,
       actionType: 'CreateTransfer' as const,
-      createdAt: new Date(),
+      time: Date.now(),
       creationRequest: {
         type: 'TransferCreationRequest',
         recipient: { uri: request.accountUri },
@@ -359,7 +359,7 @@ export class UserContext {
       // The `actionId` field will be added automatically.
       userId: transferRecord.userId,
       actionType: 'CreateTransfer' as const,
-      createdAt: new Date(),
+      time: Date.now(),
       creationRequest: {
         type: 'TransferCreationRequest',
         recipient: transferRecord.recipient,
