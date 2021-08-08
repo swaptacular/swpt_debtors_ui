@@ -413,7 +413,7 @@ class DebtorsDb extends Dexie {
       if (replacement && replacement.actionId === actionId) {
         // Update the action record "in place".
         assert(replacement.actionType === original.actionType, 'wrong actionType')
-        assert(replacement.createdAt === original.createdAt, 'wrong createdAt')
+        assert(replacement.createdAt.getTime() === original.createdAt.getTime(), 'wrong createdAt')
         await this.actions.put(replacement)
       } else {
         // Delete the original record.
