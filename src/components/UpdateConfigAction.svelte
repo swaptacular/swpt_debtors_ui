@@ -24,7 +24,7 @@
 <h1>Update Config Action</h1>
 <dl>
   <dt>actionId:</dt> <dd>{action.actionId}</dd>
-  <dt>createdAt:</dt> <dd>{new Date(action.time).toISOString()}</dd>
+  <dt>createdAt:</dt> <dd>{action.createdAt.toISOString()}</dd>
 </dl>
 
 <button on:click={dismiss}>Dismiss</button>

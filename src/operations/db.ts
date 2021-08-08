@@ -18,8 +18,8 @@ type ActionData =
   & UserReference
   & {
     actionId?: number,
-    time: number,
     actionType: string,
+    createdAt: Date,
   }
 
 export type ListQueryOptions = {
@@ -229,7 +229,7 @@ class DebtorsDb extends Dexie {
       transfers: 'uri,&[userId+time]',
 
       documents: 'uri,userId',
-      actions: '++actionId,[userId+time],creationRequest.transferUuid,transferUri',
+      actions: '++actionId,[userId+createdAt],creationRequest.transferUuid,transferUri',
       tasks: '++taskId,[userId+scheduledFor]',
     })
 
@@ -319,7 +319,7 @@ class DebtorsDb extends Dexie {
   async getActionRecords(userId: number, options: ListQueryOptions = {}): Promise<ActionRecordWithId[]> {
     const { before = Dexie.maxKey, after = Dexie.minKey, limit = 1e9, latestFirst = true } = options
     let collection = this.actions
-      .where('[userId+time]')
+      .where('[userId+createdAt]')
       .between([userId, after], [userId, before], false, false)
       .limit(limit)
     if (latestFirst) {
@@ -356,11 +356,11 @@ class DebtorsDb extends Dexie {
         .first()
       if (!action) {
         action = {
-          userId,
-          actionType: 'UpdateConfig' as const,
-          time: Date.now(),
           interestRate: data.interestRate,
           debtorInfo: data.debtorInfo,
+          userId,
+          actionType: 'UpdateConfig' as const,
+          createdAt: new Date(),
         }
         await this.createActionRecord(action)
       }
@@ -413,7 +413,7 @@ class DebtorsDb extends Dexie {
       if (replacement && replacement.actionId === actionId) {
         // Update the action record "in place".
         assert(replacement.actionType === original.actionType, 'wrong actionType')
-        assert(replacement.time === original.time, 'wrong time')
+        assert(replacement.createdAt === original.createdAt, 'wrong createdAt')
         await this.actions.put(replacement)
       } else {
         // Delete the original record.
@@ -534,7 +534,7 @@ class DebtorsDb extends Dexie {
         abortTransferAction = {
           userId,
           actionType: 'AbortTransfer',
-          time: Date.now(),
+          createdAt: new Date(),
           transferUri,
           transfer,
         }
@@ -607,7 +607,7 @@ class DebtorsDb extends Dexie {
       const currentTime = Date.now()
       const cutoffTime = collectedAfter.getTime() - MAX_PROCESSING_DELAY_MILLISECONDS
       await this.actions
-        .where('[userId+time]')
+        .where('[userId+createdAt]')
         .between([userId, Dexie.minKey], [userId, Dexie.maxKey])
         .filter(action => (
           action.actionType === 'CreateTransfer' &&
