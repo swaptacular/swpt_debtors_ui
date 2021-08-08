@@ -375,7 +375,7 @@ export class AppState {
       if (!isDirty) {
         isDirty = true
         addEventListener('beforeunload', save, { capture: true })
-        setTimeout(save, 10000)
+        setTimeout(save, 5000)
       }
     }
     const save = (): Promise<void> => {
