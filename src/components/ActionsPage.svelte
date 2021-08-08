@@ -42,7 +42,7 @@
 {#if regularActions.length > 0 }
   <ol>
     {#each regularActions as action }
-      <li>{action.actionType} <button on:click={() => app.showAction(action.actionId)}>Show</button></li>
+      <li><a href="" on:click|preventDefault={() => app.showAction(action.actionId)}>{action.actionType}</a></li>
     {/each}
   </ol>
 {/if}
@@ -53,7 +53,7 @@
   {#if showForeignActions }
     <ol>
       {#each foreignActions as action }
-        <li>{action.actionType} <button on:click={() => app.showAction(action.actionId)}>Show</button></li>
+        <li><a href="" on:click|preventDefault={() => app.showAction(action.actionId)}>{action.actionType}</a></li>
       {/each}
     </ol>
   {/if}

@@ -13,8 +13,7 @@
 <ol>
   {#each $transfers as transfer }
     <li>
-      {`${transfer.amount} to ${transfer.paymentInfo.payeeName}`}
-      <button on:click={() => app.showTransfer(transfer.uri)}>Show</button>
+      <a href="" on:click|preventDefault={() => app.showTransfer(transfer.uri)}>{`${transfer.amount} to ${transfer.paymentInfo.payeeName}`}</a>
     </li>
   {/each}
 </ol>
