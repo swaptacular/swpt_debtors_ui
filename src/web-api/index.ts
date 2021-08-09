@@ -197,8 +197,9 @@ export class ServerSession {
   }
 
   async delete(url: string, config?: RequestConfig): Promise<HttpResponse> {
+    const responseType = 'arraybuffer'
     return await this.makeRequest(
-      async client => new HttpResponse(await client.delete(url, config)),
+      async client => new HttpResponse(await client.delete(url, { ...config, responseType })),
       config,
     )
   }
