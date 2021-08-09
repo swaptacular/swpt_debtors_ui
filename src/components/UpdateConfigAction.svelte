@@ -36,7 +36,7 @@
 <form on:input={() => actionManager.markDirty()} on:change={() => actionManager.save()}>
   <p><label>interestRate:<input required type=number bind:value={interestRate}></label></p>
   <p><label>debtorName:<input required minlength="1" maxlength="40" bind:value={debtorName}></label></p>
-  <p><label>Summary:<textarea bind:value={summary} maxlength="1000"></textarea></label></p>
+  <p><label>summary:<textarea bind:value={summary} maxlength="1000"></textarea></label></p>
   <p><label>debtorHomepage:<input maxlength="10000" bind:value={debtorHomepageUri}></label></p>
   <p><label>amountDivisor:<input required type=number min="0" bind:value={amountDivisor}></label></p>
   <p><label>decimalPlaces:<input required type=number min="-20" max="20" step="1" bind:value={decimalPlaces}></label></p>
