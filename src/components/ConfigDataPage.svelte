@@ -2,9 +2,9 @@
   import type { AppState } from '../app-state'
 
   export let app: AppState
-  const data = app.getDebtorConfigData()
-  const interestRate = data.interestRate
-  const info = data.debtorInfo
+  const debtorConfigData = app.getDebtorConfigData()
+  const interestRate = debtorConfigData.interestRate
+  const info = debtorConfigData.debtorInfo
 </script>
 
 <button on:click={() => app.showActions()}>Back</button>
@@ -21,4 +21,4 @@
   <dt>peg:</dt> <dd>{info?.peg}</dd>
 </dl>
 
-<button on:click={() => app.editConfig(data)}>Edit</button>
+<button on:click={() => app.editConfig(debtorConfigData)}>Edit</button>
