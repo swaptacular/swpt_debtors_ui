@@ -264,7 +264,7 @@ test("Create and delete update config action", async () => {
   assert(uc)
 
   // get debtor's config data
-  const debtorConfigData = await uc.getDebtorConfigData()
+  const debtorConfigData = uc.getDebtorConfigData()
   expect(debtorConfigData.interestRate).toBe(5)
   expect(debtorConfigData.debtorInfo?.summary).toBe(debtorData.summary)
   expect(debtorConfigData.debtorInfo?.debtorName).toBe(debtorData.debtorName)
@@ -290,7 +290,7 @@ test("Edit and execute an update config action", async () => {
   assert(uc)
 
   const originalLatestUpdateId = debtor.config.latestUpdateId
-  const debtorConfigData = await uc.getDebtorConfigData()
+  const debtorConfigData = uc.getDebtorConfigData()
   const updateConfigAction = await uc.editDebtorConfigData(debtorConfigData)
   assert(updateConfigAction.debtorInfo)
 
@@ -308,7 +308,7 @@ test("Edit and execute an update config action", async () => {
   // execute the update config action
   await uc.executeUpdateConfigAction(editedUpdateConfigAction)
   expect(await uc.getActionRecords()).toEqual([])
-  const editedDebtorConfigData = await uc.getDebtorConfigData()
+  const editedDebtorConfigData = uc.getDebtorConfigData()
   expect(editedDebtorConfigData.interestRate).toBe(6)
   expect(editedDebtorConfigData.debtorInfo?.debtorName).toBe('Updated name')
   expect(editedDebtorConfigData.debtorInfoRevision).toEqual(debtorConfigData.debtorInfoRevision + 1)

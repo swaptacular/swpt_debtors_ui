@@ -1,12 +1,10 @@
 <script lang="ts">
-  import type { AppState, ConfigDataModel } from '../app-state'
+  import type { AppState } from '../app-state'
 
   export let app: AppState
-  export let model: ConfigDataModel
-
-  $: data = model.data
-  $: interestRate = $data.interestRate
-  $: info = $data.debtorInfo
+  const data = app.getDebtorConfigData()
+  const interestRate = data.interestRate
+  const info = data.debtorInfo
 </script>
 
 <button on:click={() => app.showActions()}>Back</button>
@@ -23,4 +21,4 @@
   <dt>peg:</dt> <dd>{info?.peg}</dd>
 </dl>
 
-<button on:click={() => app.editConfig($data)}>Edit</button>
+<button on:click={() => app.editConfig(data)}>Edit</button>

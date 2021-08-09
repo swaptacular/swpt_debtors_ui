@@ -111,7 +111,12 @@ export async function obtainUserContext(
     await update(server, false)
     alreadyTriedToUpdate = true
   }
-  return new UserContext(server, updateScheduler, await db.getDebtorRecord(userId))
+  return new UserContext(
+    server,
+    updateScheduler,
+    await db.getDebtorRecord(userId),
+    await getDebtorConfigData(userId),
+  )
 }
 
 /* Tries to update the local database, reading the latest data from
@@ -138,6 +143,7 @@ export class UserContext {
   private createTransferUri: string
   private publicInfoDocumentUri: string
   private saveDocumentUri: string
+  private debtorConfigData: DebtorConfigData & { debtorInfoRevision: number }
 
   readonly noteMaxBytes: number
   readonly userId: number
@@ -149,7 +155,12 @@ export class UserContext {
   readonly getActionRecord = db.getActionRecord.bind(db)
   readonly replaceActionRecord = db.replaceActionRecord.bind(db)
 
-  constructor(server: ServerSession, updateScheduler: UpdateScheduler, debtroRecord: DebtorRecordWithId) {
+  constructor(
+    server: ServerSession,
+    updateScheduler: UpdateScheduler,
+    debtroRecord: DebtorRecordWithId,
+    debtorConfigData: UserContext['debtorConfigData'],
+  ) {
     this.server = server
     this.updateScheduler = updateScheduler
     this.userId = debtroRecord.userId
@@ -159,6 +170,7 @@ export class UserContext {
     this.publicInfoDocumentUri = new URL(debtroRecord.publicInfoDocument.uri, debtroRecord.uri).href
     this.saveDocumentUri = new URL(debtroRecord.saveDocument.uri, debtroRecord.uri).href
     this.noteMaxBytes = Number(debtroRecord.noteMaxBytes)
+    this.debtorConfigData = debtorConfigData
     this.scheduleUpdate = this.updateScheduler.schedule.bind(this.updateScheduler)
     this.getActionRecords = db.getActionRecords.bind(db, this.userId)
     this.getTransferRecords = db.getTransferRecords.bind(db, this.userId)
@@ -168,34 +180,8 @@ export class UserContext {
     return await db.getDebtorRecord(this.userId)
   }
 
-  async getDebtorConfigData(): Promise<DebtorConfigData & { debtorInfoRevision: number }> {
-    const configRecord = await db.getConfigRecord(this.userId)
-    let configData
-    try {
-      configData = parseRootConfigData(configRecord.configData)
-    } catch (e: unknown) {
-      if (!(e instanceof InvalidRootConfigData)) throw e
-    }
-    const interestRate = configData?.rate
-
-    let debtorInfo
-    let debtorInfoRevision = 0
-    if (configData?.info) {
-      const document = await db.getDocumentRecord(configData.info.iri)
-      if (
-        document &&
-        (configData.info.contentType ?? document.contentType) === document.contentType &&
-        (configData.info.sha256 ?? document.sha256) === document.sha256
-      ) {
-        try {
-          debtorInfo = await parseDebtorInfoDocument(document)
-          debtorInfoRevision = debtorInfo.revision
-        } catch (e: unknown) {
-          if (!(e instanceof InvalidDocument)) throw e
-        }
-      }
-    }
-    return { interestRate, debtorInfo, debtorInfoRevision }
+  getDebtorConfigData(): UserContext['debtorConfigData'] {
+    return this.debtorConfigData
   }
 
   async editDebtorConfigData(data: DebtorConfigData): Promise<UpdateConfigActionWithId> {
@@ -238,6 +224,7 @@ export class UserContext {
       if (e instanceof HttpError) throw new ServerSessionError(`unexpected status code (${e.status})`)
       else throw e
     }
+    this.debtorConfigData = await getDebtorConfigData(this.userId)
     await db.replaceActionRecord(action, null)
   }
 
@@ -421,7 +408,7 @@ export class UserContext {
   }
 
   private async createDocument(data: BaseDebtorData): Promise<RootConfigData['info']> {
-    const currentRevision = (await this.getDebtorConfigData()).debtorInfoRevision
+    const currentRevision = this.getDebtorConfigData().debtorInfoRevision
     const document = await generateCoinInfoDocument({
       ...data,
       debtorIdentity: { type: 'DebtorIdentity', uri: this.debtorIdentityUri },
@@ -560,4 +547,34 @@ async function executeReadyTasks(server: ServerSession, userId: number): Promise
     }))
 
   } while (tasks.length >= limit)
+}
+
+async function getDebtorConfigData(userId: number): Promise<UserContext['debtorConfigData']> {
+  let configRecord = await db.getConfigRecord(userId)
+  let configData
+  try {
+    configData = parseRootConfigData(configRecord.configData)
+  } catch (e: unknown) {
+    if (!(e instanceof InvalidRootConfigData)) throw e
+  }
+  const interestRate = configData?.rate
+
+  let debtorInfo
+  let debtorInfoRevision = 0
+  if (configData?.info) {
+    const document = await db.getDocumentRecord(configData.info.iri)
+    if (
+      document &&
+      (configData.info.contentType ?? document.contentType) === document.contentType &&
+      (configData.info.sha256 ?? document.sha256) === document.sha256
+    ) {
+      try {
+        debtorInfo = await parseDebtorInfoDocument(document)
+        debtorInfoRevision = debtorInfo.revision
+      } catch (e: unknown) {
+        if (!(e instanceof InvalidDocument)) throw e
+      }
+    }
+  }
+  return { interestRate, debtorInfo, debtorInfoRevision }
 }

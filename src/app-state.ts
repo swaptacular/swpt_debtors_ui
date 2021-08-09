@@ -78,7 +78,6 @@ export type TransferModel = {
 
 export type ConfigDataModel = {
   type: 'ConfigDataModel',
-  data: Store<DebtorConfigData>,
 }
 
 export class AppState {
@@ -87,12 +86,14 @@ export class AppState {
   readonly alerts: Writable<Alert[]>
   readonly pageModel: Writable<PageModel>
   readonly noteMaxBytes: number
+  readonly getDebtorConfigData: () => DebtorConfigData
 
   constructor(private uc: UserContext, actions: Store<ActionRecordWithId[]>) {
     this.waitingInteractions = writable(new Set())
     this.alerts = writable([])
     this.pageModel = writable({ type: 'ActionsModel', actions })
     this.noteMaxBytes = uc.noteMaxBytes
+    this.getDebtorConfigData = uc.getDebtorConfigData.bind(uc)
   }
 
   addAlert(alert: Alert): Promise<void> {
@@ -277,9 +278,8 @@ export class AppState {
   showConfig(): Promise<void> {
     return this.attempt(async () => {
       const interactionId = this.interactionId
-      const data = await createLiveQuery(() => this.uc.getDebtorConfigData())
       if (this.interactionId === interactionId) {
-        this.pageModel.set({ type: 'ConfigDataModel', data })
+        this.pageModel.set({ type: 'ConfigDataModel' })
       }
     })
   }
