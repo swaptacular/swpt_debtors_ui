@@ -86,11 +86,13 @@ export class AppState {
   readonly waitingInteractions: Writable<Set<number>>
   readonly alerts: Writable<Alert[]>
   readonly pageModel: Writable<PageModel>
+  readonly noteMaxBytes: number
 
   constructor(private uc: UserContext, actions: Store<ActionRecordWithId[]>) {
     this.waitingInteractions = writable(new Set())
     this.alerts = writable([])
     this.pageModel = writable({ type: 'ActionsModel', actions })
+    this.noteMaxBytes = uc.noteMaxBytes
   }
 
   addAlert(alert: Alert): Promise<void> {

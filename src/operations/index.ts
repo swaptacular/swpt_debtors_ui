@@ -138,8 +138,8 @@ export class UserContext {
   private createTransferUri: string
   private publicInfoDocumentUri: string
   private saveDocumentUri: string
-  private noteMaxBytes: number
 
+  readonly noteMaxBytes: number
   readonly userId: number
   readonly scheduleUpdate: UpdateScheduler['schedule']
   readonly getActionRecords: (options?: ListQueryOptions) => Promise<ActionRecordWithId[]>
@@ -261,7 +261,7 @@ export class UserContext {
         recipient: { uri: request.accountUri },
         amount: request.amount,
         transferUuid: uuidv4(),
-        noteFormat: request.amount === 0n ? 'payment0' : 'PAYMENT0',
+        noteFormat: request.amount ? 'PAYMENT0' : 'payment0',
         note: generatePayment0TransferNote(request, this.noteMaxBytes),
       },
       paymentInfo: {

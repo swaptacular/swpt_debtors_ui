@@ -2,6 +2,7 @@
   import type { AppState } from '../app-state'
   import type { CreateTransferActionWithId } from '../operations'
   import { getCreateTransferActionStatus } from '../operations'
+  import { generatePayment0TransferNote } from '../payment-requests'
 
   export let app: AppState
   export let action: CreateTransferActionWithId
@@ -11,11 +12,18 @@
   let forbidAmountChange = action.requestedAmount > 0
 
   function createUpdatedAction(): CreateTransferActionWithId {
+    const paymentInfo = {
+      ...action.paymentInfo,
+      payeeName,
+    }
     return {
       ...action,
+      paymentInfo,
       creationRequest: {
         ...action.creationRequest,
         amount: BigInt(amount),
+        noteFormat: action.requestedAmount ? 'PAYMENT0' : 'payment0',
+        note: generatePayment0TransferNote(paymentInfo, app.noteMaxBytes),
       },
     }
   }
@@ -29,12 +37,12 @@
 
 <h1>Create Transfer Action</h1>
 <form on:input={() => actionManager.markDirty()} on:change={() => actionManager.save()}>
+  <p><label>payeeName:<input required minlength="1" maxlength="200" bind:value={payeeName}></label></p>
   <p><label>amount:<input disabled={forbidAmountChange} required type=number min="1" bind:value={amount}></label></p>
-  <p><b>payeeName:</b><span>{payeeName}</span></p>
   {#if description.contentFormat === '.'}
-    <p><b>description:</b><a href="{description.content}">{description.content}</a></p>
+    <p><a href="{description.content}">{description.content}</a></p>
   {:else}
-    <p><b>description:</b><span>{description.content}</span></p>
+    <p>{description.content}</p>
   {/if}
 </form>
 
