@@ -2,9 +2,12 @@
   import type { AppState } from '../app-state'
 
   export let app: AppState
+  export let model: unknown
   const debtorConfigData = app.getDebtorConfigData()
   const interestRate = debtorConfigData.interestRate
   const info = debtorConfigData.debtorInfo
+
+  assert(model)
 </script>
 
 <button on:click={() => app.showActions()}>Back</button>
