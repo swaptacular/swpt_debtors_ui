@@ -6,10 +6,11 @@
 
   export let app: AppState
   export let action: CreateTransferActionWithId
+  const forbidAmountChange = action.requestedAmount > 0
+  const deadline = action.requestedDeadline
+  const description = action.paymentInfo.description
   let amount = app.amountToString(action.creationRequest.amount)
   let payeeName = action.paymentInfo.payeeName
-  let description = action.paymentInfo.description
-  let forbidAmountChange = action.requestedAmount > 0
 
   function createUpdatedAction(): CreateTransferActionWithId {
     const paymentInfo = {
@@ -37,6 +38,9 @@
 
 <h1>Create Transfer Action</h1>
 <form on:input={() => actionManager.markDirty()} on:change={() => actionManager.save()}>
+  {#if deadline}
+    <p><b>Payment deadlines ({deadline.toISOString()}) are not supported, and will be ignored.</b></p>
+  {/if}
   <p><label>payeeName:<input required minlength="1" maxlength="200" bind:value={payeeName}></label></p>
   <p><label>amount:<input disabled={forbidAmountChange} required type=number min="1" bind:value={amount}> {app.unit}</label></p>
   {#if description.contentFormat === '.'}

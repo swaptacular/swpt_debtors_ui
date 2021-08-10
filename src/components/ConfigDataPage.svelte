@@ -1,8 +1,8 @@
 <script lang="ts">
-  import type { AppState } from '../app-state'
+  import type { AppState, ConfigDataModel } from '../app-state'
 
   export let app: AppState
-  export let model: unknown
+  export let model: ConfigDataModel
   const debtorConfigData = app.getDebtorConfigData()
   const interestRate = debtorConfigData.interestRate
   const info = debtorConfigData.debtorInfo
