@@ -224,7 +224,7 @@ export class ServerSession {
       },
       transformRequest: (data) => stringify(data),
       transformResponse: (data, headers) => {
-        if (typeof data === 'string' && headers['content-type'] === 'application/json') {
+        if (typeof data === 'string' && data.length > 0 && headers['content-type'] === 'application/json') {
           return parse(data)
         }
         return data
