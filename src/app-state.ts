@@ -1,6 +1,7 @@
 import equal from 'fast-deep-equal'
 import { Observable, liveQuery } from 'dexie'
 import { Writable, writable } from 'svelte/store'
+import { amountToString, stringToAmount } from './utils'
 import {
   obtainUserContext,
   UserContext,
@@ -94,6 +95,20 @@ export class AppState {
     this.pageModel = writable({ type: 'ActionsModel', actions })
     this.noteMaxBytes = uc.noteMaxBytes
     this.getDebtorConfigData = uc.getDebtorConfigData.bind(uc)
+  }
+
+  get unit(): string {
+    return this.getDebtorConfigData().debtorInfo?.unit ?? '\u00A4'
+  }
+
+  amountToString(amount: bigint): string {
+    const { amountDivisor = 1, decimalPlaces = 0 } = this.getDebtorConfigData().debtorInfo ?? {}
+    return amountToString(amount, amountDivisor, decimalPlaces)
+  }
+
+  stringToAmount(s: string): bigint {
+    const { amountDivisor = 1 } = this.getDebtorConfigData().debtorInfo ?? {}
+    return stringToAmount(s, amountDivisor)
   }
 
   addAlert(alert: Alert): Promise<void> {

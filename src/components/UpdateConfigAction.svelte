@@ -8,8 +8,8 @@
   let summary = action.debtorInfo?.summary ?? ''
   let debtorName = action.debtorInfo?.debtorName ?? ''
   let debtorHomepageUri = action.debtorInfo?.debtorHomepage?.uri ?? ''
-  let amountDivisor = action.debtorInfo?.amountDivisor ?? 100
-  let decimalPlaces = action.debtorInfo?.decimalPlaces ?? 2
+  let amountDivisor = action.debtorInfo?.amountDivisor ?? NaN
+  let decimalPlaces = action.debtorInfo?.decimalPlaces ?? NaN
   let unit = action.debtorInfo?.unit ?? ''
   let peg = action.debtorInfo?.peg
 
