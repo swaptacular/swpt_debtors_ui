@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { AppState } from '../app-state'
   import type { CreateTransferActionWithId } from '../operations'
-  import { roundAmount } from '../utils'
+  import { amountToString, stringToAmount } from '../utils'
   import { getCreateTransferActionStatus } from '../operations'
   import { generatePayment0TransferNote } from '../payment-requests'
 
@@ -13,7 +13,7 @@
     decimalPlaces = 0,
     unit = '\u00A4',
   } = debtorConfigData.debtorInfo ?? {}
-  let amount = roundAmount(Number(action.creationRequest.amount) / amountDivisor, decimalPlaces)
+  let amount = amountToString(action.creationRequest.amount, amountDivisor, decimalPlaces)
   let payeeName = action.paymentInfo.payeeName
   let description = action.paymentInfo.description
   let forbidAmountChange = action.requestedAmount > 0
@@ -28,7 +28,7 @@
       paymentInfo,
       creationRequest: {
         ...action.creationRequest,
-        amount: BigInt(amount * amountDivisor),
+        amount: stringToAmount(amount, amountDivisor),
         noteFormat: action.requestedAmount ? 'PAYMENT0' : 'payment0',
         note: generatePayment0TransferNote(paymentInfo, app.noteMaxBytes),
       },
