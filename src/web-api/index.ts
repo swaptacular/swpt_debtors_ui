@@ -176,15 +176,17 @@ export class ServerSession {
     )
   }
 
-  async postDocument(url: string, contentType: string, content: ArrayBuffer): Promise<HttpResponse> {
-    const config = {
+  async postDocument(url: string, contentType: string, content: ArrayBuffer, config?: RequestConfig): Promise<HttpResponse> {
+    const headers = config?.headers
+    config = {
+      ...config,
       headers: {
+        ...headers,
         'Content-Type': contentType,
         'Accept': contentType,
       },
       transformRequest: [],
       responseType: 'arraybuffer' as const,
-      attemptLogin: true,
     }
     return await this.post(url, content, config)
   }

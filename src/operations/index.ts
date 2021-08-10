@@ -419,6 +419,7 @@ export class UserContext {
       this.saveDocumentUri,
       document.contentType,
       document.content,
+      { attemptLogin: true },
     )
     const iri = response.headers.location
     assert(typeof iri === 'string', 'missing document location')

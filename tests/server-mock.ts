@@ -138,8 +138,8 @@ export function createServerMock(debtor: Debtor, transfers: Transfer[] = [], _do
       return await this.get(url) as HttpResponse<ArrayBuffer>
     },
 
-    async postDocument(url: string, contentType: string, content: ArrayBuffer): Promise<HttpResponse> {
-      const config = {
+    async postDocument(url: string, contentType: string, content: ArrayBuffer, config?: RequestConfig): Promise<HttpResponse> {
+      config = {
         headers: { 'content-type': contentType },
       }
       return await this.post(url, content, config)
