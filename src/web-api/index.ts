@@ -292,7 +292,8 @@ export class ServerSession {
       if (e instanceof AuthenticationError) {
         // When the authentication have failed, but the user have not
         // explicitly terminated the previous login session, we
-        // pretend that the user is still logged in.
+        // pretend that the user is still logged in. (An
+        // authentication token will be obtained when needed.)
         entrypoint = ServerSession.loadUserData()?.entrypoint
       } else throw e
     }
