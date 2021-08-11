@@ -37,6 +37,8 @@ export function createServerMock(debtor: Debtor, transfers: Transfer[] = [], _do
       return await this.get(debtor.uri)
     }),
 
+    async authenticate(): Promise<void> { },
+
     get: jest.fn(async (url: string): Promise<HttpResponse> => {
       switch (url) {
         case debtor.uri:

@@ -3,6 +3,8 @@ import {
   server as defaultServer,
   ServerSession,
   ServerSessionError,
+  AuthenticationError,
+  GetTokenOptions,
   HttpResponse,
   HttpError,
   Debtor,
@@ -52,6 +54,7 @@ import {
 export {
   RecordDoesNotExist,
   IvalidPaymentRequest,
+  AuthenticationError,
   ServerSessionError,
   getCreateTransferActionStatus,
 }
@@ -122,16 +125,29 @@ export async function obtainUserContext(
 /* Tries to update the local database, reading the latest data from
  * the server. Any network failures will be swallowed. */
 export async function update(server: ServerSession, getTransfers = true): Promise<void> {
-  let data
   try {
-    data = await getUserData(server, getTransfers)
+    const data = await getUserData(server, getTransfers)
     const userId = await db.storeUserData(data)
     await executeReadyTasks(server, userId)
-  } catch (e: unknown) {
-    if (e instanceof ServerSessionError) console.log(e)
-    else if (e instanceof HttpError) console.error(e)
-    else throw e
-    return
+
+  } catch (error: unknown) {
+    let event
+    switch (true) {
+      case error instanceof AuthenticationError:
+        event = new Event('update-authentication-error', { cancelable: true })
+        break
+      case error instanceof ServerSessionError:
+        event = new Event('update-network-error', { cancelable: true })
+        break
+      case error instanceof HttpError:
+        event = new Event('update-http-error', { cancelable: true })
+        break
+      default:
+        throw error
+    }
+    if (dispatchEvent(event)) {
+      console.error(error)
+    }
   }
 }
 
@@ -148,6 +164,7 @@ export class UserContext {
   readonly noteMaxBytes: number
   readonly userId: number
   readonly scheduleUpdate: UpdateScheduler['schedule']
+  readonly authenticate: (options?: GetTokenOptions) => Promise<unknown>
   readonly getActionRecords: (options?: ListQueryOptions) => Promise<ActionRecordWithId[]>
   readonly getTransferRecords: (options?: ListQueryOptions) => Promise<TransferRecord[]>
   readonly getTransferRecord = db.getTransferRecord.bind(db)
@@ -174,6 +191,7 @@ export class UserContext {
     this.scheduleUpdate = this.updateScheduler.schedule.bind(this.updateScheduler)
     this.getActionRecords = db.getActionRecords.bind(db, this.userId)
     this.getTransferRecords = db.getTransferRecords.bind(db, this.userId)
+    this.authenticate = server.authenticate.bind(server)
   }
 
   async getDebtorRecord(): Promise<DebtorRecordWithId> {

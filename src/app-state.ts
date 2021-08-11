@@ -13,6 +13,7 @@ import {
   TransferRecord,
   IvalidPaymentRequest,
   ServerSessionError,
+  AuthenticationError,
   ForbiddenOperation,
   WrongTransferData,
   TransferCreationTimeout,
@@ -109,6 +110,18 @@ export class AppState {
   stringToAmount(s: string): bigint {
     const { amountDivisor = 1 } = this.getDebtorConfigData().debtorInfo ?? {}
     return stringToAmount(s, amountDivisor)
+  }
+
+  fetchDataFromServer(): Promise<void> {
+    return this.attempt(async () => {
+      await this.uc.authenticate({ attemptLogin: true })
+      this.uc.scheduleUpdate()
+    }, {
+      startInteraction: false,
+      alerts: [
+        [AuthenticationError, null],
+      ],
+    })
   }
 
   addAlert(alert: Alert): Promise<void> {

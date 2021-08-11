@@ -206,7 +206,7 @@ export class ServerSession {
     )
   }
 
-  private async authenticate(options?: GetTokenOptions) {
+  async authenticate(options?: GetTokenOptions) {
     let token
     try {
       token = await this.tokenSource.getToken({ onLoginAttempt: this.loginAttemptHandler, ...options })

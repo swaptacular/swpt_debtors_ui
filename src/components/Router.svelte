@@ -19,7 +19,6 @@
   function enusreOriginalAppState(appState: AppState): void {
     if (appState !== originalAppState) throw new Error('unoriginal app state')
   }
-
   function getPageComponent(pageModelType: string) {
     switch (pageModelType) {
     case 'ActionModel':
@@ -42,6 +41,7 @@
 </script>
 
 <button on:click={() => logout()}>Logout</button>
+<button on:click={() => app.fetchDataFromServer()}>Update</button>
 {#if $alerts.length === 0 && $waitingInteractions.size > 0 }
   <Hourglass />
 {/if}
