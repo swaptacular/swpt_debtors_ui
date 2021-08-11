@@ -284,6 +284,9 @@ export class ServerSession {
   private async getEntrypoint(): Promise<string | undefined> {
     let entrypoint
     try {
+      // By passing `attemptTokenRefresh: false` here, we make sure
+      // that an unnecessary network request will not be made, causing
+      // a delay, and harming the user experience.
       entrypoint = (await this.authenticate({ attemptLogin: false, attemptTokenRefresh: false })).entrypoint
     } catch (e: unknown) {
       if (e instanceof AuthenticationError) {
