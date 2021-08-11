@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { login } from '../operations'
+  import { login, ServerSessionError } from '../operations'
   import { createAppState } from '../app-state'
   import Router from './Router.svelte'
 
@@ -20,6 +20,10 @@
       <Router app={appState}/>
     {/if}
   {:catch error}
-    <h1>{logError(error)}</h1>
+    {#if error instanceof ServerSessionError }
+      <h1>Network error</h1>
+    {:else}
+      <h1>{logError(error)}</h1>
+    {/if}
   {/await}
 </main>
