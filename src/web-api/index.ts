@@ -290,6 +290,9 @@ export class ServerSession {
       entrypoint = (await this.authenticate({ attemptLogin: false, attemptTokenRefresh: false })).entrypoint
     } catch (e: unknown) {
       if (e instanceof AuthenticationError) {
+        // When the authentication have failed, but the user have not
+        // explicitly terminated the previous login session, we
+        // pretend that the user is still logged in.
         entrypoint = ServerSession.loadUserData()?.entrypoint
       } else throw e
     }
