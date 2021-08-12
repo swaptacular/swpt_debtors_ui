@@ -1,15 +1,11 @@
 <script lang="ts">
-  import { login, ServerSessionError } from '../operations'
+  import { login } from '../operations'
   import { createAppState } from '../app-state'
   import Router from './Router.svelte'
 
   let authenticationError = false
   let networkError = false
 
-  function logError(e: unknown): string {
-    console.error(e)
-    return 'An unexpected error has occured.'
-  }
   addEventListener('update-authentication-error', (event) => {
     if (!authenticationError) {
       authenticationError = true
@@ -24,6 +20,11 @@
     }
     event.preventDefault()
   })
+
+  function logError(e: unknown): string {
+    console.error(e)
+    return 'An unexpected error has occured.'
+  }
   const appStatePromise = createAppState()
 </script>
 
@@ -44,10 +45,6 @@
       <Router app={appState}/>
     {/if}
   {:catch error}
-    {#if error instanceof ServerSessionError }
-      <h1>Network error</h1>
-    {:else}
-      <h1>{logError(error)}</h1>
-    {/if}
+    <h1>{logError(error)}</h1>
   {/await}
 </main>
