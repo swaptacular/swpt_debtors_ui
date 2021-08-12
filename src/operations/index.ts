@@ -4,7 +4,6 @@ import {
   ServerSession,
   ServerSessionError,
   AuthenticationError,
-  GetTokenOptions,
   HttpResponse,
   HttpError,
   Debtor,
@@ -99,7 +98,7 @@ export async function logout(server = defaultServer): Promise<never> {
  * instance can be used to perform operations on user's behalf. */
 export async function obtainUserContext(
   server = defaultServer,
-  updateScheduler = new UpdateScheduler(update.bind(undefined, server)),
+  updateScheduler?: UpdateScheduler,
 ): Promise<UserContext | undefined> {
   const entrypoint = await server.entrypointPromise
   if (entrypoint === undefined) {
@@ -116,7 +115,7 @@ export async function obtainUserContext(
   }
   return new UserContext(
     server,
-    updateScheduler,
+    updateScheduler ?? new UpdateScheduler(update.bind(undefined, server)),
     await db.getDebtorRecord(userId),
     await getDebtorConfigData(userId),
   )
@@ -164,7 +163,6 @@ export class UserContext {
   readonly noteMaxBytes: number
   readonly userId: number
   readonly scheduleUpdate: UpdateScheduler['schedule']
-  readonly authenticate: (options?: GetTokenOptions) => Promise<unknown>
   readonly getActionRecords: (options?: ListQueryOptions) => Promise<ActionRecordWithId[]>
   readonly getTransferRecords: (options?: ListQueryOptions) => Promise<TransferRecord[]>
   readonly getTransferRecord = db.getTransferRecord.bind(db)
@@ -191,7 +189,14 @@ export class UserContext {
     this.scheduleUpdate = this.updateScheduler.schedule.bind(this.updateScheduler)
     this.getActionRecords = db.getActionRecords.bind(db, this.userId)
     this.getTransferRecords = db.getTransferRecords.bind(db, this.userId)
-    this.authenticate = server.authenticate.bind(server)
+  }
+
+  async ensureAuthenticated(): Promise<void> {
+    const entrypoint = await this.server.entrypointPromise
+    if (entrypoint === undefined) {
+      throw new Error('undefined entrypoint')
+    }
+    await this.server.get(entrypoint, { attemptLogin: true })
   }
 
   async getDebtorRecord(): Promise<DebtorRecordWithId> {

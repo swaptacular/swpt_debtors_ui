@@ -157,7 +157,7 @@ export class ServerSession {
   async getEntrypointResponse(): Promise<HttpResponse> {
     const entrypoint = await this.entrypointPromise
     if (entrypoint === undefined) {
-      throw new ServerSessionError('undefined entrypoint')
+      throw new Error('undefined entrypoint')
     }
 
     // Do not make a request at all, if the response saved during the
@@ -206,7 +206,7 @@ export class ServerSession {
     )
   }
 
-  async authenticate(options?: GetTokenOptions) {
+  private async authenticate(options?: GetTokenOptions) {
     let token
     try {
       token = await this.tokenSource.getToken({ onLoginAttempt: this.loginAttemptHandler, ...options })

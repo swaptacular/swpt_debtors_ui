@@ -114,12 +114,13 @@ export class AppState {
 
   fetchDataFromServer(): Promise<void> {
     return this.attempt(async () => {
-      await this.uc.authenticate({ attemptLogin: true })
+      await this.uc.ensureAuthenticated()
       this.uc.scheduleUpdate()
     }, {
       startInteraction: false,
       alerts: [
         [AuthenticationError, null],
+        [ServerSessionError, new Alert('Network error')],
       ],
     })
   }

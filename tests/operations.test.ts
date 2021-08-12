@@ -356,3 +356,13 @@ test("Delete old successful transfer", async () => {
   await update(serverMock)
   expect(serverMock.delete.mock.calls.length).toBe(1)
 })
+
+test("Delete old successful transfer", async () => {
+  const serverMock = createServerMock(debtor)
+  const uc = await obtainUserContext(serverMock, updatSchedulerMock)
+  assert(uc)
+
+  const n = serverMock.get.mock.calls.length
+  await uc.ensureAuthenticated()
+  expect(serverMock.get.mock.calls.length).toBe(n + 1)
+})
