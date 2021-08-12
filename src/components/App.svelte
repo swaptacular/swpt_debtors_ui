@@ -5,6 +5,7 @@
 
   let authenticationError = false
   let networkError = false
+  let httpError = false
 
   addEventListener('update-authentication-error', (event) => {
     if (!authenticationError) {
@@ -17,6 +18,13 @@
     if (!networkError) {
       networkError = true
       setTimeout(() => { networkError = false}, 5000)
+    }
+    event.preventDefault()
+  })
+  addEventListener('update-http-error', (event) => {
+    if (!httpError) {
+      httpError = true
+      setTimeout(() => { httpError = false}, 5000)
     }
     event.preventDefault()
   })
@@ -34,6 +42,9 @@
   {/if}
   {#if networkError }
     <h1>A network error has occured.</h1>
+  {/if}
+  {#if httpError }
+    <h1>A server error has occured.</h1>
   {/if}
 
   {#await appStatePromise}
