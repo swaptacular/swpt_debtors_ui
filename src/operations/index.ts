@@ -55,7 +55,6 @@ export {
   IvalidPaymentRequest,
   AuthenticationError,
   ServerSessionError,
-  HttpError,
   getCreateTransferActionStatus,
 }
 
@@ -193,13 +192,18 @@ export class UserContext {
   }
 
   /* The caller must be prepared this method to throw
-   * `ServerSessionError` or `HttpError`..*/
+   * `ServerSessionError` or `AuthenticationError`. */
   async ensureAuthenticated(): Promise<void> {
     const entrypoint = await this.server.entrypointPromise
     if (entrypoint === undefined) {
       throw new Error('undefined entrypoint')
     }
-    await this.server.get(entrypoint, { attemptLogin: true })
+    try {
+      await this.server.get(entrypoint, { attemptLogin: true })
+    } catch (e: unknown) {
+      if (e instanceof HttpError) throw new ServerSessionError(`unexpected status code (${e.status})`)
+      else throw e
+    }
   }
 
   async getDebtorRecord(): Promise<DebtorRecordWithId> {

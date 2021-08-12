@@ -14,7 +14,6 @@ import {
   IvalidPaymentRequest,
   ServerSessionError,
   AuthenticationError,
-  HttpError,
   ForbiddenOperation,
   WrongTransferData,
   TransferCreationTimeout,
@@ -122,7 +121,6 @@ export class AppState {
       alerts: [
         [AuthenticationError, null],
         [ServerSessionError, new Alert('Network error')],
-        [HttpError, new Alert('Server error')],
       ],
     })
   }
