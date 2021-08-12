@@ -3,11 +3,13 @@
   import { createAppState } from '../app-state'
   import Router from './Router.svelte'
 
+  let unauthenticated = false
   let authenticationError = false
   let networkError = false
   let httpError = false
 
   addEventListener('update-authentication-error', (event) => {
+    unauthenticated = true
     if (!authenticationError) {
       authenticationError = true
       setTimeout(() => { authenticationError = false}, 5000)
@@ -53,7 +55,7 @@
     {#if appState === undefined }
       <button on:click={() => login()}>Login</button>
     {:else}
-      <Router app={appState}/>
+      <Router app={appState} {unauthenticated} />
     {/if}
   {:catch error}
     <h1>{logError(error)}</h1>

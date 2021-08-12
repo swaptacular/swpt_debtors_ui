@@ -11,6 +11,7 @@
   import ConfigDataPage from './ConfigDataPage.svelte'
 
   export let app: AppState
+  export let unauthenticated: boolean
 
   const { waitingInteractions, alerts, pageModel } = app
   const originalAppState = app
@@ -41,7 +42,11 @@
 </script>
 
 <button on:click={() => logout()}>Logout</button>
-<button on:click={() => app.fetchDataFromServer()}>Update</button>
+{#if unauthenticated}
+  <button on:click={() => app.fetchDataFromServer()}>Update!</button>
+{:else}
+  <button on:click={() => app.fetchDataFromServer()}>Update</button>
+{/if}
 {#if $alerts.length === 0 && $waitingInteractions.size > 0 }
   <Hourglass />
 {/if}
