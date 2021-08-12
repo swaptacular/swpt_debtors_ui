@@ -55,6 +55,7 @@ export {
   IvalidPaymentRequest,
   AuthenticationError,
   ServerSessionError,
+  HttpError,
   getCreateTransferActionStatus,
 }
 
@@ -191,6 +192,8 @@ export class UserContext {
     this.getTransferRecords = db.getTransferRecords.bind(db, this.userId)
   }
 
+  /* The caller must be prepared this method to throw
+   * `ServerSessionError` or `HttpError`..*/
   async ensureAuthenticated(): Promise<void> {
     const entrypoint = await this.server.entrypointPromise
     if (entrypoint === undefined) {
