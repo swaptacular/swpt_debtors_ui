@@ -224,26 +224,25 @@ export class UserContext {
    * failure due to concurrent execution/deletion of the action.*/
   async executeUpdateConfigAction(action: UpdateConfigActionWithId): Promise<void> {
     try {
+      const configData = stringifyRootConfigData({
+        rate: action.interestRate,
+        info: action.debtorInfo ? await this.createDocument(action.debtorInfo) : undefined,
+      })
       let attemptsLeft = 10
       while (true) {
         await this.fetchDebtorConfig()
-
         try {
           const response = await this.server.patch(
             this.configUri,
             {
               type: 'DebtorConfig',
               latestUpdateId: (await db.getConfigRecord(this.userId)).latestUpdateId + 1n,
-              configData: stringifyRootConfigData({
-                rate: action.interestRate,
-                info: action.debtorInfo ? await this.createDocument(action.debtorInfo) : undefined
-              }),
+              configData,
             },
             { attemptLogin: true },
           ) as HttpResponse<DebtorConfig>
           await db.updateConfigRecord(this.userId, response.data)
           break
-
         } catch (e: unknown) {
           if (e instanceof HttpError && e.status === 409 && attemptsLeft--) continue
           else throw e
