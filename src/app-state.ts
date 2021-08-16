@@ -150,7 +150,7 @@ export class AppState {
     })
   }
 
-  scanQrCode(): Promise<void> {
+  scanQrCode(): void {
     this.pageModel.set({ type: 'MakePaymentModel' })
   }
 
