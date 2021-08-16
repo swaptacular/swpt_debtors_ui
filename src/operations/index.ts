@@ -154,12 +154,12 @@ export class UserContext {
   private server: ServerSession
   private updateScheduler: UpdateScheduler
   private configUri: string
-  private debtorIdentityUri: string
   private createTransferUri: string
-  private publicInfoDocumentUri: string
   private saveDocumentUri: string
   private debtorConfigData: DebtorConfigData & { debtorInfoRevision: number }
 
+  readonly debtorIdentityUri: string
+  readonly publicInfoDocumentUri: string
   readonly noteMaxBytes: number
   readonly userId: number
   readonly scheduleUpdate: UpdateScheduler['schedule']

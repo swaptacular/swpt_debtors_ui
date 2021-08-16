@@ -42,5 +42,5 @@
   }
 </style>
 
-<h1>QR Scanner</h1>
+<!-- svelte-ignore a11y-media-has-caption -->
 <video bind:this={videoElement}></video>

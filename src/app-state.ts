@@ -93,6 +93,8 @@ export class AppState {
   readonly pageModel: Writable<PageModel>
   readonly noteMaxBytes: number
   readonly getDebtorConfigData: () => DebtorConfigData
+  readonly debtorIdentityUri: string
+  readonly publicInfoDocumentUri: string
 
   constructor(private uc: UserContext, actions: Store<ActionRecordWithId[]>) {
     this.waitingInteractions = writable(new Set())
@@ -100,6 +102,8 @@ export class AppState {
     this.pageModel = writable({ type: 'ActionsModel', actions })
     this.noteMaxBytes = uc.noteMaxBytes
     this.getDebtorConfigData = uc.getDebtorConfigData.bind(uc)
+    this.debtorIdentityUri = uc.debtorIdentityUri
+    this.publicInfoDocumentUri = uc.publicInfoDocumentUri
   }
 
   get unit(): string {
