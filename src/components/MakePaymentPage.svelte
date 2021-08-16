@@ -6,6 +6,8 @@
   export let model: MakePaymentModel
   assert(model)
 
+  let scannedValue: string | undefined
+
   const blob = new Blob([
     'PR0\n',
     '\n',
@@ -17,12 +19,18 @@
     '.\n',
     'http://example.com'
   ])
+
+  $: {
+    if (scannedValue) {
+      app.initiatePayment(new Blob([scannedValue]))
+    }
+  }
 </script>
 
 <button on:click={() => app.showActions()}>Back</button>
 
 <h1>Make Payment Page</h1>
 
-<QrScanner />
+<QrScanner bind:result={scannedValue}/>
 
 <button on:click={() => app.initiatePayment(blob)}>Load file</button>

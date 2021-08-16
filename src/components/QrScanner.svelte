@@ -2,6 +2,7 @@
   import { onMount } from 'svelte'
   import QrScanner from 'qr-scanner'
 
+  export let result: string | undefined = undefined
   let videoElement: HTMLVideoElement
 
   // QrScanner.WORKER_PATH = 'path/to/qr-scanner-worker.min.js'
@@ -10,9 +11,9 @@
     let destructor
 
     if (QrScanner.hasCamera()) {
-      const qrScanner = new QrScanner(videoElement, result => console.log('decoded qr code:', typeof result))
+      const qrScanner = new QrScanner(videoElement, r => { result = r })
       const startedScannerPromise = qrScanner.start()
-      const tryToturnFlashOn = async (): Promise<boolean> => {
+      const tryTurningFlashOn = async (): Promise<boolean> => {
         let mustTurnFlashOff = false
         await startedScannerPromise
         if (await qrScanner.hasFlash()) {
@@ -21,7 +22,7 @@
         }
         return mustTurnFlashOff
       }
-      const flashEffortPromise = tryToturnFlashOn()
+      const flashEffortPromise = tryTurningFlashOn()
 
       destructor = async () => {
         if (await flashEffortPromise) {
