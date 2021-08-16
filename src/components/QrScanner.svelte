@@ -6,22 +6,26 @@
 
   // QrScanner.WORKER_PATH = 'path/to/qr-scanner-worker.min.js'
 
-  onMount(async () => {
-    var destructor
+  onMount(() => {
+    let destructor
 
     if (QrScanner.hasCamera()) {
       const qrScanner = new QrScanner(videoElement, result => console.log('decoded qr code:', typeof result))
-      await qrScanner.start()
-
-      var mustTurnFlashOff = false
-      if (await qrScanner.hasFlash()) {
-        mustTurnFlashOff = !qrScanner.isFlashOn()
-        await qrScanner.turnFlashOn()
+      const startedScannerPromise = qrScanner.start()
+      const tryToturnFlashOn = async (): Promise<boolean> => {
+        let mustTurnFlashOff = false
+        await startedScannerPromise
+        if (await qrScanner.hasFlash()) {
+          mustTurnFlashOff = qrScanner.isFlashOn()
+          await qrScanner.turnFlashOn()
+        }
+        return mustTurnFlashOff
       }
+      const flashEffortPromise = tryToturnFlashOn()
 
-      destructor = () => {
-        if (mustTurnFlashOff) {
-          qrScanner.turnFlashOff()
+      destructor = async () => {
+        if (await flashEffortPromise) {
+          await qrScanner.turnFlashOff()
         }
         qrScanner.destroy()
       }
