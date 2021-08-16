@@ -56,6 +56,7 @@ export type PageModel =
   | TransfersModel
   | TransferModel
   | ConfigDataModel
+  | MakePaymentModel
 
 export type ActionsModel = {
   type: 'ActionsModel',
@@ -82,6 +83,9 @@ export type ConfigDataModel = {
   type: 'ConfigDataModel',
 }
 
+export type MakePaymentModel = {
+  type: 'MakePaymentModel'
+}
 export class AppState {
   private interactionId: number = 0
   readonly waitingInteractions: Writable<Set<number>>
@@ -140,6 +144,10 @@ export class AppState {
     }, {
       startInteraction: false,
     })
+  }
+
+  scanQrCode(): Promise<void> {
+    this.pageModel.set({ type: 'MakePaymentModel' })
   }
 
   initiatePayment(paymentRequestFile: Blob | Promise<Blob>): Promise<void> {

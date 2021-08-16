@@ -9,6 +9,7 @@
   import TransferPage from './TransferPage.svelte'
   import TransfersPage from './TransfersPage.svelte'
   import ConfigDataPage from './ConfigDataPage.svelte'
+  import MakePaymentPage from './MakePaymentPage.svelte'
 
   export let app: AppState
   export let unauthenticated: boolean
@@ -32,6 +33,8 @@
       return TransfersPage
     case 'ConfigDataModel':
       return ConfigDataPage
+    case 'MakePaymentModel':
+      return MakePaymentPage
     default:
       throw new Error('unknown page model type')
     }

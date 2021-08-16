@@ -7,18 +7,6 @@
   const LOCALSTORAGE_KEY = 'debtors.showForeignActions'
   let showForeignActions = localStorage.getItem(LOCALSTORAGE_KEY) === 'true'
 
-  const blob = new Blob([
-    'PR0\n',
-    '\n',
-    'swpt:6199429176/998877665544332211\n',
-    'Payee Name\n',
-    '1000\n',
-    '2001-01-01\n',
-    '12d3a45642665544\n',
-    '.\n',
-    'http://example.com'
-  ])
-
   function separateForeignActions(allActions: ActionRecordWithId[]): [ActionRecordWithId[], ActionRecordWithId[]] {
     let regularActions = []
     let foreignActions = []
@@ -62,4 +50,4 @@
 
 <button on:click={() => app.showConfig()}>Configuration</button>
 <button on:click={() => app.showTransfers()}>Show Transfers</button>
-<button on:click={() => app.initiatePayment(blob)}>Make Payment</button>
+<button on:click={() => app.scanQrCode()}>Make Payment</button>
