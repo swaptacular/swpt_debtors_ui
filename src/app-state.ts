@@ -1,5 +1,5 @@
 import equal from 'fast-deep-equal'
-import { Observable, liveQuery } from 'dexie'
+import { Dexie, Observable, liveQuery } from 'dexie'
 import { Writable, writable } from 'svelte/store'
 import { amountToString, stringToAmount } from './utils'
 import {
@@ -23,6 +23,10 @@ import {
 type AttemptOptions = {
   alerts?: [Function, Alert | null][],
   startInteraction?: boolean
+}
+
+export type {
+  TransferRecord,
 }
 
 export type AlertOptions = {
@@ -70,7 +74,7 @@ export type ActionModel = {
 
 export type TransfersModel = {
   type: 'TransfersModel',
-  transfers: Store<TransferRecord[]>,
+  fetchTransfers: () => Promise<TransferRecord[]>,
 }
 
 export type TransferModel = {
@@ -86,6 +90,7 @@ export type ConfigDataModel = {
 export type MakePaymentModel = {
   type: 'MakePaymentModel'
 }
+
 export class AppState {
   private interactionId: number = 0
   readonly waitingInteractions: Writable<Set<number>>
@@ -193,14 +198,15 @@ export class AppState {
     })
   }
 
-  showTransfers(): Promise<void> {
-    return this.attempt(async () => {
-      const interactionId = this.interactionId
-      const transfers = await createLiveQuery(() => this.uc.getTransferRecords())
-      if (this.interactionId === interactionId) {
-        this.pageModel.set({ type: 'TransfersModel', transfers })
-      }
-    })
+  showTransfers(): void {
+    let before: any = Dexie.maxKey
+    const fetchTransfers = async (): Promise<TransferRecord[]> => {
+      const transfers = await this.uc.getTransferRecords({ limit: 100, before })
+      const n = transfers.length
+      before = n > 0 ? transfers[n - 1].time : Dexie.minKey
+      return transfers
+    }
+    this.pageModel.set({ type: 'TransfersModel', fetchTransfers })
   }
 
   showTransfer(transferUri: string, back?: () => void): Promise<void> {
