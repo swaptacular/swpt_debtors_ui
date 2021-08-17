@@ -5,14 +5,29 @@
 
   export let app: AppState
   export let model: TransfersModel
-  let transfers: TransferRecord[] = []
+  const threshold = 100
+  let containerElement: HTMLElement | undefined
+  let transfers = model.transfers
+  let hasMore = transfers.length > 0
   let newBatch: TransferRecord[] = []
 
-  async function fetchTransfers() {
+  async function fetchTransfers(): Promise<void> {
     newBatch = await model.fetchTransfers()
+    hasMore = newBatch.length > 0
+  }
+  function showTransfer(transferUri: string): void {
+    const scrollTop = containerElement?.scrollTop
+    const scrollLeft = containerElement?.scrollLeft
+    app.showTransfer(transferUri, () => {
+      app.pageModel.set({ ...model, transfers, scrollTop, scrollLeft })
+    })
   }
 
-  onMount(fetchTransfers)
+  onMount(() => {
+    assert(containerElement)
+    containerElement.scrollTop = model.scrollTop ?? containerElement.scrollTop
+    containerElement.scrollLeft = model.scrollLeft ?? containerElement.scrollLeft
+  })
 
   $: transfers = [...transfers, ...newBatch]
 </script>
@@ -59,12 +74,15 @@
 <h1>Transfers Page</h1>
 
 <div class="list">
-  <ul>
+  <ul bind:this={containerElement}>
     {#each transfers as transfer, n }
       <li>
-        {n} <a href="." on:click|preventDefault={() => app.showTransfer(transfer.uri)}>{`${transfer.amount} to ${transfer.paymentInfo.payeeName}`}</a>
+        {n}
+        <a href="." on:click|preventDefault={() => showTransfer(transfer.uri)}>
+          {`${transfer.amount} to ${transfer.paymentInfo.payeeName}`}
+        </a>
       </li>
     {/each}
-    <InfiniteScroll hasMore={newBatch.length !== 0} threshold={100} on:loadMore={fetchTransfers} />
+    <InfiniteScroll {hasMore} {threshold} on:loadMore={fetchTransfers} />
   </ul>
 </div>

@@ -74,7 +74,10 @@ export type ActionModel = {
 
 export type TransfersModel = {
   type: 'TransfersModel',
+  transfers: TransferRecord[],
   fetchTransfers: () => Promise<TransferRecord[]>,
+  scrollTop?: number,
+  scrollLeft?: number,
 }
 
 export type TransferModel = {
@@ -198,15 +201,22 @@ export class AppState {
     })
   }
 
-  showTransfers(): void {
-    let before: any = Dexie.maxKey
-    const fetchTransfers = async (): Promise<TransferRecord[]> => {
-      const transfers = await this.uc.getTransferRecords({ limit: 100, before })
-      const n = transfers.length
-      before = n > 0 ? transfers[n - 1].time : Dexie.minKey
-      return transfers
-    }
-    this.pageModel.set({ type: 'TransfersModel', fetchTransfers })
+  showTransfers(): Promise<void> {
+    return this.attempt(async () => {
+      const interactionId = this.interactionId
+
+      let before: any = Dexie.maxKey
+      const fetchTransfers = async (): Promise<TransferRecord[]> => {
+        const batch = await this.uc.getTransferRecords({ before, limit: 100 })
+        const n = batch.length
+        before = n > 0 ? batch[n - 1].time : Number.MIN_VALUE
+        return batch
+      }
+      const transfers = await fetchTransfers()
+      if (this.interactionId === interactionId) {
+        this.pageModel.set({ type: 'TransfersModel', transfers, fetchTransfers })
+      }
+    })
   }
 
   showTransfer(transferUri: string, back?: () => void): Promise<void> {
