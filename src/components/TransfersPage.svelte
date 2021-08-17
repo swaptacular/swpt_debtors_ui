@@ -5,26 +5,23 @@
 
   export let app: AppState
   export let model: TransfersModel
-  const threshold = 100
-  let containerElement: HTMLElement | undefined
-  let transfers = model.transfers
-  let hasMore = transfers.length > 0
-  let newBatch: TransferRecord[] = []
+  let containerElement: HTMLElement
+  let transfers: TransferRecord[] = []
+  let newBatch = model.transfers
 
-  async function fetchTransfers(): Promise<void> {
+  async function fetchNewBatch(): Promise<void> {
     newBatch = await model.fetchTransfers()
-    hasMore = newBatch.length > 0
   }
+
   function showTransfer(transferUri: string): void {
-    const scrollTop = containerElement?.scrollTop
-    const scrollLeft = containerElement?.scrollLeft
+    const scrollTop = containerElement.scrollTop
+    const scrollLeft = containerElement.scrollLeft
     app.showTransfer(transferUri, () => {
       app.pageModel.set({ ...model, transfers, scrollTop, scrollLeft })
     })
   }
 
   onMount(() => {
-    assert(containerElement)
     containerElement.scrollTop = model.scrollTop ?? containerElement.scrollTop
     containerElement.scrollLeft = model.scrollLeft ?? containerElement.scrollLeft
   })
@@ -83,6 +80,6 @@
         </a>
       </li>
     {/each}
-    <InfiniteScroll {hasMore} {threshold} on:loadMore={fetchTransfers} />
+    <InfiniteScroll hasMore={newBatch.length > 0} threshold={100} on:loadMore={fetchNewBatch} />
   </ul>
 </div>
