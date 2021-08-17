@@ -8,7 +8,7 @@
   let transfers: TransferRecord[] = []
   let newBatch: TransferRecord[] = []
 
-  async function fetchTransfers() => {
+  async function fetchTransfers() {
     newBatch = await model.fetchTransfers()
   }
 
