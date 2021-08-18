@@ -6,6 +6,7 @@ const appFiles = [
   'favicon.svg',
   'global.css',
   'config.js',
+  'qr-scanner-worker.min.js',
   'build/bundle.css',
   'build/bundle.js',
 ]
