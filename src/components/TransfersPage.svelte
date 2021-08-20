@@ -66,8 +66,6 @@
   }
 </style>
 
-<button on:click={() => app.showActions()}>Back</button>
-
 <h1>Transfers Page</h1>
 
 <div class="list">

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { setContext } from 'svelte'
+  import { setContext, onMount } from 'svelte'
   import type { AppState } from '../app-state'
   import { logout } from '../operations'
   import Alerts from './Alerts.svelte'
@@ -16,7 +16,7 @@
 
   const { waitingInteractions, alerts, pageModel } = app
   const originalAppState = app
-  setContext('app', app)
+  let seqnum = typeof history.state === 'number' ? history.state : 0
 
   function enusreOriginalAppState(appState: AppState): void {
     if (appState !== originalAppState) throw new Error('unoriginal app state')
@@ -39,17 +39,39 @@
       throw new Error('unknown page model type')
     }
   }
+  function hijackBackButton() {
+    history.pushState(++seqnum, '')
+  }
+  function goBack() {
+    hijackBackButton()
+    $pageModel.goBack?.()
+  }
+  async function update(): Promise<void> {
+    await app.fetchDataFromServer()
+    $pageModel.reload()
+  }
+
+  setContext('app', app)
+  hijackBackButton()
+  onMount(() => {
+    addEventListener('popstate', goBack)
+    return () => {
+      removeEventListener("popstate", goBack)
+    }
+  })
 
   $: enusreOriginalAppState(app)
   $: pageComponent = getPageComponent($pageModel.type)
 </script>
 
+<button on:click={() => $pageModel.goBack?.()}>Back</button>
 <button on:click={() => logout()}>Logout</button>
 {#if unauthenticated}
-  <button on:click={() => app.fetchDataFromServer()}>Update!</button>
+  <button on:click={update}>Update!</button>
 {:else}
-  <button on:click={() => app.fetchDataFromServer()}>Update</button>
+  <button on:click={update}>Update</button>
 {/if}
+
 {#if $alerts.length === 0 && $waitingInteractions.size > 0 }
   <Hourglass />
 {/if}

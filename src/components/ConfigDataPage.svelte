@@ -12,8 +12,6 @@
   const link = `${app.publicInfoDocumentUri}#${app.debtorIdentityUri}`
 </script>
 
-<button on:click={() => app.showActions()}>Back</button>
-
 <h1>Config Data Page</h1>
 <dl>
   <dt>interestRate:</dt> <dd>{interestRate}</dd>

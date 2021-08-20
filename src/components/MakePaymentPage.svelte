@@ -27,8 +27,6 @@
   }
 </script>
 
-<button on:click={() => app.showActions()}>Back</button>
-
 <h1>Make Payment Page</h1>
 
 <QrScanner bind:result={scannedValue}/>

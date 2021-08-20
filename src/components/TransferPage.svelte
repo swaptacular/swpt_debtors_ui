@@ -7,8 +7,6 @@
   $: transfer = model.transfer
 </script>
 
-<button on:click={() => model.goBack()}>Back</button>
-
 <h1>Transfer Page</h1>
 <dl>
   <dt>UUID:</dt> <dd>{$transfer.transferUuid}</dd>

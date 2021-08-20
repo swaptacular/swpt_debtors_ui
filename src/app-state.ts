@@ -62,17 +62,23 @@ export type PageModel =
   | ConfigDataModel
   | MakePaymentModel
 
-export type ActionsModel = {
+type BasePageModel = {
+  type: string,
+  reload: () => void,
+  goBack?: () => void,
+}
+
+export type ActionsModel = BasePageModel & {
   type: 'ActionsModel',
   actions: Store<ActionRecordWithId[]>,
 }
 
-export type ActionModel = {
+export type ActionModel = BasePageModel & {
   type: 'ActionModel',
   action: ActionRecordWithId,
 }
 
-export type TransfersModel = {
+export type TransfersModel = BasePageModel & {
   type: 'TransfersModel',
   transfers: TransferRecord[],
   fetchTransfers: () => Promise<TransferRecord[]>,
@@ -80,17 +86,17 @@ export type TransfersModel = {
   scrollLeft?: number,
 }
 
-export type TransferModel = {
+export type TransferModel = BasePageModel & {
   type: 'TransferModel',
   transfer: Store<TransferRecord>,
   goBack: () => void,
 }
 
-export type ConfigDataModel = {
+export type ConfigDataModel = BasePageModel & {
   type: 'ConfigDataModel',
 }
 
-export type MakePaymentModel = {
+export type MakePaymentModel = BasePageModel & {
   type: 'MakePaymentModel'
 }
 
@@ -107,7 +113,11 @@ export class AppState {
   constructor(private uc: UserContext, actions: Store<ActionRecordWithId[]>) {
     this.waitingInteractions = writable(new Set())
     this.alerts = writable([])
-    this.pageModel = writable({ type: 'ActionsModel', actions })
+    this.pageModel = writable({
+      type: 'ActionsModel',
+      reload: () => { this.showActions() },
+      actions,
+    })
     this.noteMaxBytes = uc.noteMaxBytes
     this.getDebtorConfigData = uc.getDebtorConfigData.bind(uc)
     this.debtorIdentityUri = uc.debtorIdentityUri
@@ -128,10 +138,10 @@ export class AppState {
     return stringToAmount(s, amountDivisor)
   }
 
-  fetchDataFromServer(): Promise<void> {
+  fetchDataFromServer(callback?: () => void): Promise<void> {
     return this.attempt(async () => {
       await this.uc.ensureAuthenticated()
-      this.uc.scheduleUpdate()
+      this.uc.scheduleUpdate(callback)
     }, {
       startInteraction: false,
       alerts: [
@@ -159,7 +169,11 @@ export class AppState {
   }
 
   scanQrCode(): void {
-    this.pageModel.set({ type: 'MakePaymentModel' })
+    this.pageModel.set({
+      type: 'MakePaymentModel',
+      reload: () => { this.scanQrCode() },
+      goBack: () => { this.showActions() },
+    })
   }
 
   initiatePayment(paymentRequestFile: Blob | Promise<Blob>): Promise<void> {
@@ -182,18 +196,27 @@ export class AppState {
       const interactionId = this.interactionId
       const actions = await createLiveQuery(() => this.uc.getActionRecords())
       if (this.interactionId === interactionId) {
-        this.pageModel.set({ type: 'ActionsModel', actions })
+        this.pageModel.set({
+          type: 'ActionsModel',
+          reload: () => { this.showActions() },
+          actions,
+        })
       }
     })
   }
 
-  showAction(actionId: number): Promise<void> {
+  showAction(actionId: number, back?: () => void): Promise<void> {
     return this.attempt(async () => {
       const interactionId = this.interactionId
       const action = await this.uc.getActionRecord(actionId)
       if (this.interactionId === interactionId) {
         if (action !== undefined) {
-          this.pageModel.set({ type: 'ActionModel', action })
+          this.pageModel.set({
+            type: 'ActionModel',
+            reload: () => { this.showAction(actionId, back) },
+            goBack: back ?? (() => { this.showActions() }),
+            action,
+          })
         } else {
           this.addAlert(new Alert('The requested action does not exist.', { continue: () => this.showActions() }))
         }
@@ -214,7 +237,13 @@ export class AppState {
       }
       const transfers = await fetchTransfers()
       if (this.interactionId === interactionId) {
-        this.pageModel.set({ type: 'TransfersModel', transfers, fetchTransfers })
+        this.pageModel.set({
+          type: 'TransfersModel',
+          reload: () => { this.showTransfers() },
+          goBack: () => { this.showActions() },
+          transfers,
+          fetchTransfers,
+        })
       }
     })
   }
@@ -228,8 +257,9 @@ export class AppState {
         if (getStoreValue(transfer) !== undefined) {
           this.pageModel.set({
             type: 'TransferModel',
-            transfer: transfer as Store<TransferRecord>,
+            reload: () => { this.showTransfer(transferUri, back) },
             goBack,
+            transfer: transfer as Store<TransferRecord>,
           })
         } else {
           this.addAlert(new Alert('The requested transfer does not exist.', { continue: goBack }))
@@ -336,7 +366,11 @@ export class AppState {
     return this.attempt(async () => {
       const interactionId = this.interactionId
       if (this.interactionId === interactionId) {
-        this.pageModel.set({ type: 'ConfigDataModel' })
+        this.pageModel.set({
+          type: 'ConfigDataModel',
+          reload: () => { this.showConfig() },
+          goBack: () => { this.showActions() },
+        })
       }
     })
   }

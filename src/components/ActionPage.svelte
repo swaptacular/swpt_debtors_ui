@@ -10,8 +10,6 @@
   $: action = model.action
 </script>
 
-<button on:click={() => app.showActions()}>Back</button>
-
 {#if action.actionType === 'CreateTransfer'}
   <CreateTransferAction {action} {app} />
 {:else if action.actionType === 'AbortTransfer'}
