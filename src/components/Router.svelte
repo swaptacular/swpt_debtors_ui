@@ -93,7 +93,7 @@
   }
 </style>
 
-<TopAppBar dense variant="standard" bind:this={topAppBar} bind:collapsed>
+<TopAppBar dense variant="fixed" bind:this={topAppBar} bind:collapsed>
   <Row>
     <Section>
       {#if $pageModel.goBack}
