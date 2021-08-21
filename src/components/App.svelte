@@ -38,26 +38,14 @@
   const appStatePromise = createAppState()
 </script>
 
-<main>
-  {#if authenticationError }
-    <h1>An authentication error has occured.</h1>
+{#await appStatePromise}
+  <h1>Launching...</h1>
+{:then appState}
+  {#if appState === undefined }
+    <button on:click={() => login()}>Login</button>
+  {:else}
+    <Router app={appState} {unauthenticated} {authenticationError} {networkError} {httpError} />
   {/if}
-  {#if networkError }
-    <h1>A network error has occured.</h1>
-  {/if}
-  {#if httpError }
-    <h1>A server error has occured.</h1>
-  {/if}
-
-  {#await appStatePromise}
-    <h1>Launching...</h1>
-  {:then appState}
-    {#if appState === undefined }
-      <button on:click={() => login()}>Login</button>
-    {:else}
-      <Router app={appState} {unauthenticated} />
-    {/if}
-  {:catch error}
-    <h1>{logError(error)}</h1>
-  {/await}
-</main>
+{:catch error}
+  <h1>{logError(error)}</h1>
+{/await}

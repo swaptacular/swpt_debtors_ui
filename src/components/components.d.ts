@@ -1,1 +1,5 @@
 declare module 'svelte-qrcode'
+declare module '@smui/top-app-bar'
+declare module '@smui/icon-button'
+declare module '@smui/banner'
+declare module '@smui/button'

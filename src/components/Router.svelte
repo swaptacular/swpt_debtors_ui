@@ -2,6 +2,15 @@
   import { setContext, onMount } from 'svelte'
   import type { AppState } from '../app-state'
   import { logout } from '../operations'
+  import TopAppBar, {
+    Row,
+    Section,
+    Title,
+    AutoAdjust,
+  } from '@smui/top-app-bar'
+  import IconButton from '@smui/icon-button'
+  import Banner, { Label } from '@smui/banner'
+  import Button from '@smui/button'
   import Alerts from './Alerts.svelte'
   import Hourglass from './Hourglass.svelte'
   import ActionPage from './ActionPage.svelte'
@@ -13,10 +22,15 @@
 
   export let app: AppState
   export let unauthenticated: boolean
+  export let authenticationError: boolean
+  export let networkError: boolean
+  export let httpError: boolean
 
   const { waitingInteractions, alerts, pageModel } = app
   const originalAppState = app
   let seqnum = typeof history.state === 'number' ? history.state : 0
+  let topAppBar: HTMLElement
+  let collapsed = false  // TODO: Do we need this?
 
   function enusreOriginalAppState(appState: AppState): void {
     if (appState !== originalAppState) throw new Error('unoriginal app state')
@@ -46,6 +60,11 @@
     hijackBackButton()
     $pageModel.goBack?.()
   }
+  function acknowledgeAuthenticationError(event: any) {
+    if (event.detail.reason !== undefined) {
+      update()
+    }
+  }
   async function update(): Promise<void> {
     await app.fetchDataFromServer()
     $pageModel.reload()
@@ -64,16 +83,61 @@
   $: pageComponent = getPageComponent($pageModel.type)
 </script>
 
-<button on:click={() => $pageModel.goBack?.()}>Back</button>
-<button on:click={() => logout()}>Logout</button>
-{#if unauthenticated}
-  <button on:click={update}>Update!</button>
-{:else}
-  <button on:click={update}>Update</button>
-{/if}
+<style>
+  /* Hide everything above this component. */
+  :global(body, html) {
+    display: block !important;
+    height: auto !important;
+    width: auto !important;
+    position: static !important;
+  }
+</style>
 
-{#if $alerts.length === 0 && $waitingInteractions.size > 0 }
-  <Hourglass />
-{/if}
-<Alerts alerts={$alerts} {app} />
-<svelte:component this={pageComponent} model={$pageModel} {app} />
+<TopAppBar dense variant="standard" bind:this={topAppBar} bind:collapsed>
+  <Row>
+    <Section>
+      <IconButton class="material-icons">menu</IconButton>
+      <Title>Title</Title>
+    </Section>
+    <Section align="end" toolbar>
+      <IconButton class="material-icons" aria-label="Download">file_download</IconButton>
+      <IconButton class="material-icons" aria-label="Print this page">print</IconButton>
+      <IconButton class="material-icons" aria-label="Bookmark this page">bookmark</IconButton>
+    </Section>
+  </Row>
+</TopAppBar>
+
+<AutoAdjust {topAppBar}>
+  <Banner open={authenticationError} on:MDCBanner:closed={acknowledgeAuthenticationError}>
+    <Label slot="label">An authentication error has occured.</Label>
+    <svelte:fragment slot="actions">
+      <Button>Login</Button>
+    </svelte:fragment>
+  </Banner>
+  <Banner open={networkError}>
+    <Label slot="label">A network error has occured.</Label>
+    <svelte:fragment slot="actions">
+      <Button>OK</Button>
+    </svelte:fragment>
+  </Banner>
+  <Banner open={httpError}>
+    <Label slot="label">A server error has occured.</Label>
+    <svelte:fragment slot="actions">
+      <Button>OK</Button>
+    </svelte:fragment>
+  </Banner>
+
+  <button on:click={() => $pageModel.goBack?.()}>Back</button>
+  <button on:click={() => logout()}>Logout</button>
+  {#if unauthenticated}
+    <button on:click={update}>Update!</button>
+  {:else}
+    <button on:click={update}>Update</button>
+  {/if}
+
+  {#if $alerts.length === 0 && $waitingInteractions.size > 0 }
+    <Hourglass />
+  {/if}
+  <Alerts alerts={$alerts} {app} />
+  <svelte:component this={pageComponent} model={$pageModel} {app} />
+</AutoAdjust>
