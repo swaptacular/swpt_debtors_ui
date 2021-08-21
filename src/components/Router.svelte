@@ -96,13 +96,21 @@
 <TopAppBar dense variant="standard" bind:this={topAppBar} bind:collapsed>
   <Row>
     <Section>
-      <IconButton class="material-icons">menu</IconButton>
+      {#if $pageModel.goBack}
+        <IconButton class="material-icons" on:click={() => $pageModel.goBack?.()}>arrow_back</IconButton>
+      {/if}
       <Title>Title</Title>
     </Section>
     <Section align="end" toolbar>
-      <IconButton class="material-icons" aria-label="Download">file_download</IconButton>
-      <IconButton class="material-icons" aria-label="Print this page">print</IconButton>
-      <IconButton class="material-icons" aria-label="Bookmark this page">bookmark</IconButton>
+      <IconButton class="material-icons" aria-label="Reload" on:click={update}>
+        {#if unauthenticated}
+          sync_problem
+        {:else}
+          sync
+        {/if}
+      </IconButton>
+      <IconButton class="material-icons" aria-label="Logout" on:click={() => logout()}>exit_to_app</IconButton>
+      <!-- <IconButton class="material-icons" aria-label="More">more_vert</IconButton> -->
     </Section>
   </Row>
 </TopAppBar>
@@ -126,18 +134,10 @@
       <Button>OK</Button>
     </svelte:fragment>
   </Banner>
-
-  <button on:click={() => $pageModel.goBack?.()}>Back</button>
-  <button on:click={() => logout()}>Logout</button>
-  {#if unauthenticated}
-    <button on:click={update}>Update!</button>
-  {:else}
-    <button on:click={update}>Update</button>
-  {/if}
+  <Alerts alerts={$alerts} {app} />
 
   {#if $alerts.length === 0 && $waitingInteractions.size > 0 }
     <Hourglass />
   {/if}
-  <Alerts alerts={$alerts} {app} />
   <svelte:component this={pageComponent} model={$pageModel} {app} />
 </AutoAdjust>
