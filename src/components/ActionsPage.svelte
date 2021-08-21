@@ -25,8 +25,6 @@
   $: localStorage.setItem(LOCALSTORAGE_KEY, String(showForeignActions))
 </script>
 
-<h1>Actions Page</h1>
-
 {#if regularActions.length > 0 }
   <ol>
     {#each regularActions as action }
@@ -48,6 +46,6 @@
 {/if}
 </p>
 
-<button on:click={() => app.showConfig()}>Configuration</button>
-<button on:click={() => app.showTransfers()}>Show Transfers</button>
+<button on:click={() => app.showConfig()}>Currency</button>
+<button on:click={() => app.showTransfers()}>Transfers</button>
 <button on:click={() => app.scanQrCode()}>Make Payment</button>

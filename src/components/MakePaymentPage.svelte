@@ -27,8 +27,6 @@
   }
 </script>
 
-<h1>Make Payment Page</h1>
-
 <QrScanner bind:result={scannedValue}/>
 
 <button on:click={() => app.initiatePayment(blob)}>Load file</button>

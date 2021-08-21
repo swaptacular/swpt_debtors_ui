@@ -7,7 +7,6 @@
   $: transfer = model.transfer
 </script>
 
-<h1>Transfer Page</h1>
 <dl>
   <dt>UUID:</dt> <dd>{$transfer.transferUuid}</dd>
   <dt>time:</dt> <dd>{new Date($transfer.time).toISOString()}</dd>

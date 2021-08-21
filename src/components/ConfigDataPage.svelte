@@ -12,7 +12,6 @@
   const link = `${app.publicInfoDocumentUri}#${app.debtorIdentityUri}`
 </script>
 
-<h1>Config Data Page</h1>
 <dl>
   <dt>interestRate:</dt> <dd>{interestRate}</dd>
   <dt>summary:</dt> <dd>{info?.summary}</dd>

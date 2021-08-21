@@ -66,8 +66,6 @@
   }
 </style>
 
-<h1>Transfers Page</h1>
-
 <div class="list">
   <ul bind:this={containerElement}>
     {#each transfers as transfer, n }

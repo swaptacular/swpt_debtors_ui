@@ -30,6 +30,7 @@
   const originalAppState = app
   let seqnum = typeof history.state === 'number' ? history.state : 0
   let topAppBar: HTMLElement
+  let pageTitle: string
   let collapsed = false  // TODO: Do we need this?
 
   function enusreOriginalAppState(appState: AppState): void {
@@ -38,16 +39,22 @@
   function getPageComponent(pageModelType: string) {
     switch (pageModelType) {
     case 'ActionModel':
+      pageTitle = 'Action'
       return ActionPage
     case 'ActionsModel':
+      pageTitle = 'Actions'
       return ActionsPage
     case 'TransferModel':
+      pageTitle = 'Transfer'
       return TransferPage
     case 'TransfersModel':
+      pageTitle = 'Transfers'
       return TransfersPage
     case 'ConfigDataModel':
+      pageTitle = 'Currency'
       return ConfigDataPage
     case 'MakePaymentModel':
+      pageTitle = 'Make payment'
       return MakePaymentPage
     default:
       throw new Error('unknown page model type')
@@ -99,7 +106,7 @@
       {#if $pageModel.goBack}
         <IconButton class="material-icons" on:click={() => $pageModel.goBack?.()}>arrow_back</IconButton>
       {/if}
-      <Title>Title</Title>
+      <Title>{pageTitle}</Title>
     </Section>
     <Section align="end" toolbar>
       <IconButton class="material-icons" aria-label="Reload" on:click={update}>
