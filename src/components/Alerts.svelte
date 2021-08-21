@@ -1,12 +1,27 @@
 <script lang="ts">
   import type { AppState, Alert } from '../app-state'
+  import Dialog, { Title, Content, Actions } from '@smui/dialog'
+  import Button, { Label } from '@smui/button'
 
   export let app: AppState
   export let alerts: Alert[]
 </script>
 
-<ol>
-  {#each alerts as alert }
-    <li>{alert.message} <button on:click={() => app.dismissAlert(alert)}>Dismiss</button></li>
-  {/each}
-</ol>
+{#if alerts.length > 0}
+<Dialog
+  open
+  scrimClickAction=""
+  escapeKeyAction=""
+  aria-labelledby="alert-title"
+  aria-describedby="alert-content"
+  >
+  <!-- TODO: Title cannot contain leading whitespace due to mdc-typography-baseline-top() -->
+  <Title id="alert-title">Error</Title>
+  <Content id="alert-content">{alerts[0].message}</Content>
+  <Actions>
+    <Button on:click={() => app.dismissAlert(alerts[0])}>
+      <Label>OK</Label>
+    </Button>
+  </Actions>
+</Dialog>
+{/if}
