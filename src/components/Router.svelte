@@ -134,10 +134,12 @@
       <Button>OK</Button>
     </svelte:fragment>
   </Banner>
+
   <Alerts alerts={$alerts} {app} />
 
   {#if $alerts.length === 0 && $waitingInteractions.size > 0 }
     <Hourglass />
   {/if}
+
   <svelte:component this={pageComponent} model={$pageModel} {app} />
 </AutoAdjust>
