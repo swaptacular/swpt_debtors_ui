@@ -72,6 +72,11 @@
       update()
     }
   }
+  function confirmLogout() {
+    if (confirm('You will be logged out. To use the application again, you will have to log in.')) {
+      logout()
+    }
+  }
   async function update(): Promise<void> {
     await app.fetchDataFromServer()
     $pageModel.reload()
@@ -116,7 +121,7 @@
           sync
         {/if}
       </IconButton>
-      <IconButton class="material-icons" aria-label="Logout" on:click={() => logout()}>exit_to_app</IconButton>
+      <IconButton class="material-icons" aria-label="Logout" on:click={confirmLogout}>exit_to_app</IconButton>
       <!-- <IconButton class="material-icons" aria-label="More">more_vert</IconButton> -->
     </Section>
   </Row>
