@@ -12,21 +12,21 @@
     unauthenticated = true
     if (!authenticationError) {
       authenticationError = true
-      setTimeout(() => { authenticationError = false}, 5000)
+      setTimeout(() => { authenticationError = false}, 60000)
     }
     event.preventDefault()
   })
   addEventListener('update-network-error', (event) => {
     if (!networkError) {
       networkError = true
-      setTimeout(() => { networkError = false}, 5000)
+      setTimeout(() => { networkError = false}, 60000)
     }
     event.preventDefault()
   })
   addEventListener('update-http-error', (event) => {
     if (!httpError) {
       httpError = true
-      setTimeout(() => { httpError = false}, 5000)
+      setTimeout(() => { httpError = false}, 60000)
     }
     event.preventDefault()
   })

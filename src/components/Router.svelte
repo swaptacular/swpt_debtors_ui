@@ -9,7 +9,7 @@
     AutoAdjust,
   } from '@smui/top-app-bar'
   import IconButton from '@smui/icon-button'
-  import Banner, { Label } from '@smui/banner'
+  import Snackbar, { Actions, Label } from '@smui/snackbar'
   import Button from '@smui/button'
   import Alerts from './Alerts.svelte'
   import Hourglass from './Hourglass.svelte'
@@ -32,6 +32,9 @@
   let topAppBar: HTMLElement
   let pageTitle: string
   let collapsed = false  // TODO: Do we need this?
+  let authenticationErrorSnackbar: any
+  let networkErrorSnackbar: any
+  let httpErrorSnackbar: any
 
   function enusreOriginalAppState(appState: AppState): void {
     if (appState !== originalAppState) throw new Error('unoriginal app state')
@@ -67,11 +70,6 @@
     hijackBackButton()
     $pageModel.goBack?.()
   }
-  function acknowledgeAuthenticationError(event: any) {
-    if (event.detail.reason !== undefined) {
-      update()
-    }
-  }
   function confirmLogout() {
     if (confirm('You will be logged out. To use the application again, you will have to log in.')) {
       logout()
@@ -93,6 +91,9 @@
 
   $: enusreOriginalAppState(app)
   $: pageComponent = getPageComponent($pageModel.type)
+  $: authenticationError && authenticationErrorSnackbar?.open()
+  $: networkError && networkErrorSnackbar?.open()
+  $: httpError && httpErrorSnackbar?.open()
 </script>
 
 <style>
@@ -128,24 +129,18 @@
 </TopAppBar>
 
 <AutoAdjust {topAppBar}>
-  <Banner open={authenticationError} on:MDCBanner:closed={acknowledgeAuthenticationError}>
-    <Label slot="label">An authentication error has occured.</Label>
-    <svelte:fragment slot="actions">
-      <Button>Login</Button>
-    </svelte:fragment>
-  </Banner>
-  <Banner open={networkError}>
-    <Label slot="label">A network error has occured.</Label>
-    <svelte:fragment slot="actions">
-      <Button>OK</Button>
-    </svelte:fragment>
-  </Banner>
-  <Banner open={httpError}>
-    <Label slot="label">A server error has occured.</Label>
-    <svelte:fragment slot="actions">
-      <Button>OK</Button>
-    </svelte:fragment>
-  </Banner>
+  <Snackbar bind:this={authenticationErrorSnackbar}>
+    <Label>An authentication error has occured.</Label>
+    <Actions>
+      <Button on:click={update}>Login</Button>
+    </Actions>
+  </Snackbar>
+  <Snackbar bind:this={networkErrorSnackbar}>
+    <Label>A network error has occured.</Label>
+  </Snackbar>
+  <Snackbar bind:this={httpErrorSnackbar}>
+    <Label>A server error has occured.</Label>
+  </Snackbar>
 
   <Alerts alerts={$alerts} {app} />
 
