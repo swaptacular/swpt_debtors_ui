@@ -129,6 +129,13 @@
 </TopAppBar>
 
 <AutoAdjust {topAppBar}>
+  {#if $alerts.length > 0}
+    <Alerts alerts={$alerts} {app} />
+  {:else if $waitingInteractions.size > 0 }
+    <Hourglass />
+  {/if}
+  <svelte:component this={pageComponent} model={$pageModel} {app} />
+
   <Snackbar bind:this={authenticationErrorSnackbar}>
     <Label>An authentication error has occured.</Label>
     <Actions>
@@ -141,12 +148,4 @@
   <Snackbar bind:this={httpErrorSnackbar}>
     <Label>A server error has occured.</Label>
   </Snackbar>
-
-  <Alerts alerts={$alerts} {app} />
-
-  {#if $alerts.length === 0 && $waitingInteractions.size > 0 }
-    <Hourglass />
-  {/if}
-
-  <svelte:component this={pageComponent} model={$pageModel} {app} />
 </AutoAdjust>

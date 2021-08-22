@@ -5,7 +5,7 @@
 <style>
   .centered {
     display: flex;
-    position: absolute;
+    position: fixed;
     left: 50%;
     top: 50%;
     margin-left: -16px;
