@@ -1,32 +1,39 @@
 <script lang="ts">
+  import { setContext } from 'svelte'
+  import { writable } from 'svelte/store'
   import { login } from '../operations'
   import { createAppState } from '../app-state'
   import Router from './Router.svelte'
 
-  let unauthenticated = false
-  let authenticationError = false
-  let networkError = false
-  let httpError = false
+  const unauthenticated = writable(false)
+  const authenticationError = writable(false)
+  const networkError = writable(false)
+  const httpError = writable(false)
+
+  setContext('unauthenticated', unauthenticated)
+  setContext('authenticationError', authenticationError)
+  setContext('networkError', networkError)
+  setContext('httpError', httpError)
 
   addEventListener('update-authentication-error', (event) => {
-    unauthenticated = true
-    if (!authenticationError) {
-      authenticationError = true
-      setTimeout(() => { authenticationError = false}, 60000)
+    unauthenticated.set(true)
+    if (!$authenticationError) {
+      authenticationError.set(true)
+      setTimeout(() => { authenticationError.set(false) }, 600_000)
     }
     event.preventDefault()
   })
   addEventListener('update-network-error', (event) => {
-    if (!networkError) {
-      networkError = true
-      setTimeout(() => { networkError = false}, 60000)
+    if (!$networkError) {
+      networkError.set(true)
+      setTimeout(() => { networkError.set(false) }, 600_000)
     }
     event.preventDefault()
   })
   addEventListener('update-http-error', (event) => {
-    if (!httpError) {
-      httpError = true
-      setTimeout(() => { httpError = false}, 60000)
+    if (!$httpError) {
+      httpError.set(true)
+      setTimeout(() => { httpError.set(false) }, 600_000)
     }
     event.preventDefault()
   })
@@ -44,7 +51,7 @@
   {#if appState === undefined }
     <button on:click={() => login()}>Login</button>
   {:else}
-    <Router app={appState} {unauthenticated} {authenticationError} {networkError} {httpError} />
+    <Router app={appState} />
   {/if}
 {:catch error}
   <h1>{logError(error)}</h1>

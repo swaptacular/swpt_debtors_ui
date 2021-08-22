@@ -1,6 +1,8 @@
 <script lang="ts">
   import type { AppState, ActionsModel } from '../app-state'
   import type { ActionRecordWithId } from '../operations'
+  import Fab, { Icon } from '@smui/fab';
+  import Page from './Page.svelte'
 
   export let app: AppState
   export let model: ActionsModel
@@ -25,27 +27,50 @@
   $: localStorage.setItem(LOCALSTORAGE_KEY, String(showForeignActions))
 </script>
 
-{#if regularActions.length > 0 }
-  <ol>
-    {#each regularActions as action }
-      <li><a href="." on:click|preventDefault={() => app.showAction(action.actionId)}>{action.actionType}</a></li>
-    {/each}
-  </ol>
-{/if}
+<style>
+  .fab-container {
+    margin: 16px 16px;
+  }
+</style>
 
-<p>
-{#if foreignActions.length > 0 }
-  <input type=checkbox bind:checked={showForeignActions}> Show failed transfers initiated from other devices
-  {#if showForeignActions }
-    <ol>
-      {#each foreignActions as action }
-        <li><a href="." on:click|preventDefault={() => app.showAction(action.actionId)}>{action.actionType}</a></li>
-      {/each}
-    </ol>
-  {/if}
-{/if}
-</p>
+<Page title="Actions" snackbarBottom="84px">
+  <svelte:fragment slot="content">
+    {#if regularActions.length > 0 }
+      <ol>
+        {#each regularActions as action }
+          <li><a href="." on:click|preventDefault={() => app.showAction(action.actionId)}>{action.actionType}</a></li>
+        {/each}
+      </ol>
+    {/if}
+    <p>
+    {#if foreignActions.length > 0 }
+      <input type=checkbox bind:checked={showForeignActions}> Show failed transfers initiated from other devices
+      {#if showForeignActions }
+        <ol>
+          {#each foreignActions as action }
+            <li><a href="." on:click|preventDefault={() => app.showAction(action.actionId)}>{action.actionType}</a></li>
+          {/each}
+        </ol>
+      {/if}
+    {/if}
+    </p>
+  </svelte:fragment>
 
-<button on:click={() => app.showConfig()}>Currency</button>
-<button on:click={() => app.showTransfers()}>Transfers</button>
-<button on:click={() => app.scanQrCode()}>Make Payment</button>
+  <svelte:fragment slot="floating">
+    <div class="fab-container">
+      <Fab on:click={() => app.showConfig()}>
+        <Icon class="material-icons">account_balance</Icon>
+      </Fab>
+    </div>
+    <div class="fab-container">
+      <Fab on:click={() => app.showTransfers()}>
+        <Icon class="material-icons">list</Icon>
+      </Fab>
+    </div>
+    <div class="fab-container">
+      <Fab on:click={() => app.scanQrCode()}>
+        <Icon class="material-icons">payment</Icon>
+      </Fab>
+    </div>
+  </svelte:fragment>
+</Page>

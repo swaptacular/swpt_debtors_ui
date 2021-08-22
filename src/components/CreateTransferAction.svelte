@@ -3,6 +3,8 @@
   import type { CreateTransferActionWithId } from '../operations'
   import { getCreateTransferActionStatus } from '../operations'
   import { generatePayment0TransferNote } from '../payment-requests'
+  import Fab, { Icon, Label } from '@smui/fab';
+  import Page from './Page.svelte'
 
   export let app: AppState
   export let action: CreateTransferActionWithId
@@ -36,21 +38,45 @@
   $: dismissButtonIsDisabled = (status === 'Not confirmed' || status === 'Sent' || status === 'Timed out')
 </script>
 
-<h1>Create Transfer Action</h1>
-<form on:input={() => actionManager.markDirty()} on:change={() => actionManager.save()}>
-  {#if deadline}
-    <p><b>Payment deadlines ({deadline.toISOString()}) are not supported, and will be ignored.</b></p>
-  {/if}
-  <p><label>payeeName:<input required minlength="1" maxlength="200" bind:value={payeeName}></label></p>
-  <p><label>amount:<input disabled={forbidAmountChange} required type=number min="1" bind:value={amount}> {app.unit}</label></p>
-  {#if description.contentFormat === '.'}
-    <p><a href="{description.content}">{description.content}</a></p>
-  {:else}
-    <p>{description.content}</p>
-  {/if}
-</form>
+<style>
+  .fab-container {
+    margin: 16px 16px;
+  }
+</style>
 
-<h2>{status}</h2>
+<Page title="Payment" snackbarBottom="84px">
+  <svelte:fragment slot="content">
+    <h1>Create Transfer Action</h1>
+    <form on:input={() => actionManager.markDirty()} on:change={() => actionManager.save()}>
+      {#if deadline}
+        <p><b>Payment deadlines ({deadline.toISOString()}) are not supported, and will be ignored.</b></p>
+      {/if}
+      <p><label>payeeName:<input required minlength="1" maxlength="200" bind:value={payeeName}></label></p>
+      <p><label>amount:<input disabled={forbidAmountChange} required type=number min="1" bind:value={amount}> {app.unit}</label></p>
+      {#if description.contentFormat === '.'}
+        <p><a href="{description.content}">{description.content}</a></p>
+      {:else}
+        <p>{description.content}</p>
+      {/if}
+    </form>
+    <h2>{status}</h2>
+  </svelte:fragment>
 
-<button disabled={dismissButtonIsDisabled} on:click={() => actionManager.remove()}>Dismiss</button>
-<button disabled={executeButtonIsDisabled} on:click={() => actionManager.execute()}>{executeButtonLabel}</button>
+  <svelte:fragment slot="floating">
+    {#if !dismissButtonIsDisabled}
+      <div class="fab-container">
+        <Fab on:click={() => actionManager.remove()} extended>
+          <Label>Dismiss</Label>
+        </Fab>
+      </div>
+    {/if}
+    {#if !executeButtonIsDisabled}
+      <div class="fab-container">
+        <Fab color="primary" on:click={() => actionManager.execute()} extended>
+          <Icon class="material-icons">monetization_on</Icon>
+          <Label>{executeButtonLabel}</Label>
+        </Fab>
+      </div>
+    {/if}
+  </svelte:fragment>
+</Page>

@@ -1,13 +1,16 @@
 <script lang="ts">
-  import {onMount} from "svelte"
+  import { onMount } from "svelte"
   import type { AppState, TransfersModel, TransferRecord } from '../app-state'
   import InfiniteScroll from "./InfiniteScroll.svelte"
+  import Snackbar, { Label } from '@smui/snackbar'
+  import Page from './Page.svelte'
 
   export let app: AppState
   export let model: TransfersModel
   let containerElement: HTMLElement
   let transfers: TransferRecord[] = []
   let newBatch = model.transfers
+  let snackbar: any
 
   async function fetchNewBatch(): Promise<void> {
     newBatch = await model.fetchTransfers()
@@ -24,6 +27,7 @@
   onMount(() => {
     containerElement.scrollTop = model.scrollTop ?? containerElement.scrollTop
     containerElement.scrollLeft = model.scrollLeft ?? containerElement.scrollLeft
+    snackbar.open()
   })
 
   $: transfers = [...transfers, ...newBatch]
@@ -48,7 +52,7 @@
     width: 100%;
     max-width: 400px;
     max-height: 400px;
-		background-color: white;
+    background-color: white;
     overflow-x: scroll;
     list-style: none;
     padding: 0;
@@ -66,16 +70,27 @@
   }
 </style>
 
-<div class="list">
-  <ul bind:this={containerElement}>
-    {#each transfers as transfer, n }
-      <li>
-        {n}
-        <a href="." on:click|preventDefault={() => showTransfer(transfer.uri)}>
-          {`${transfer.amount} to ${transfer.paymentInfo.payeeName}`}
-        </a>
-      </li>
-    {/each}
-    <InfiniteScroll hasMore={newBatch.length > 0} threshold={100} on:loadMore={fetchNewBatch} />
-  </ul>
-</div>
+<Page title="Transfers" snackbarBottom="0px">
+  <svelte:fragment slot="content">
+    <div class="list">
+      <ul bind:this={containerElement}>
+        {#each transfers as transfer, n }
+          <li>
+            {n}
+            <a href="." on:click|preventDefault={() => showTransfer(transfer.uri)}>
+              {`${transfer.amount} to ${transfer.paymentInfo.payeeName}`}
+            </a>
+          </li>
+        {/each}
+        <InfiniteScroll hasMore={newBatch.length > 0} threshold={100} on:loadMore={fetchNewBatch} />
+      </ul>
+    </div>
+  </svelte:fragment>
+
+  <!-- TODO: Remove this. It is only for testing. -->
+  <svelte:fragment slot="snackbars">
+    <Snackbar bind:this={snackbar}>
+      <Label>A test.</Label>
+    </Snackbar>
+  </svelte:fragment>
+</Page>

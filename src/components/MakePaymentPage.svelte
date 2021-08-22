@@ -1,6 +1,8 @@
 <script lang="ts">
   import type { AppState, MakePaymentModel } from '../app-state'
   import QrScanner from './QrScanner.svelte'
+  import Fab, { Icon } from '@smui/fab';
+  import Page from './Page.svelte'
 
   export let app: AppState
   export let model: MakePaymentModel
@@ -27,6 +29,22 @@
   }
 </script>
 
-<QrScanner bind:result={scannedValue}/>
+<style>
+  .fab-container {
+    margin: 16px 16px;
+  }
+</style>
 
-<button on:click={() => app.initiatePayment(blob)}>Load file</button>
+<Page title="Make payment" snackbarBottom="84px">
+  <svelte:fragment slot="content">
+    <QrScanner bind:result={scannedValue}/>
+  </svelte:fragment>
+
+  <svelte:fragment slot="floating">
+    <div class="fab-container">
+      <Fab on:click={() => app.initiatePayment(blob)}>
+        <Icon class="material-icons">insert_drive_file</Icon>
+      </Fab>
+    </div>
+  </svelte:fragment>
+</Page>
