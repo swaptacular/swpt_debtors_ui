@@ -25,6 +25,7 @@
     "@smui/fab": "^4.2.0",
     "@smui/icon-button": "^4.2.0",
     "@smui/snackbar": "^4.2.0",
+    "@smui/textfield": "^4.2.0",
     "@smui/top-app-bar": "^4.2.0",
     "@tsconfig/svelte": "^1.0.0",
     "@types/jest": "^26.0.23",
