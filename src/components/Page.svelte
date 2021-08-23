@@ -69,11 +69,6 @@
         {/if}
       </IconButton>
 
-      <!-- TODO: Show help when clicked. -->
-      <IconButton class="material-icons" aria-label="Help">
-        help_outline
-      </IconButton>
-
       <IconButton class="material-icons" aria-label="Logout" on:click={confirmLogout}>
         exit_to_app
       </IconButton>
