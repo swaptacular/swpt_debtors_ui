@@ -59,7 +59,7 @@
   <svelte:fragment slot="floating">
     <div class="fab-container">
       <Fab on:click={() => app.showConfig()}>
-        <Icon class="material-icons">account_balance</Icon>
+        <Icon class="material-icons">build</Icon>
       </Fab>
     </div>
     <div class="fab-container">
@@ -69,7 +69,7 @@
     </div>
     <div class="fab-container">
       <Fab on:click={() => app.scanQrCode()}>
-        <Icon class="material-icons">payment</Icon>
+        <Icon class="material-icons">local_atm</Icon>
       </Fab>
     </div>
   </svelte:fragment>
