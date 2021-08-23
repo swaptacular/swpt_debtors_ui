@@ -2,6 +2,10 @@
   import type { AppState, ActionsModel } from '../app-state'
   import type { ActionRecordWithId } from '../operations'
   import Fab, { Icon } from '@smui/fab';
+  import LayoutGrid, { Cell } from '@smui/layout-grid'
+  import ActionCard from './ActionCard.svelte'
+  import Checkbox from '@smui/checkbox'
+  import FormField from '@smui/form-field'
   import Page from './Page.svelte'
 
   export let app: AppState
@@ -38,21 +42,28 @@
 <Page title="Actions">
   <svelte:fragment slot="content">
     {#if regularActions.length > 0 }
-      <ol>
+      <LayoutGrid>
         {#each regularActions as action }
-          <li><a href="." on:click|preventDefault={() => app.showAction(action.actionId)}>{action.actionType}</a></li>
+          <Cell>
+            <ActionCard {action} />
+          </Cell>
         {/each}
-      </ol>
+      </LayoutGrid>
     {/if}
     <p>
     {#if foreignActions.length > 0 }
-      <input type=checkbox bind:checked={showForeignActions}> Show failed transfers initiated from other devices
+      <FormField>
+        <Checkbox bind:checked={showForeignActions} />
+        <span slot="label">Show failed transfers initiated from other devices.</span>
+      </FormField>
       {#if showForeignActions }
-        <ol>
+        <LayoutGrid>
           {#each foreignActions as action }
-            <li><a href="." on:click|preventDefault={() => app.showAction(action.actionId)}>{action.actionType}</a></li>
+            <Cell>
+              <ActionCard {action} />
+            </Cell>
           {/each}
-        </ol>
+        </LayoutGrid>
       {/if}
     {/if}
     </p>
