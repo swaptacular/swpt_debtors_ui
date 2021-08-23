@@ -50,12 +50,15 @@
         {/each}
       </LayoutGrid>
     {/if}
-    <p>
     {#if foreignActions.length > 0 }
-      <FormField>
-        <Checkbox bind:checked={showForeignActions} />
-        <span slot="label">Show failed transfers initiated from other devices.</span>
-      </FormField>
+      <LayoutGrid>
+        <Cell span={12}>
+          <FormField>
+            <Checkbox bind:checked={showForeignActions} />
+            <span slot="label">Show failed payments initiated from other devices.</span>
+          </FormField>
+        </Cell>
+      </LayoutGrid>
       {#if showForeignActions }
         <LayoutGrid>
           {#each foreignActions as action }
@@ -66,7 +69,6 @@
         </LayoutGrid>
       {/if}
     {/if}
-    </p>
   </svelte:fragment>
 
   <svelte:fragment slot="floating">

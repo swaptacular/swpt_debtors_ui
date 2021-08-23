@@ -69,7 +69,7 @@
   }
 </style>
 
-<Page title="Transfers">
+<Page title="Payments">
   <svelte:fragment slot="content">
     <div class="list">
       <ul bind:this={containerElement}>

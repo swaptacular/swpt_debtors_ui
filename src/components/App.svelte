@@ -64,24 +64,27 @@
 </script>
 
 <style>
-  .snackbars :global(.mdc-snackbar) {
+  .container {
+    padding-bottom: var(--snackbar-bottom);
+  }
+  .container :global(.mdc-snackbar) {
     bottom: var(--snackbar-bottom);
   }
 </style>
 
-{#await appStatePromise}
-  <h1>Launching...</h1>
-{:then appState}
-  {#if appState === undefined }
-    <button on:click={() => login()}>Login</button>
-  {:else}
-    <Router app={appState} bind:snackbarBottom />
-  {/if}
-{:catch error}
-  <h1>{logError(error)}</h1>
-{/await}
+<div class="container" style="--snackbar-bottom: {snackbarBottom}">
+  {#await appStatePromise}
+    <h1>Launching...</h1>
+  {:then appState}
+    {#if appState === undefined }
+      <button on:click={() => login()}>Login</button>
+    {:else}
+      <Router app={appState} bind:snackbarBottom />
+    {/if}
+  {:catch error}
+    <h1>{logError(error)}</h1>
+  {/await}
 
-<div class="snackbars" style="--snackbar-bottom: {snackbarBottom}">
   <Snackbar bind:this={authenticationErrorSnackbar} on:MDCSnackbar:closed={handleClosedAuthenticationErrorSnackbar}>
     <Label>An authentication error has occured.</Label>
     <Actions>
