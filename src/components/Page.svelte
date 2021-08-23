@@ -46,6 +46,10 @@
     bottom: 0;
     width: 100%;
     justify-content: center;
+    pointer-events: none;
+  }
+  .floating :global(*) {
+    pointer-events: auto;
   }
 </style>
 
