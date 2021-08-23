@@ -9,6 +9,7 @@
   } from '@smui/card'
 
   export let action: ActionRecordWithId
+  export let color: string = 'primary'
 
   const app: AppState = getContext('app')
 
@@ -17,7 +18,7 @@
     case 'CreateTransfer':
       return 'Make payment'
     case 'AbortTransfer':
-      return 'Show problem'
+      return 'Show the problem'
     case 'UpdateConfig':
       return 'Update configuration'
     default:
@@ -29,7 +30,7 @@
 <Card>
   <Content>{action.actionType}</Content>
   <Actions fullBleed>
-    <Button on:click={() => app.showAction(action.actionId)}>
+    <Button {color} on:click={() => app.showAction(action.actionId)}>
       <Label>{getButtonLabel(action)}</Label>
       <i class="material-icons" aria-hidden="true">arrow_forward</i>
     </Button>

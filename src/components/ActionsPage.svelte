@@ -63,7 +63,7 @@
         <LayoutGrid>
           {#each foreignActions as action }
             <Cell>
-              <ActionCard {action} />
+              <ActionCard {action} color="secondary" />
             </Cell>
           {/each}
         </LayoutGrid>
