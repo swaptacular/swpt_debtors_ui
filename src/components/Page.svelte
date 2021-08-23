@@ -49,7 +49,7 @@
   }
 </style>
 
-<TopAppBar dense variant="fixed" bind:this={topAppBar}>
+<TopAppBar dense bind:this={topAppBar}>
   <Row>
     <Section>
       {#if $pageModel.goBack}
