@@ -2,15 +2,15 @@
   import { onMount } from "svelte"
   import type { AppState, TransfersModel, TransferRecord } from '../app-state'
   import InfiniteScroll from "./InfiniteScroll.svelte"
-  import Snackbar, { Label } from '@smui/snackbar'
   import Page from './Page.svelte'
 
   export let app: AppState
   export let model: TransfersModel
+  export const snackbarBottom: string = "0px"
+
   let containerElement: HTMLElement
   let transfers: TransferRecord[] = []
   let newBatch = model.transfers
-  let snackbar: any
 
   async function fetchNewBatch(): Promise<void> {
     newBatch = await model.fetchTransfers()
@@ -27,7 +27,6 @@
   onMount(() => {
     containerElement.scrollTop = model.scrollTop ?? containerElement.scrollTop
     containerElement.scrollLeft = model.scrollLeft ?? containerElement.scrollLeft
-    snackbar.open()
   })
 
   $: transfers = [...transfers, ...newBatch]
@@ -70,7 +69,7 @@
   }
 </style>
 
-<Page title="Transfers" snackbarBottom="0px">
+<Page title="Transfers">
   <svelte:fragment slot="content">
     <div class="list">
       <ul bind:this={containerElement}>
@@ -85,12 +84,5 @@
         <InfiniteScroll hasMore={newBatch.length > 0} threshold={100} on:loadMore={fetchNewBatch} />
       </ul>
     </div>
-  </svelte:fragment>
-
-  <!-- TODO: Remove this. It is only for testing. -->
-  <svelte:fragment slot="snackbars">
-    <Snackbar bind:this={snackbar}>
-      <Label>A test.</Label>
-    </Snackbar>
   </svelte:fragment>
 </Page>

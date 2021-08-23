@@ -9,6 +9,7 @@
   import MakePaymentPage from './MakePaymentPage.svelte'
 
   export let app: AppState
+  export let snackbarBottom: string = '0px'
 
   const { pageModel } = app
   const originalAppState = app
@@ -56,4 +57,4 @@
   $: pageComponent = getPageComponent($pageModel.type)
 </script>
 
-<svelte:component this={pageComponent} model={$pageModel} {app} />
+<svelte:component this={pageComponent} model={$pageModel} {app} bind:snackbarBottom />

@@ -6,6 +6,7 @@
 
   export let app: AppState
   export let model: ConfigDataModel
+  export const snackbarBottom: string = "84px"
   assert(model)
 
   const debtorConfigData = app.getDebtorConfigData()
@@ -20,7 +21,7 @@
   }
 </style>
 
-<Page title="Configuration" snackbarBottom="84px">
+<Page title="Configuration">
   <svelte:fragment slot="content">
     <dl>
       <dt>interestRate:</dt> <dd>{interestRate}</dd>

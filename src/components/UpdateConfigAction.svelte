@@ -6,6 +6,8 @@
 
   export let app: AppState
   export let action: UpdateConfigActionWithId
+  export const snackbarBottom: string = "84px"
+
   let interestRate = action.interestRate ?? 0
   let summary = action.debtorInfo?.summary ?? ''
   let debtorName = action.debtorInfo?.debtorName ?? ''
@@ -40,7 +42,7 @@
   }
 </style>
 
-<Page title="Update configuration" snackbarBottom="84px">
+<Page title="Update configuration">
   <svelte:fragment slot="content">
     <h1>Update Config Action</h1>
     <form on:input={() => actionManager.markDirty()} on:change={() => actionManager.save()}>

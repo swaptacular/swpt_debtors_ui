@@ -10,25 +10,15 @@
     AutoAdjust,
   } from '@smui/top-app-bar'
   import IconButton from '@smui/icon-button'
-  import Snackbar, { Actions, Label } from '@smui/snackbar'
-  import Button from '@smui/button'
   import Alerts from './Alerts.svelte'
   import Hourglass from './Hourglass.svelte'
 
   export let title: string
-  export let snackbarBottom: string = '0'
 
   const app: AppState = getContext('app')
-  const unauthenticated: Writable<boolean> = getContext('unauthenticated')
-  const authenticationError: Writable<boolean> = getContext('authenticationError')
-  const networkError: Writable<boolean> = getContext('networkError')
-  const httpError: Writable<boolean> = getContext('httpError')
   const { waitingInteractions, alerts, pageModel } = app
-
+  const unauthenticated: Writable<boolean> = getContext('unauthenticated')
   let topAppBar: any
-  let authenticationErrorSnackbar: any
-  let networkErrorSnackbar: any
-  let httpErrorSnackbar: any
 
   function confirmLogout() {
     if (confirm('You will be logged out. To use the application again, you will have to log in.')) {
@@ -39,10 +29,6 @@
     await app.fetchDataFromServer()
     $pageModel.reload()
   }
-
-  $: $authenticationError && authenticationErrorSnackbar?.open()
-  $: $networkError && networkErrorSnackbar?.open()
-  $: $httpError && httpErrorSnackbar?.open()
 </script>
 
 <style>
@@ -52,9 +38,6 @@
     height: auto !important;
     width: auto !important;
     position: static !important;
-  }
-  .snackbars :global(.mdc-snackbar) {
-    bottom: var(--snackbar-bottom);
   }
   .floating {
     display: flex;
@@ -85,6 +68,12 @@
           sync
         {/if}
       </IconButton>
+
+      <!-- TODO: Show help when clicked. -->
+      <IconButton class="material-icons" aria-label="Help">
+        help_outline
+      </IconButton>
+
       <IconButton class="material-icons" aria-label="Logout" on:click={confirmLogout}>
         exit_to_app
       </IconButton>
@@ -102,24 +91,5 @@
 
   <div class="floating">
     <slot name="floating"></slot>
-  </div>
-
-  <div class="snackbars" style="--snackbar-bottom: {snackbarBottom}">
-    <slot name="snackbars"></slot>
-
-    <Snackbar bind:this={authenticationErrorSnackbar}>
-      <Label>An authentication error has occured.</Label>
-      <Actions>
-        <Button on:click={update}>Login</Button>
-      </Actions>
-    </Snackbar>
-
-    <Snackbar bind:this={networkErrorSnackbar}>
-      <Label>A network error has occured.</Label>
-    </Snackbar>
-
-    <Snackbar bind:this={httpErrorSnackbar}>
-      <Label>A server error has occured.</Label>
-    </Snackbar>
   </div>
 </AutoAdjust>

@@ -6,6 +6,8 @@
 
   export let app: AppState
   export let action: AbortTransferActionWithId
+  export const snackbarBottom: string = "84px"
+
   let showFailedCancellationDialog = false
 
   function retry() {
@@ -30,7 +32,7 @@
   }
 </style>
 
-<Page title="Payment problem" snackbarBottom="84px">
+<Page title="Payment problem">
   <svelte:fragment slot="content">
     <h1>Abort Transfer Action</h1>
     <dl>

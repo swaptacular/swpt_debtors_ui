@@ -5,6 +5,7 @@
 
   export let app: AppState
   export let model: TransferModel
+  export let snackbarBottom: string
 
   $: transfer = model.transfer
   $: snackbarBottom = $transfer.result ? '84px' : '0px'
@@ -16,7 +17,7 @@
   }
 </style>
 
-<Page title="Transfer" {snackbarBottom}>
+<Page title="Transfer">
   <svelte:fragment slot="content">
     <dl>
       <dt>UUID:</dt> <dd>{$transfer.transferUuid}</dd>

@@ -6,6 +6,7 @@
 
   export let app: AppState
   export let model: MakePaymentModel
+  export const snackbarBottom: string = "84px"
   assert(model)
 
   let scannedValue: string | undefined
@@ -35,7 +36,7 @@
   }
 </style>
 
-<Page title="Make payment" snackbarBottom="84px">
+<Page title="Make payment">
   <svelte:fragment slot="content">
     <QrScanner bind:result={scannedValue}/>
   </svelte:fragment>

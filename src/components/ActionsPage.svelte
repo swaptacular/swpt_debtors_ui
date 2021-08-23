@@ -6,6 +6,8 @@
 
   export let app: AppState
   export let model: ActionsModel
+  export const snackbarBottom: string = '84px'
+
   const LOCALSTORAGE_KEY = 'debtors.showForeignActions'
   let showForeignActions = localStorage.getItem(LOCALSTORAGE_KEY) === 'true'
 
@@ -33,7 +35,7 @@
   }
 </style>
 
-<Page title="Actions" snackbarBottom="84px">
+<Page title="Actions">
   <svelte:fragment slot="content">
     {#if regularActions.length > 0 }
       <ol>

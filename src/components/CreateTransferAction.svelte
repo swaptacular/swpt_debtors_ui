@@ -8,6 +8,8 @@
 
   export let app: AppState
   export let action: CreateTransferActionWithId
+  export const snackbarBottom: string = "84px"
+
   const forbidAmountChange = action.requestedAmount > 0
   const deadline = action.requestedDeadline
   const description = action.paymentInfo.description
@@ -44,7 +46,7 @@
   }
 </style>
 
-<Page title="Payment" snackbarBottom="84px">
+<Page title="Payment">
   <svelte:fragment slot="content">
     <h1>Create Transfer Action</h1>
     <form on:input={() => actionManager.markDirty()} on:change={() => actionManager.save()}>
