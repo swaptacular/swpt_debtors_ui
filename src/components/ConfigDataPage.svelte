@@ -49,7 +49,7 @@
 
   <svelte:fragment slot="floating">
     <div class="fab-container">
-      <Fab on:click={() => app.editConfig(debtorConfigData)}>
+      <Fab color={ debtorConfigData.debtorInfo ? 'secondary' : 'primary' } on:click={() => app.editConfig(debtorConfigData)}>
         <Icon class="material-icons">edit</Icon>
       </Fab>
     </div>

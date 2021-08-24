@@ -14,6 +14,7 @@
 
   const LOCALSTORAGE_KEY = 'debtors.showForeignActions'
   let showForeignActions = localStorage.getItem(LOCALSTORAGE_KEY) === 'true'
+  const debtorConfigData = app.getDebtorConfigData()
 
   function separateForeignActions(allActions: ActionRecordWithId[]): [ActionRecordWithId[], ActionRecordWithId[]] {
     let regularActions = []
@@ -73,7 +74,7 @@
 
   <svelte:fragment slot="floating">
     <div class="fab-container">
-      <Fab on:click={() => app.showConfig()}>
+      <Fab color={ debtorConfigData.debtorInfo ? 'secondary' : 'primary' } on:click={() => app.showConfig()}>
         <Icon class="material-icons">build</Icon>
       </Fab>
     </div>
