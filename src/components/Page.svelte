@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getContext } from 'svelte'
+  import { onMount, getContext } from 'svelte'
   import type { Writable } from 'svelte/store'
   import type { AppState } from '../app-state'
   import { logout } from '../operations'
@@ -29,6 +29,11 @@
     await app.fetchDataFromServer()
     $pageModel.reload()
   }
+
+  onMount(() => {
+    document.documentElement.scrollTop = 0
+    document.documentElement.scrollLeft = 0
+  })
 </script>
 
 <style>
@@ -53,7 +58,7 @@
   }
 </style>
 
-<TopAppBar dense bind:this={topAppBar}>
+<TopAppBar variant="fixed" dense bind:this={topAppBar}>
   <Row>
     <Section>
       {#if $pageModel.goBack}

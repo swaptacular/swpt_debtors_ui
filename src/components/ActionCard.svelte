@@ -3,10 +3,7 @@
   import type { ActionRecordWithId } from '../operations'
   import type { AppState } from '../app-state'
   import Button, { Label } from '@smui/button'
-  import Card, {
-    Content,
-    Actions,
-  } from '@smui/card'
+  import Card, { Content, Actions } from '@smui/card'
 
   export let action: ActionRecordWithId
   export let color: string = 'primary'

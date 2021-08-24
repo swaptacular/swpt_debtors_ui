@@ -37,6 +37,7 @@
     }
   }
   function hijackBackButton() {
+    history.scrollRestoration = 'manual'
     history.pushState(++seqnum, '')
   }
   function goBack() {

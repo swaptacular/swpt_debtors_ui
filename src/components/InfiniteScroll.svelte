@@ -1,49 +1,31 @@
-<script>
-  import { onMount, onDestroy, createEventDispatcher } from "svelte";
+<script lang="ts">
+  import { onMount, createEventDispatcher } from "svelte"
 
-  export let threshold = 0;
-  export let horizontal = false;
-  export let elementScroll = undefined;
-  export let hasMore = true;
+  export let threshold = 0
+  export let hasMore = true
+  export const scrollElement = document.documentElement
 
-  const dispatch = createEventDispatcher();
-  let isLoadMore = false;
-  let component;
+  const dispatch = createEventDispatcher()
+  let waitsForMore = false
 
-  $: {
-    if (component || elementScroll) {
-      const element = elementScroll ? elementScroll : component.parentNode;
-
-      element.addEventListener("scroll", onScroll);
-      element.addEventListener("resize", onScroll);
+  const onScroll = () => {
+    const offset = scrollElement.scrollHeight - scrollElement.clientHeight - scrollElement.scrollTop
+    if (offset <= threshold) {
+      if (!waitsForMore && hasMore) {
+        dispatch("loadMore")
+        waitsForMore = true
+      }
+    } else {
+      waitsForMore = false
     }
   }
 
-  const onScroll = e => {
-    const element = e.target;
-
-    const offset = horizontal
-      ? e.target.scrollWidth - e.target.clientWidth - e.target.scrollLeft
-      : e.target.scrollHeight - e.target.clientHeight - e.target.scrollTop;
-
-    if (offset <= threshold) {
-      if (!isLoadMore && hasMore) {
-        dispatch("loadMore");
-      }
-      isLoadMore = true;
-    } else {
-      isLoadMore = false;
+  onMount(() => {
+    window.addEventListener("scroll", onScroll)
+    window.addEventListener("resize", onScroll)
+    return () => {
+      window.removeEventListener("scroll", onScroll)
+      window.removeEventListener("resize", onScroll)
     }
-  };
-
-  onDestroy(() => {
-    if (component || elementScroll) {
-      const element = elementScroll ? elementScroll : component.parentNode;
-
-      element.removeEventListener("scroll", null);
-      element.removeEventListener("resize", null);
-    }
-  });
+  })
 </script>
-
-<div bind:this={component} style="width:0px" />
