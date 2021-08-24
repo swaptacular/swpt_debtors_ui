@@ -40,10 +40,10 @@
 
 <div class="paper-container">
   <Paper color="secondary" style="margin: 36px 18px">
-    <Title>Welcome to Swaptacular!</Title>
+    <Title>Welcome to Swaptacular</Title>
     <Content>
-      With Swaptacular, you can create your own digital currency,
-      which everybody can use. It is easy!
+      With Swaptacular you can create your own digital currency,
+      which everybody can use. And it is easy!
     </Content>
   </Paper>
 </div>
