@@ -3,11 +3,13 @@
   import { writable } from 'svelte/store'
   import { createAppState } from '../app-state'
   import type { AppState } from  '../app-state'
+  import Paper, { Title, Content } from '@smui/paper'
   import Snackbar, { Actions, Label } from '@smui/snackbar'
   import IconButton from '@smui/icon-button'
   import Button from '@smui/button'
   import LoginScreen from './LoginScreen.svelte'
   import Router from './Router.svelte'
+  import Hourglass from './Hourglass.svelte'
 
   const unauthenticated = writable(false)
   setContext('unauthenticated', unauthenticated)
@@ -26,7 +28,7 @@
 
   function logError(e: unknown): string {
     console.error(e)
-    return 'An unexpected error has occured.'
+    return 'Oops, an unexpected error has occurred which prevents the applcication from running.'
   }
 
   async function handleClosedAuthenticationErrorSnackbar(event: any) {
@@ -74,7 +76,7 @@
 
 <div class="container" style="--snackbar-bottom: {snackbarBottom}">
   {#await appStatePromise}
-    <h1>Launching...</h1>
+    <Hourglass />
   {:then appState}
     {#if appState === undefined }
       <LoginScreen bind:snackbarBottom  />
@@ -82,7 +84,12 @@
       <Router app={appState} bind:snackbarBottom />
     {/if}
   {:catch error}
-    <h1>{logError(error)}</h1>
+    <Paper style="margin: 36px 18px">
+      <Title>Application error</Title>
+      <Content>
+        {logError(error)}
+      </Content>
+    </Paper>
   {/await}
 
   <Snackbar bind:this={authenticationErrorSnackbar} on:MDCSnackbar:closed={handleClosedAuthenticationErrorSnackbar}>
