@@ -1,12 +1,12 @@
 <script lang="ts">
   import { setContext, onMount } from 'svelte'
   import { writable } from 'svelte/store'
-  import { login } from '../operations'
   import { createAppState } from '../app-state'
   import type { AppState } from  '../app-state'
   import Snackbar, { Actions, Label } from '@smui/snackbar'
   import IconButton from '@smui/icon-button'
   import Button from '@smui/button'
+  import LoginScreen from './LoginScreen.svelte'
   import Router from './Router.svelte'
 
   const unauthenticated = writable(false)
@@ -77,7 +77,7 @@
     <h1>Launching...</h1>
   {:then appState}
     {#if appState === undefined }
-      <button on:click={() => login()}>Login</button>
+      <LoginScreen bind:snackbarBottom  />
     {:else}
       <Router app={appState} bind:snackbarBottom />
     {/if}
