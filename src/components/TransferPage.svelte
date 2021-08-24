@@ -36,7 +36,7 @@
   <svelte:fragment slot="floating">
     {#if $transfer.result}
       <div class="fab-container">
-        <Fab color="primary" on:click={() => app.retryTransfer($transfer)}>
+        <Fab on:click={() => app.retryTransfer($transfer)}>
           <Icon class="material-icons">replay</Icon>
         </Fab>
       </div>
