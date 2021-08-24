@@ -5,10 +5,11 @@
   import Button, { Label } from '@smui/button'
   import Card, { Content, Actions } from '@smui/card'
 
-  export let action: ActionRecordWithId
-  export let color: string = 'primary'
-
   const app: AppState = getContext('app')
+
+  export let action: ActionRecordWithId
+  export let show = () => { app.showAction(action.actionId) }
+  export let color: string = 'primary'
 
   function getButtonLabel(action: ActionRecordWithId): string {
     switch (action.actionType) {
@@ -27,7 +28,7 @@
 <Card>
   <Content>{action.actionType}</Content>
   <Actions fullBleed>
-    <Button {color} on:click={() => app.showAction(action.actionId)}>
+    <Button {color} on:click={show}>
       <Label>{getButtonLabel(action)}</Label>
       <i class="material-icons" aria-hidden="true">arrow_forward</i>
     </Button>

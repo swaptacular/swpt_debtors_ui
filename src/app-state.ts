@@ -71,6 +71,8 @@ type BasePageModel = {
 export type ActionsModel = BasePageModel & {
   type: 'ActionsModel',
   actions: Store<ActionRecordWithId[]>,
+  scrollTop?: number,
+  scrollLeft?: number,
 }
 
 export type ActionModel = BasePageModel & {

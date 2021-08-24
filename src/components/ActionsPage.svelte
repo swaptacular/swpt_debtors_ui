@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from "svelte"
   import type { AppState, ActionsModel } from '../app-state'
   import type { ActionRecordWithId } from '../operations'
   import Fab, { Icon } from '@smui/fab';
@@ -13,8 +14,9 @@
   export const snackbarBottom: string = '84px'
 
   const LOCALSTORAGE_KEY = 'debtors.showForeignActions'
-  let showForeignActions = localStorage.getItem(LOCALSTORAGE_KEY) === 'true'
   const debtorConfigData = app.getDebtorConfigData()
+  const scrollElement = document.documentElement
+  let showForeignActions = localStorage.getItem(LOCALSTORAGE_KEY) === 'true'
 
   function separateForeignActions(allActions: ActionRecordWithId[]): [ActionRecordWithId[], ActionRecordWithId[]] {
     let regularActions = []
@@ -28,6 +30,19 @@
     }
     return [regularActions, foreignActions]
   }
+
+  function showAction(actionId: number): void {
+    const scrollTop = scrollElement.scrollTop
+    const scrollLeft = scrollElement.scrollLeft
+    app.showAction(actionId, () => {
+      app.pageModel.set({ ...model, scrollTop, scrollLeft })
+    })
+  }
+
+  onMount(() => {
+    scrollElement.scrollTop = model.scrollTop ?? scrollElement.scrollTop
+    scrollElement.scrollLeft = model.scrollLeft ?? scrollElement.scrollLeft
+  })
 
   $: actions = model.actions
   $: [regularActions, foreignActions] = separateForeignActions($actions)
@@ -46,7 +61,7 @@
       <LayoutGrid>
         {#each regularActions as action }
           <Cell>
-            <ActionCard {action} />
+            <ActionCard {action} show={() => showAction(action.actionId)} />
           </Cell>
         {/each}
       </LayoutGrid>
@@ -64,7 +79,7 @@
         <LayoutGrid>
           {#each foreignActions as action }
             <Cell>
-              <ActionCard {action} color="secondary" />
+              <ActionCard color="secondary" {action} show={() => showAction(action.actionId)} />
             </Cell>
           {/each}
         </LayoutGrid>

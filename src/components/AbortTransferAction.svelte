@@ -32,7 +32,7 @@
   }
 </style>
 
-<Page title="Payment problem">
+<Page title={transfer.result ? "Failed payment" : "Delayed payment"}>
   <svelte:fragment slot="content">
     <h1>Abort Transfer Action</h1>
     <dl>
@@ -55,14 +55,14 @@
         </Fab>
       </div>
       <div class="fab-container">
-        <Fab on:click={dismiss} extended>
+        <Fab color="primary" on:click={dismiss} extended>
           <Label>Dismiss</Label>
         </Fab>
       </div>
     {:else}
       <div class="fab-container">
         <Fab color="primary" on:click={cancel} extended>
-          <Label>Cancel</Label>
+          <Label>Cancel payment</Label>
         </Fab>
       </div>
     {/if}
