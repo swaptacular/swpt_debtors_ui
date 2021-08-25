@@ -365,16 +365,21 @@ export class AppState {
   }
 
   showConfig(): Promise<void> {
-    return this.attempt(async () => {
-      const interactionId = this.interactionId
-      if (this.interactionId === interactionId) {
-        this.pageModel.set({
-          type: 'ConfigDataModel',
-          reload: () => { this.showConfig() },
-          goBack: () => { this.showActions() },
-        })
-      }
-    })
+    const debtorConfigData = this.getDebtorConfigData()
+    if (debtorConfigData.debtorInfo) {
+      return this.attempt(async () => {
+        const interactionId = this.interactionId
+        if (this.interactionId === interactionId) {
+          this.pageModel.set({
+            type: 'ConfigDataModel',
+            reload: () => { this.showConfig() },
+            goBack: () => { this.showActions() },
+          })
+        }
+      })
+    } else {
+      return this.editConfig(debtorConfigData)
+    }
   }
 
   editConfig(debtorConfigData: DebtorConfigData): Promise<void> {

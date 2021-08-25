@@ -13,6 +13,9 @@
   const interestRate = debtorConfigData.interestRate
   const info = debtorConfigData.debtorInfo
   const link = `${app.publicInfoDocumentUri}#${app.debtorIdentityUri}`
+  if (!info) {
+    app.showActions()
+  }
 </script>
 
 <style>
@@ -23,33 +26,36 @@
 
 <Page title="Configuration">
   <svelte:fragment slot="content">
-    <dl>
-      <dt>interestRate:</dt> <dd>{interestRate}</dd>
-      <dt>summary:</dt> <dd>{info?.summary}</dd>
-      <dt>debtorName:</dt> <dd>{info?.debtorName}</dd>
-      <dt>debtorHomepage:</dt> <dd>{info?.debtorHomepage}</dd>
-      <dt>amountDivisor:</dt> <dd>{info?.amountDivisor}</dd>
-      <dt>decimalPlaces:</dt> <dd>{info?.decimalPlaces}</dd>
-      <dt>unit:</dt> <dd>{info?.unit}</dd>
-      <dt>peg:</dt> <dd>{info?.peg}</dd>
-    </dl>
+    {#if info}
+      <dl>
+        <dt>interestRate:</dt> <dd>{interestRate}</dd>
+        <dt>summary:</dt> <dd>{info.summary}</dd>
+        <dt>debtorName:</dt> <dd>{info.debtorName}</dd>
+        <dt>debtorHomepage:</dt> <dd>{info.debtorHomepage}</dd>
+        <dt>amountDivisor:</dt> <dd>{info.amountDivisor}</dd>
+        <dt>decimalPlaces:</dt> <dd>{info.decimalPlaces}</dd>
+        <dt>unit:</dt> <dd>{info.unit}</dd>
+        <dt>peg:</dt> <dd>{info.peg}</dd>
+      </dl>
 
-    <QrCode
-      value="{link}"
-      size="260"
-      padding="30"
-      errorCorrection="L"
-      background="#FFFFFF"
-      color="#000000"
-    />
-    <p>
-      <a href={link} target="blank">Debtor info document</a>
-    </p>
+      <QrCode
+        value="{link}"
+        size="260"
+        padding="30"
+        errorCorrection="L"
+        background="#FFFFFF"
+        color="#000000"
+        />
+
+      <p>
+        <a href={link} target="blank">Debtor info document</a>
+      </p>
+    {/if}
   </svelte:fragment>
 
   <svelte:fragment slot="floating">
     <div class="fab-container">
-      <Fab color={ debtorConfigData.debtorInfo ? 'secondary' : 'primary' } on:click={() => app.editConfig(debtorConfigData)}>
+      <Fab on:click={() => app.editConfig(debtorConfigData)}>
         <Icon class="material-icons">edit</Icon>
       </Fab>
     </div>
