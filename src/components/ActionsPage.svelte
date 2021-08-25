@@ -7,6 +7,7 @@
   import ActionCard from './ActionCard.svelte'
   import Checkbox from '@smui/checkbox'
   import FormField from '@smui/form-field'
+  import Paper, { Title, Content } from '@smui/paper'
   import Page from './Page.svelte'
 
   export let app: AppState
@@ -53,6 +54,11 @@
   .fab-container {
     margin: 16px 16px;
   }
+  .no-actions {
+    margin: 36px 18px;
+    text-align: center;
+    color: #bbb;
+  }
 </style>
 
 <Page title="Actions">
@@ -65,6 +71,33 @@
           </Cell>
         {/each}
       </LayoutGrid>
+    {:else}
+      {#if debtorConfigData.debtorInfo}
+        <p class="no-actions">No pending actions</p>
+      {:else}
+        <Paper style="margin: 36px 18px">
+          <Title>Are you new to Swaptacular?</Title>
+          <Content>
+            Every time this app starts, you will see the "Actions"
+            screen first. It shows things that require your
+            attention. Like actions that have been started, but have
+            not been finalized yet.
+          </Content>
+        </Paper>
+        <Paper style="margin: 36px 18px">
+          <Title>Configure your currency!</Title>
+          <Content>
+            A new digital currency have been created for you. Before
+            everybody can use it, you need to specify some basic
+            information about your currency. Like the name of the
+            issuer, the currency abbreviation, and few other
+            things. To do this, press the
+            <span style="white-space: nowrap">
+              <Icon style="vertical-align: top" class="material-icons">build</Icon> button.
+            </span>
+          </Content>
+        </Paper>
+      {/if}
     {/if}
     {#if foreignActions.length > 0 }
       <LayoutGrid>
