@@ -55,7 +55,7 @@
     margin: 16px 16px;
   }
   .no-actions {
-    margin: 36px 18px;
+    margin: 36px 18px 26px 18px;
     text-align: center;
     color: #bbb;
   }
