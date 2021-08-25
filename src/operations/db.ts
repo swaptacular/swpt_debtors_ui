@@ -478,6 +478,16 @@ class DebtorsDb extends Dexie {
         action => action.actionType === 'AbortTransfer' && action.userId === userId
       ) as Collection<AbortTransferActionWithId, number>
 
+    const deleteAbortTransferAction = async () => {
+      const actionsToDelete = await getAbortTransferActionQuery().toArray()
+      for (const { actionId } of actionsToDelete) {
+        await this.actions.delete(actionId)
+      }
+      if (actionsToDelete.length > 1) {
+        console.warn(`There were more than one abort transfer actions for ${transferUri}.`)
+      }
+    }
+
     const matchCreateTransferAction = async (): Promise<boolean> => {
       const matched = await this.actions
         .where({ 'creationRequest.transferUuid': transferUuid })
@@ -555,7 +565,7 @@ class DebtorsDb extends Dexie {
       switch (getTransferState(transfer)) {
         case 'successful':
           await scheduleTransferDeletion()
-          await getAbortTransferActionQuery().delete()
+          await deleteAbortTransferAction()
           break
         case 'delayed':
         case 'unsuccessful':
@@ -593,14 +603,20 @@ class DebtorsDb extends Dexie {
 
     const deleteIrrelevantActionsAndTasks = async (userId: number): Promise<void> => {
       const uris = new Set(transferUris)
-      await this.actions
+      const actionsToDelete = await this.actions
         .where({ userId })
         .filter(action => action.actionType === 'AbortTransfer' && !uris.has(action.transferUri))
-        .delete()
-      await this.tasks
+        .toArray() as ActionRecordWithId[]
+      for (const { actionId } of actionsToDelete) {
+        await this.actions.delete(actionId)
+      }
+      const tasksToDelete = await this.tasks
         .where({ userId })
         .filter(task => task.taskType === 'DeleteTransfer' && !uris.has(task.transferUri))
-        .delete()
+        .toArray() as TaskRecordWithId[]
+      for (const { taskId } of tasksToDelete) {
+        await this.tasks.delete(taskId)
+      }
     }
 
     const resolveOldNotConfirmedCreateTransferRequests = async (userId: number): Promise<void> => {
