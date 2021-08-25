@@ -59,7 +59,7 @@
   .no-actions {
     margin: 36px 18px 26px 18px;
     text-align: center;
-    color: #bbb;
+    color: #c4c4c4;
   }
 </style>
 
@@ -75,7 +75,11 @@
       </LayoutGrid>
     {:else}
       {#if debtorConfigData.debtorInfo}
-        <p class="no-actions">No pending actions</p>
+        <p class="no-actions">
+          Press
+          <Icon class="material-icons" style="vertical-align: middle">local_atm</Icon>
+          to make a payment.
+        </p>
       {:else}
         <LayoutGrid>
           <Cell span={12}>
@@ -114,7 +118,7 @@
         <Cell span={12}>
           <FormField>
             <Checkbox bind:checked={showForeignActions} />
-            <span slot="label">Show failed payments initiated from other devices.</span>
+            <span slot="label">Show troubled payments initiated from other devices.</span>
           </FormField>
         </Cell>
       </LayoutGrid>
@@ -142,7 +146,7 @@
       </Fab>
     </div>
     <div class="fab-container">
-      <Fab on:click={() => app.scanQrCode()}>
+      <Fab color={debtorConfigData.debtorInfo ? "primary" : "secondary"} on:click={() => app.scanQrCode()}>
         <Icon class="material-icons">local_atm</Icon>
       </Fab>
     </div>
