@@ -14,7 +14,7 @@
   const info = debtorConfigData.debtorInfo
   const link = `${app.publicInfoDocumentUri}#${app.debtorIdentityUri}`
   if (!info) {
-    app.showActions()
+    app.editConfig(debtorConfigData)
   }
 </script>
 
