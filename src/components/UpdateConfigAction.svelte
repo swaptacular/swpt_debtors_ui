@@ -42,7 +42,7 @@
   }
 </style>
 
-<Page title="Update configuration">
+<Page title="Configure currency">
   <svelte:fragment slot="content">
     <h1>Update Config Action</h1>
     <form on:input={() => actionManager.markDirty()} on:change={() => actionManager.save()}>

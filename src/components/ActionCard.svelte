@@ -18,7 +18,20 @@
     case 'AbortTransfer':
       return 'Show the problem'
     case 'UpdateConfig':
-      return 'Update configuration'
+      return 'Configure currency'
+    default:
+      return 'Unknown action type'
+    }
+  }
+
+  function getDescription(action: ActionRecordWithId): string {
+    switch (action.actionType) {
+    case 'CreateTransfer':
+      return 'CreateTransfer'
+    case 'AbortTransfer':
+      return 'AbortTransfer'
+    case 'UpdateConfig':
+      return 'Specify information about your currency.'
     default:
       return 'Unknown action type'
     }
@@ -26,7 +39,7 @@
 </script>
 
 <Card>
-  <Content>{action.actionType}</Content>
+  <Content>{getDescription(action)}</Content>
   <Actions fullBleed>
     <Button {color} on:click={show}>
       <Label>{getButtonLabel(action)}</Label>
