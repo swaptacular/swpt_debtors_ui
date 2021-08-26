@@ -82,7 +82,7 @@
           </Textfield>
         </Cell>
 
-        <Cell>
+        <Cell span={8}>
           <Textfield variant="outlined" style="width: 100%" bind:value={debtorHomepageUri} label="Homepage">
             <HelperText slot="helper">
               An Internet address, where the users of your currency
