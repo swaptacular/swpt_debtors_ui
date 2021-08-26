@@ -57,7 +57,13 @@
 
       <LayoutGrid>
         <Cell>
-          <Textfield required variant="outlined" style="width: 100%" bind:value={debtorName} label="Name">
+          <Textfield
+            required
+            variant="filled"
+            style="width: 100%"
+            bind:value={debtorName}
+            label="Name"
+            >
             <HelperText slot="helper">Helper Text</HelperText>
           </Textfield>
         </Cell>
@@ -65,7 +71,7 @@
         <Cell>
           <Textfield
             required
-            variant="outlined"
+            variant="filled"
             style="width: 100%"
             input$maxlength="40"
             bind:value={unit}
@@ -83,7 +89,13 @@
         </Cell>
 
         <Cell span={8}>
-          <Textfield variant="outlined" style="width: 100%" bind:value={debtorHomepageUri} label="Homepage">
+          <Textfield
+            variant="outlined"
+            style="width: 100%"
+            input$maxlength="10000"
+            bind:value={debtorHomepageUri}
+            label="Homepage"
+            >
             <HelperText slot="helper">
               An Internet address, where the users of your currency
               can learn more about it.
@@ -111,10 +123,10 @@
         <Cell span={2}>
           <Textfield
             required
+            variant="filled"
             type="number"
             input$min={Number.EPSILON}
             input$step="any"
-            variant="outlined"
             style="width: 100%"
             bind:value={amountDivisor}
             label="Amount divisor"
@@ -130,11 +142,11 @@
         <Cell span={2}>
           <Textfield
             required
+            variant="filled"
             type="number"
             input$min="-20"
             input$max="20"
             input$step="1"
-            variant="outlined"
             style="width: 100%"
             bind:value={decimalPlaces}
             label="Decimal places"
@@ -150,11 +162,11 @@
         <Cell>
           <Textfield
             required
+            variant="filled"
             type="number"
             input$min="-50"
             input$max="100"
             input$step="any"
-            variant="outlined"
             style="width: 100%"
             bind:value={interestRate}
             label="Interest rate"
