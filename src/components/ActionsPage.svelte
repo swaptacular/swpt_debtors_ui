@@ -49,6 +49,9 @@
 
   $: actions = model.actions
   $: [regularActions, foreignActions] = separateForeignActions($actions)
+  $: hasRegularActions = regularActions.length > 0
+  $: hasForeignActions = foreignActions.length > 0
+  $: hasConfiguredCurrency = debtorConfigData.debtorInfo !== undefined
   $: localStorage.setItem(LOCALSTORAGE_KEY, String(showForeignActions))
 </script>
 
@@ -65,7 +68,7 @@
 
 <Page title="Actions">
   <svelte:fragment slot="content">
-    {#if regularActions.length > 0 }
+    {#if hasRegularActions }
       <LayoutGrid>
         {#each regularActions as action }
           <Cell>
@@ -74,7 +77,7 @@
         {/each}
       </LayoutGrid>
     {:else}
-      {#if debtorConfigData.debtorInfo}
+      {#if hasConfiguredCurrency}
         <p class="no-actions">
           Press
           <Icon class="material-icons" style="vertical-align: middle">local_atm</Icon>
@@ -113,7 +116,7 @@
         </LayoutGrid>
       {/if}
     {/if}
-    {#if foreignActions.length > 0 }
+    {#if hasForeignActions}
       <LayoutGrid>
         <Cell span={12}>
           <FormField>
@@ -121,16 +124,14 @@
             <span slot="label">Show troubled payments initiated from other devices.</span>
           </FormField>
         </Cell>
-      </LayoutGrid>
-      {#if showForeignActions }
-        <LayoutGrid>
+        {#if showForeignActions }
           {#each foreignActions as action }
             <Cell>
               <ActionCard color="secondary" {action} show={() => showAction(action.actionId)} />
             </Cell>
           {/each}
-        </LayoutGrid>
-      {/if}
+        {/if}
+      </LayoutGrid>
     {/if}
   </svelte:fragment>
 
@@ -146,7 +147,7 @@
       </Fab>
     </div>
     <div class="fab-container">
-      <Fab color={debtorConfigData.debtorInfo ? "primary" : "secondary"} on:click={() => app.scanQrCode()}>
+      <Fab color={hasConfiguredCurrency && !hasRegularActions ? "primary" : "secondary"} on:click={() => app.scanQrCode()}>
         <Icon class="material-icons">local_atm</Icon>
       </Fab>
     </div>
