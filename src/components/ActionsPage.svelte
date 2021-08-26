@@ -102,7 +102,7 @@
                 A new digital currency have been created for
                 you. Before everybody can use it, you need to specify
                 some basic information about your currency &ndash the
-                name of the issuer, the interest rate, and few other
+                currency name, the interest rate, and few other
                 things.
               </CardContent>
               <Actions fullBleed>
