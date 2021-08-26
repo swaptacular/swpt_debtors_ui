@@ -61,6 +61,7 @@
             required
             variant="filled"
             style="width: 100%"
+            input$maxlength="40"
             bind:value={debtorName}
             label="Name"
             >
