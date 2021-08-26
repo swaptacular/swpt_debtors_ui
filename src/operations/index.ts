@@ -231,7 +231,8 @@ export class UserContext {
       let attemptsLeft = 10
       while (true) {
         await this.fetchDebtorConfig()
-        if (!await verifyIfConfigIsUpToDate(this.userId, interestRate, debtorInfo)) {
+        this.debtorConfigData = await getDebtorConfigData(this.userId)
+        if (!isConfigIsUpToDate(this.debtorConfigData, interestRate, debtorInfo)) {
           configData ??= stringifyRootConfigData({
             rate: interestRate,
             info: debtorInfo ? await this.createDocument(debtorInfo) : undefined,
@@ -616,12 +617,12 @@ async function getDebtorConfigData(userId: number): Promise<UserContext['debtorC
   return { interestRate, debtorInfo, debtorInfoRevision }
 }
 
-async function verifyIfConfigIsUpToDate(
-  userId: number,
+function isConfigIsUpToDate(
+  debtorConfigData: DebtorConfigData,
   newInterestRate?: number,
   newDebtorInfo?: BaseDebtorData,
-): Promise<boolean> {
-  const { interestRate, debtorInfo } = await getDebtorConfigData(userId)
+): boolean {
+  const { interestRate, debtorInfo } = debtorConfigData
   const {
     summary,
     debtorName,
@@ -630,9 +631,7 @@ async function verifyIfConfigIsUpToDate(
     decimalPlaces,
     unit,
     peg,
-    ...otherProps
   } = newDebtorInfo ?? {}
-  assert(equal(otherProps, {}))
   return (
     interestRate === newInterestRate &&
     debtorInfo?.summary === summary &&
