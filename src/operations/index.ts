@@ -1,3 +1,4 @@
+import equal from 'fast-deep-equal'
 import { v4 as uuidv4 } from 'uuid';
 import {
   server as defaultServer,
@@ -223,36 +224,42 @@ export class UserContext {
    * `ServerSessionError`, or `RecordDoesNotExist` in case of a
    * failure due to concurrent execution/deletion of the action.*/
   async executeUpdateConfigAction(action: UpdateConfigActionWithId): Promise<void> {
+    const { interestRate, debtorInfo } = action
+    let configData: string | undefined
+
     try {
-      const configData = stringifyRootConfigData({
-        rate: action.interestRate,
-        info: action.debtorInfo ? await this.createDocument(action.debtorInfo) : undefined,
-      })
       let attemptsLeft = 10
       while (true) {
         await this.fetchDebtorConfig()
-        try {
-          const response = await this.server.patch(
-            this.configUri,
-            {
-              type: 'DebtorConfig',
-              latestUpdateId: (await db.getConfigRecord(this.userId)).latestUpdateId + 1n,
-              configData,
-            },
-            { attemptLogin: true },
-          ) as HttpResponse<DebtorConfig>
-          await db.updateConfigRecord(this.userId, response.data)
-          break
-        } catch (e: unknown) {
-          if (e instanceof HttpError && e.status === 409 && attemptsLeft--) continue
-          else throw e
+        if (!await verifyIfConfigIsUpToDate(this.userId, interestRate, debtorInfo)) {
+          configData ??= stringifyRootConfigData({
+            rate: interestRate,
+            info: debtorInfo ? await this.createDocument(debtorInfo) : undefined,
+          })
+          try {
+            const response = await this.server.patch(
+              this.configUri,
+              {
+                type: 'DebtorConfig',
+                latestUpdateId: (await db.getConfigRecord(this.userId)).latestUpdateId + 1n,
+                configData,
+              },
+              { attemptLogin: true },
+            ) as HttpResponse<DebtorConfig>
+            await db.updateConfigRecord(this.userId, response.data)
+          } catch (e: unknown) {
+            if (e instanceof HttpError && e.status === 409 && attemptsLeft--) continue
+            else throw e
+          }
         }
+        break
       }
 
     } catch (e: unknown) {
       if (e instanceof HttpError) throw new ServerSessionError(`unexpected status code (${e.status})`)
       else throw e
     }
+
     this.debtorConfigData = await getDebtorConfigData(this.userId)
     await db.replaceActionRecord(action, null)
   }
@@ -607,4 +614,33 @@ async function getDebtorConfigData(userId: number): Promise<UserContext['debtorC
     }
   }
   return { interestRate, debtorInfo, debtorInfoRevision }
+}
+
+async function verifyIfConfigIsUpToDate(
+  userId: number,
+  newInterestRate?: number,
+  newDebtorInfo?: BaseDebtorData,
+): Promise<boolean> {
+  const { interestRate, debtorInfo } = await getDebtorConfigData(userId)
+  const {
+    summary,
+    debtorName,
+    debtorHomepage,
+    amountDivisor,
+    decimalPlaces,
+    unit,
+    peg,
+    ...otherProps
+  } = newDebtorInfo ?? {}
+  assert(equal(otherProps, {}))
+  return (
+    interestRate === newInterestRate &&
+    debtorInfo?.summary === summary &&
+    debtorInfo?.debtorName === debtorName &&
+    debtorInfo?.amountDivisor === amountDivisor &&
+    debtorInfo?.decimalPlaces === decimalPlaces &&
+    debtorInfo?.unit === unit &&
+    equal(debtorInfo?.debtorHomepage, debtorHomepage) &&
+    equal(debtorInfo?.peg, peg)
+  )
 }
