@@ -65,7 +65,13 @@
             bind:value={debtorName}
             label="Name"
             >
-            <HelperText slot="helper">Helper Text</HelperText>
+            <HelperText slot="helper">
+              The name of your currency. Should be unambiguous, easy
+              to remember, and unlikely to be duplicated
+              accidentally. Different currencies should have different
+              names, even when they are issued by the same person or
+              organization.
+            </HelperText>
           </Textfield>
         </Cell>
 
@@ -80,7 +86,7 @@
             >
             <HelperText slot="helper">
               This will be shown shown right after the displayed
-              amount: "500.00 USD" for example. If your digital
+              amount: "500.00 USD", for example. If your digital
               currency has a recognized name &ndash; enter its
               abbreviation here. More likely, your currency will be a
               proxy for a well known currency. In that case, use the
@@ -115,8 +121,9 @@
             >
             <CharacterCounter slot="internalCounter">0 / 1000</CharacterCounter>
             <HelperText slot="helper">
-              A short description of your digital currency. Should
-              contain just enough information to...
+              A short description of your digital currency. It will be
+              shown to the users before they create an account in your
+              currency.
             </HelperText>
           </Textfield>
         </Cell>
