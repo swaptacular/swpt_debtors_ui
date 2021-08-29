@@ -56,33 +56,30 @@
       >
 
       <LayoutGrid>
-        <Cell>
+        <Cell spanDevices={{ desktop: 6, tablet: 4, phone: 4 }}>
           <Textfield
             required
-            variant="filled"
+            variant="outlined"
             style="width: 100%"
             input$maxlength="40"
             bind:value={debtorName}
-            label="Name"
+            label="Currency name"
             >
             <HelperText slot="helper">
-              The name of your currency. Should be unambiguous, easy
-              to remember, and unlikely to be duplicated
-              accidentally. Different currencies should have different
-              names, even when they are issued by the same person or
-              organization.
+              Should be unambiguous, and unlikely to be duplicated
+              accidentally.
             </HelperText>
           </Textfield>
         </Cell>
 
-        <Cell>
+        <Cell spanDevices={{ desktop: 6, tablet: 4, phone: 4 }}>
           <Textfield
             required
-            variant="filled"
+            variant="outlined"
             style="width: 100%"
             input$maxlength="40"
             bind:value={unit}
-            label="Abbreviation"
+            label="Currency abbreviation"
             >
             <HelperText slot="helper">
               This will be shown shown right after the displayed
@@ -95,7 +92,7 @@
           </Textfield>
         </Cell>
 
-        <Cell span={8}>
+        <Cell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
           <Textfield
             variant="outlined"
             style="width: 100%"
@@ -110,7 +107,7 @@
           </Textfield>
         </Cell>
 
-        <Cell span={12}>
+        <Cell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
           <Textfield
             textarea
             variant="outlined"
@@ -128,10 +125,31 @@
           </Textfield>
         </Cell>
 
-        <Cell span={2}>
+        <Cell spanDevices={{ desktop: 6, tablet: 4, phone: 4 }}>
           <Textfield
             required
-            variant="filled"
+            variant="outlined"
+            type="number"
+            input$min="-50"
+            input$max="100"
+            input$step="any"
+            style="width: 100%"
+            bind:value={interestRate}
+            label="Interest rate"
+            >
+            <HelperText slot="helper">
+              The annual rate (in percents) at which interest
+              accumulates on currency holders' accounts. This can be
+              any number between -50 and 100. If in doubt, leave it at
+              0.
+            </HelperText>
+          </Textfield>
+        </Cell>
+
+        <Cell spanDevices={{ desktop: 3, tablet: 2, phone: 2 }}>
+          <Textfield
+            required
+            variant="outlined"
             type="number"
             input$min={Number.EPSILON}
             input$step="any"
@@ -147,10 +165,10 @@
           </Textfield>
         </Cell>
 
-        <Cell span={2}>
+        <Cell spanDevices={{ desktop: 3, tablet: 2, phone: 2 }}>
           <Textfield
             required
-            variant="filled"
+            variant="outlined"
             type="number"
             input$min="-20"
             input$max="20"
@@ -161,29 +179,8 @@
             >
             <HelperText slot="helper">
               The number of digits to show after the decimal point,
-              when displaying the amount. This must be a number
-              between -20 and 20.
-            </HelperText>
-          </Textfield>
-        </Cell>
-
-        <Cell>
-          <Textfield
-            required
-            variant="filled"
-            type="number"
-            input$min="-50"
-            input$max="100"
-            input$step="any"
-            style="width: 100%"
-            bind:value={interestRate}
-            label="Interest rate"
-            >
-            <HelperText slot="helper">
-              The annual rate (in percents) at which interest
-              accumulates on currency holders' accounts. This can be
-              any number between -50 and 100. If in doubt, leave it at
-              0.
+              when displaying the amount. Must be a number between -20
+              and 20.
             </HelperText>
           </Textfield>
         </Cell>
