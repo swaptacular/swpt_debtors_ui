@@ -151,11 +151,11 @@
               </svelte:fragment>
               <HelperText slot="helper">
                 This will be shown shown right after the displayed
-                amount: "500.00 USD", for example. If your digital
-                currency has a recognized name &ndash; enter its
-                abbreviation here. More likely, your currency will be a
-                proxy for a well known currency. In that case, use the
-                well know abbreviation ("USD", for example).
+                amount: "500.00 USD", for example. If your currency
+                has a recognized name &ndash; enter its abbreviation
+                here. More likely, your currency will be a proxy for a
+                well known currency. In that case, use the well know
+                abbreviation ("USD" for example).
               </HelperText>
             </Textfield>
           </Cell>
@@ -195,9 +195,9 @@
               >
               <CharacterCounter slot="internalCounter">0 / 1000</CharacterCounter>
               <HelperText slot="helper">
-                A short description of your digital currency. Your
-                currency holders will see this, when they are about to
-                create an account.
+                A short description of your digital currency. Currency
+                holders will see this, when they are about to create
+                an account.
               </HelperText>
             </Textfield>
           </Cell>
@@ -223,10 +223,9 @@
                 {/if}
               </svelte:fragment>
               <HelperText slot="helper">
-                The annual rate (in percents) at which interest
-                accumulates on currency holders' accounts. This can be
-                any number between -50 and 100. If in doubt, leave it at
-                0.
+                The annual rate at which interest accumulates on
+                currency holders' accounts. Must be a number between
+                -50 and 100. If in doubt, leave it at 0.
               </HelperText>
             </Textfield>
           </Cell>
