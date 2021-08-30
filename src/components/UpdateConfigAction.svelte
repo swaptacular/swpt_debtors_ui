@@ -294,7 +294,7 @@
       </div>
       <div class="fab-container">
         <Fab color="primary" on:click={submit} extended>
-          <Icon class="material-icons">save</Icon>
+          <Icon class="material-icons">storage</Icon>
           <Label>Save</Label>
         </Fab>
       </div>

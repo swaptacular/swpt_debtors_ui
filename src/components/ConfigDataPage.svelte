@@ -2,6 +2,8 @@
   import type { AppState, ConfigDataModel } from '../app-state'
   import QrCode from 'svelte-qrcode'
   import Fab, { Icon } from '@smui/fab';
+  import LayoutGrid, { Cell } from '@smui/layout-grid'
+  import Paper, { Title, Content } from '@smui/paper'
   import Page from './Page.svelte'
 
   export let app: AppState
@@ -10,7 +12,6 @@
   assert(model)
 
   const debtorConfigData = app.getDebtorConfigData()
-  const interestRate = debtorConfigData.interestRate
   const info = debtorConfigData.debtorInfo
   const link = `${app.publicInfoDocumentUri}#${app.debtorIdentityUri}`
   if (!info) {
@@ -22,34 +23,47 @@
   .fab-container {
     margin: 16px 16px;
   }
+  .qrcode-container {
+    width: 100%;
+    text-align: center;
+  }
+  .qrcode-container :global(img) {
+    width: 100%;
+    max-width: 600px;
+  }
 </style>
 
 <Page title="Configuration">
   <svelte:fragment slot="content">
     {#if info}
-      <dl>
-        <dt>interestRate:</dt> <dd>{interestRate}</dd>
-        <dt>summary:</dt> <dd>{info.summary}</dd>
-        <dt>debtorName:</dt> <dd>{info.debtorName}</dd>
-        <dt>debtorHomepage:</dt> <dd>{info.debtorHomepage}</dd>
-        <dt>amountDivisor:</dt> <dd>{info.amountDivisor}</dd>
-        <dt>decimalPlaces:</dt> <dd>{info.decimalPlaces}</dd>
-        <dt>unit:</dt> <dd>{info.unit}</dd>
-        <dt>peg:</dt> <dd>{info.peg}</dd>
-      </dl>
+      <LayoutGrid>
+        <Cell span={12}>
+          <div class="qrcode-container">
+            <QrCode
+              value="{link}"
+              size="280"
+              padding="20"
+              errorCorrection="L"
+              background="#FFFFFF"
+              color="#000000"
+              />
+          </div>
+        </Cell>
 
-      <QrCode
-        value="{link}"
-        size="260"
-        padding="30"
-        errorCorrection="L"
-        background="#FFFFFF"
-        color="#000000"
-        />
-
-      <p>
-        <a href={link} target="blank">Debtor info document</a>
-      </p>
+        <Cell span={12}>
+          <Paper>
+            <Title>Your "QR coin"</Title>
+            <Content>
+              The image above (an ordinary QR code, indeed) uniquely
+              identifies your digital currency. Whoever wants to use
+              your currency, will have to scan this image with his/her
+              mobile device. Make sure this image is publicly
+              available, and people are able to undoubtedly associate
+              it with you &ndash; the issuer of the currency.
+            </Content>
+          </Paper>
+        </Cell>
+      </LayoutGrid>
     {/if}
   </svelte:fragment>
 
@@ -57,6 +71,12 @@
     <div class="fab-container">
       <Fab on:click={() => app.editConfig(debtorConfigData)}>
         <Icon class="material-icons">edit</Icon>
+      </Fab>
+    </div>
+    <div class="fab-container">
+      <!-- TODO: Implement file download on click. -->
+      <Fab color="primary" on:click={() => undefined}>
+        <Icon class="material-icons">save_alt</Icon>
       </Fab>
     </div>
   </svelte:fragment>
