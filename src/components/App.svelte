@@ -84,7 +84,7 @@
       <Router app={appState} bind:snackbarBottom />
     {/if}
   {:catch error}
-    <Paper style="margin: 36px 18px">
+    <Paper style="margin: 36px 18px" elevation={8}>
       <Title>Application error</Title>
       <Content>
         {logError(error)}

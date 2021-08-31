@@ -1,17 +1,19 @@
 <script lang="ts">
   import { VIEWED_QR_COIN_KEY } from '../app-state'
   import type { AppState, ConfigDataModel } from '../app-state'
-  import QrCode from 'svelte-qrcode'
   import Fab, { Icon } from '@smui/fab';
   import LayoutGrid, { Cell } from '@smui/layout-grid'
   import Paper, { Title, Content } from '@smui/paper'
   import Page from './Page.svelte'
+  import QrGenerator from './QrGenerator.svelte'
 
   export let app: AppState
   export let model: ConfigDataModel
   export const snackbarBottom: string = "84px"
   assert(model)
 
+  let downloadLinkElement: HTMLAnchorElement
+  let dataUrl: string
   const debtorConfigData = app.getDebtorConfigData()
   const info = debtorConfigData.debtorInfo
   const link = `${app.publicInfoDocumentUri}#${app.debtorIdentityUri}`
@@ -20,9 +22,8 @@
   }
 
   function save(): void {
-    // TODO: Implement file download on click.
-
     localStorage.setItem(VIEWED_QR_COIN_KEY, 'true')
+    downloadLinkElement.click()
   }
 </script>
 
@@ -30,13 +31,16 @@
   .fab-container {
     margin: 16px 16px;
   }
+  .download-link {
+    display: none;
+  }
   .qrcode-container {
     width: 100%;
     text-align: center;
   }
   .qrcode-container :global(img) {
     width: 100%;
-    max-width: 600px;
+    max-width: 640px;
   }
   ol {
     list-style: decimal outside;
@@ -53,25 +57,27 @@
       <LayoutGrid>
         <Cell span={12}>
           <div class="qrcode-container">
-            <QrCode
+            <QrGenerator
               value="{link}"
-              size="280"
-              padding="20"
+              size={320}
+              padding={28}
               errorCorrection="L"
               background="#FFFFFF"
               color="#000000"
+              bind:dataUrl
               />
           </div>
+          <a class="download-link" href={dataUrl} download={`${info.debtorName}.png`} bind:this={downloadLinkElement}>download</a>
         </Cell>
 
         <Cell span={12}>
-          <Paper>
-            <Title>Your "QR coin"</Title>
+          <Paper elevation={8}>
+            <Title>Your digital coin</Title>
             <Content>
               The image above (an ordinary QR code, indeed) uniquely
               identifies your digital currency. Whoever wants to use
-              your currency, will have to scan this image with his/her
-              mobile device. Therefore, you should:
+              your currency, will have to scan this image with
+              his/hers mobile device. Therefore, you should:
               <ol>
                 <li>
                   Download the image.

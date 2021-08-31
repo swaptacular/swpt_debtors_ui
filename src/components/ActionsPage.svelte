@@ -90,13 +90,13 @@
           {:else}
             Press
             <QrCodeIcon style="width: 20px; margin: 0 0.15em; fill: var(--no-actions-color); vertical-align: middle" />
-            to see your QR coin.
+            to view your digital coin.
           {/if}
         </p>
       {:else}
         <LayoutGrid>
           <Cell span={12}>
-            <Paper>
+            <Paper elevation={8} style="margin-bottom: 16px">
               <Title>Are you new to Swaptacular?</Title>
               <Content>
                 Every time this app starts, you will see the "Actions"

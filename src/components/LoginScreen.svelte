@@ -39,7 +39,7 @@
 </style>
 
 <div class="paper-container">
-  <Paper style="margin: 36px 18px">
+  <Paper style="margin: 36px 18px" elevation={8}>
     <Title>Welcome to Swaptacular!</Title>
     <Content>
       With Swaptacular you can create your own digital currency, which
