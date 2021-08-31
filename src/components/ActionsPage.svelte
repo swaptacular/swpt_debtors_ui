@@ -11,6 +11,7 @@
   import Page from './Page.svelte'
   import Card, { Actions, Content as CardContent } from '@smui/card'
   import Button, { Label } from '@smui/button'
+  import QrCodeIcon from './QrCodeIcon.svelte'
 
   export let app: AppState
   export let model: ActionsModel
@@ -138,7 +139,7 @@
   <svelte:fragment slot="floating">
     <div class="fab-container">
       <Fab on:click={() => app.showConfig()}>
-        <Icon class="material-icons">build</Icon>
+        <QrCodeIcon />
       </Fab>
     </div>
     <div class="fab-container">

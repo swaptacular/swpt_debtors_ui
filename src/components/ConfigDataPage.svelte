@@ -33,9 +33,9 @@
   }
 </style>
 
-<Page title="Configuration">
-  <svelte:fragment slot="content">
-    {#if info}
+{#if info}
+  <Page title={info.debtorName}>
+    <svelte:fragment slot="content">
       <LayoutGrid>
         <Cell span={12}>
           <div class="qrcode-container">
@@ -64,20 +64,23 @@
           </Paper>
         </Cell>
       </LayoutGrid>
-    {/if}
-  </svelte:fragment>
+    </svelte:fragment>
 
-  <svelte:fragment slot="floating">
-    <div class="fab-container">
-      <Fab on:click={() => app.editConfig(debtorConfigData)}>
-        <Icon class="material-icons">edit</Icon>
-      </Fab>
-    </div>
-    <div class="fab-container">
-      <!-- TODO: Implement file download on click. -->
-      <Fab color="primary" on:click={() => undefined}>
-        <Icon class="material-icons">save_alt</Icon>
-      </Fab>
-    </div>
-  </svelte:fragment>
-</Page>
+    <svelte:fragment slot="floating">
+      <div class="fab-container">
+        <Fab on:click={() => app.editConfig(debtorConfigData)}>
+          <Icon class="material-icons">settings</Icon>
+        </Fab>
+      </div>
+      <div class="fab-container">
+        <!-- TODO: Implement file download on click. -->
+        <Fab color="primary" on:click={() => undefined}>
+          <Icon class="material-icons">save_alt</Icon>
+        </Fab>
+      </div>
+    </svelte:fragment>
+  </Page>
+{:else}
+  <!-- Normally, this will never be shown. -->
+  <Page title="Configure currency" />
+{/if}
