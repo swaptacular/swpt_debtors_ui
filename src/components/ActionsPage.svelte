@@ -63,9 +63,10 @@
     margin: 16px 16px;
   }
   .no-actions {
+    --no-actions-color: #c4c4c4;
     margin: 36px 18px 26px 18px;
     text-align: center;
-    color: #c4c4c4;
+    color: var(--no-actions-color);
   }
 </style>
 
@@ -85,10 +86,10 @@
           {#if viewedQrCoin}
             Press
             <Icon class="material-icons" style="vertical-align: middle">local_atm</Icon>
-            to make a payment.
+            to issue new currency into existence.
           {:else}
             Press
-            <QrCodeIcon style="width: 20px; margin: 0 0.15em; fill: #c4c4c4; vertical-align: middle" />
+            <QrCodeIcon style="width: 20px; margin: 0 0.15em; fill: var(--no-actions-color); vertical-align: middle" />
             to see your QR coin.
           {/if}
         </p>
