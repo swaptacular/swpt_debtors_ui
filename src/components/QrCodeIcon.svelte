@@ -3,7 +3,7 @@
   import { Icon } from '@smui/fab';
 </script>
 
-<Icon component={Svg} viewBox="0 0 512 512">
+<Icon component={Svg} viewBox="0 0 512 512" {...$$props}>
   <!-- This icon has been made by Pixelmeetup (https://www.flaticon.com/authors/pixelmeetup), and downloaded from www.flaticon.com -->
   <path d="M160,0H0v160h160V0z M128,128H32V32h96V128z"/>
   <rect x="64" y="64" width="32" height="32"/>

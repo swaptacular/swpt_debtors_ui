@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { VIEWED_QR_COIN_KEY } from '../app-state'
   import type { AppState, ConfigDataModel } from '../app-state'
   import QrCode from 'svelte-qrcode'
   import Fab, { Icon } from '@smui/fab';
@@ -17,6 +18,12 @@
   if (!info) {
     app.editConfig(debtorConfigData)
   }
+
+  function save(): void {
+    // TODO: Implement file download on click.
+
+    localStorage.setItem(VIEWED_QR_COIN_KEY, 'true')
+  }
 </script>
 
 <style>
@@ -30,6 +37,13 @@
   .qrcode-container :global(img) {
     width: 100%;
     max-width: 600px;
+  }
+  ol {
+    list-style: decimal outside;
+    margin: 0.75em 1.25em;
+  }
+  li {
+    margin: 0.5em 0;
   }
 </style>
 
@@ -57,9 +71,17 @@
               The image above (an ordinary QR code, indeed) uniquely
               identifies your digital currency. Whoever wants to use
               your currency, will have to scan this image with his/her
-              mobile device. Make sure this image is publicly
-              available, and people are able to undoubtedly associate
-              it with you &ndash; the issuer of the currency.
+              mobile device. Therefore, you should:
+              <ol>
+                <li>
+                  Download the image.
+                </li>
+                <li>
+                  Make sure that the image is publicly available, and
+                  people are able to undoubtedly associate it with you
+                  &ndash; the issuer of the currency.
+                </li>
+              </ol>
             </Content>
           </Paper>
         </Cell>
@@ -73,8 +95,7 @@
         </Fab>
       </div>
       <div class="fab-container">
-        <!-- TODO: Implement file download on click. -->
-        <Fab color="primary" on:click={() => undefined}>
+        <Fab color="primary" on:click={save}>
           <Icon class="material-icons">save_alt</Icon>
         </Fab>
       </div>

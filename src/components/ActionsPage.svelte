@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte"
+  import { VIEWED_QR_COIN_KEY } from '../app-state'
   import type { AppState, ActionsModel } from '../app-state'
   import type { ActionRecordWithId } from '../operations'
   import Fab, { Icon } from '@smui/fab';
@@ -17,10 +18,11 @@
   export let model: ActionsModel
   export const snackbarBottom: string = '84px'
 
-  const LOCALSTORAGE_KEY = 'debtors.showForeignActions'
+  const SHOW_FOREIGN_ACTIONS_KEY = 'debtors.showForeignActions'
   const debtorConfigData = app.getDebtorConfigData()
   const scrollElement = document.documentElement
-  let showForeignActions = localStorage.getItem(LOCALSTORAGE_KEY) === 'true'
+  const viewedQrCoin = localStorage.getItem(VIEWED_QR_COIN_KEY) === 'true'
+  let showForeignActions = localStorage.getItem(SHOW_FOREIGN_ACTIONS_KEY) === 'true'
 
   function separateForeignActions(allActions: ActionRecordWithId[]): [ActionRecordWithId[], ActionRecordWithId[]] {
     let regularActions = []
@@ -53,7 +55,7 @@
   $: hasRegularActions = regularActions.length > 0
   $: hasForeignActions = foreignActions.length > 0
   $: hasConfiguredCurrency = debtorConfigData.debtorInfo !== undefined
-  $: localStorage.setItem(LOCALSTORAGE_KEY, String(showForeignActions))
+  $: localStorage.setItem(SHOW_FOREIGN_ACTIONS_KEY, String(showForeignActions))
 </script>
 
 <style>
@@ -80,9 +82,15 @@
     {:else}
       {#if hasConfiguredCurrency}
         <p class="no-actions">
-          Press
-          <Icon class="material-icons" style="vertical-align: middle">local_atm</Icon>
-          to make a payment.
+          {#if viewedQrCoin}
+            Press
+            <Icon class="material-icons" style="vertical-align: middle">local_atm</Icon>
+            to make a payment.
+          {:else}
+            Press
+            <QrCodeIcon style="width: 20px; margin: 0 0.15em; fill: #c4c4c4; vertical-align: middle" />
+            to see your QR coin.
+          {/if}
         </p>
       {:else}
         <LayoutGrid>
@@ -138,7 +146,7 @@
 
   <svelte:fragment slot="floating">
     <div class="fab-container">
-      <Fab on:click={() => app.showConfig()}>
+      <Fab color={hasConfiguredCurrency && !hasRegularActions && !viewedQrCoin ? "primary" : "secondary"} on:click={() => app.showConfig()}>
         <QrCodeIcon />
       </Fab>
     </div>
@@ -148,7 +156,7 @@
       </Fab>
     </div>
     <div class="fab-container">
-      <Fab color={hasConfiguredCurrency && !hasRegularActions ? "primary" : "secondary"} on:click={() => app.scanQrCode()}>
+      <Fab color={hasConfiguredCurrency && !hasRegularActions && viewedQrCoin ? "primary" : "secondary"} on:click={() => app.scanQrCode()}>
         <Icon class="material-icons">local_atm</Icon>
       </Fab>
     </div>
