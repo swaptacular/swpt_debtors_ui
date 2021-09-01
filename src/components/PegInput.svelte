@@ -7,8 +7,9 @@
   import Textfield from '@smui/textfield'
   import TextfieldIcon from '@smui/textfield/icon'
   import HelperText from '@smui/textfield/helper-text/index'
-  import Dialog, { Title, Content } from '@smui/dialog'
+  import Dialog, { Title, Content, Actions } from '@smui/dialog'
   import QrScanner from './QrScanner.svelte'
+  import Button, { Label } from '@smui/button'
 
   export let invalid = false
   export let value : Peg | undefined = undefined
@@ -42,6 +43,9 @@
   }
 
   async function fetchDebtorInfo(coinUrl: string): Promise<DebtorData> {
+    if (coinUrl.split('#', 1)[0] === '') {
+      throw new InvalidDocument('empty URL')
+    }
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), appConfig.serverApiTimeout)
     const response = await fetch(coinUrl, { signal: controller.signal })
@@ -52,6 +56,10 @@
     const contentType = response.headers.get('Content-Type') ?? 'text/plain'
     const content = await response.arrayBuffer()
     return await parseDebtorInfoDocument({content, contentType})
+  }
+
+  function setInvalidCoinUrl(): void {
+    coinUrl = '#'
   }
 
   $: invalid = pegged && (invalidCoinUrl || invalidExchangeRate)
@@ -74,14 +82,17 @@
     open
     aria-labelledby="qrscan-title"
     aria-describedby="qrscan-content"
-    on:MDCDialog:closed={() => coinUrl = '#'}
+    on:MDCDialog:closed={setInvalidCoinUrl}
     >
-    <Title id="qrscan-title">
-      Scan another currency's digital coin (a QR code)
-    </Title>
+    <Title id="qrscan-title">Scan another currency's digital coin (a QR code)</Title>
     <Content id="qrscan-content">
       <QrScanner bind:result={coinUrl}/>
     </Content>
+    <Actions>
+      <Button on:click={setInvalidCoinUrl}>
+        <Label>Close</Label>
+      </Button>
+    </Actions>
   </Dialog>
 {/if}
 
