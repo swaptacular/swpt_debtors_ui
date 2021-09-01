@@ -6,6 +6,8 @@
   import Textfield from '@smui/textfield'
   import TextfieldIcon from '@smui/textfield/icon'
   import HelperText from '@smui/textfield/helper-text/index'
+  import Dialog, { Title, Content } from '@smui/dialog'
+  import QrScanner from './QrScanner.svelte'
 
   export let invalid = false
   export let value : Peg | undefined = undefined
@@ -43,6 +45,7 @@
   $: if (!pegged) {
     reset()
   }
+  $: showQrScanDialog = pegged && coinUrl === ''
 </script>
 
 <style>
@@ -50,6 +53,22 @@
     visibility: hidden;
   }
 </style>
+
+{#if showQrScanDialog}
+  <Dialog
+    open
+    aria-labelledby="qrscan-title"
+    aria-describedby="qrscan-content"
+    on:MDCDialog:closed={() => coinUrl = '#'}
+    >
+    <Title id="qrscan-title">
+      Scan another currency's digital coin (a QR code)
+    </Title>
+    <Content id="qrscan-content">
+      <QrScanner bind:result={coinUrl}/>
+    </Content>
+  </Dialog>
+{/if}
 
 <LayoutGrid>
   <Cell>
