@@ -1,12 +1,13 @@
 <script lang="ts">
   import type { AppState } from '../app-state'
   import type { UpdateConfigActionWithId } from '../operations'
-  import Fab, { Icon, Label } from '@smui/fab';
+  import Fab, { Icon, Label } from '@smui/fab'
   import Textfield from '@smui/textfield'
   import TextfieldIcon from '@smui/textfield/icon'
   import CharacterCounter from '@smui/textfield/character-counter/index'
   import HelperText from '@smui/textfield/helper-text/index'
   import LayoutGrid, { Cell } from '@smui/layout-grid'
+  import PegInput from './PegInput.svelte'
   import Page from './Page.svelte'
 
   export let app: AppState
@@ -31,6 +32,7 @@
   let invalidInterestRate: boolean
   let invalidAmountDivisor: boolean
   let invalidDecimalPlaces: boolean
+  let invalidPeg: boolean
 
   function createUpdatedAction(): UpdateConfigActionWithId {
     return {
@@ -66,7 +68,8 @@
     invalidHomepage ||
     invalidInterestRate ||
     invalidAmountDivisor ||
-    invalidDecimalPlaces
+    invalidDecimalPlaces ||
+    invalidPeg
   )
 </script>
 
@@ -281,6 +284,10 @@
                 and 20.
               </HelperText>
             </Textfield>
+          </Cell>
+
+          <Cell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+            <PegInput bind:value={peg} bind:invalid={invalidPeg} />
           </Cell>
         </LayoutGrid>
       </form>

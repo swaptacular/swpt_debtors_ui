@@ -405,6 +405,9 @@ class DebtorsDb extends Dexie {
     await this.transaction('rw', [this.transfers, this.actions, this.tasks], async () => {
       const { actionId, userId } = original
       const existing = await this.actions.get(actionId)
+
+      // TODO: `equal` believes that two `NaN` values are not
+      // equal. This could be a problem in practice.
       if (!equal(existing, original)) {
         throw new RecordDoesNotExist()
       }
