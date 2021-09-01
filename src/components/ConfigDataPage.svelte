@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { VIEWED_QR_COIN_KEY } from '../app-state'
+  import { DOWNLOADED_QR_COIN_KEY } from '../app-state'
   import type { AppState, ConfigDataModel } from '../app-state'
   import Fab, { Icon } from '@smui/fab';
   import LayoutGrid, { Cell } from '@smui/layout-grid'
@@ -22,7 +22,7 @@
   }
 
   function save(): void {
-    localStorage.setItem(VIEWED_QR_COIN_KEY, 'true')
+    localStorage.setItem(DOWNLOADED_QR_COIN_KEY, 'true')
     downloadLinkElement.click()
   }
 </script>

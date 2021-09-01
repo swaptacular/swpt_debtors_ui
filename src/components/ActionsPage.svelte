@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte"
-  import { VIEWED_QR_COIN_KEY } from '../app-state'
+  import { DOWNLOADED_QR_COIN_KEY } from '../app-state'
   import type { AppState, ActionsModel } from '../app-state'
   import type { ActionRecordWithId } from '../operations'
   import Fab, { Icon } from '@smui/fab';
@@ -21,7 +21,7 @@
   const SHOW_FOREIGN_ACTIONS_KEY = 'debtors.showForeignActions'
   const debtorConfigData = app.getDebtorConfigData()
   const scrollElement = document.documentElement
-  const viewedQrCoin = localStorage.getItem(VIEWED_QR_COIN_KEY) === 'true'
+  const downloadedQrCoin = localStorage.getItem(DOWNLOADED_QR_COIN_KEY) === 'true'
   let showForeignActions = localStorage.getItem(SHOW_FOREIGN_ACTIONS_KEY) === 'true'
 
   function separateForeignActions(allActions: ActionRecordWithId[]): [ActionRecordWithId[], ActionRecordWithId[]] {
@@ -83,7 +83,7 @@
     {:else}
       {#if hasConfiguredCurrency}
         <p class="no-actions">
-          {#if viewedQrCoin}
+          {#if downloadedQrCoin}
             Press
             <Icon class="material-icons" style="vertical-align: middle">local_atm</Icon>
             to issue money into existence.
@@ -147,7 +147,7 @@
 
   <svelte:fragment slot="floating">
     <div class="fab-container">
-      <Fab color={hasConfiguredCurrency && !hasRegularActions && !viewedQrCoin ? "primary" : "secondary"} on:click={() => app.showConfig()}>
+      <Fab color={hasConfiguredCurrency && !hasRegularActions && !downloadedQrCoin ? "primary" : "secondary"} on:click={() => app.showConfig()}>
         <QrCodeIcon />
       </Fab>
     </div>
@@ -157,7 +157,7 @@
       </Fab>
     </div>
     <div class="fab-container">
-      <Fab color={hasConfiguredCurrency && !hasRegularActions && viewedQrCoin ? "primary" : "secondary"} on:click={() => app.scanQrCode()}>
+      <Fab color={hasConfiguredCurrency && !hasRegularActions && downloadedQrCoin ? "primary" : "secondary"} on:click={() => app.scanQrCode()}>
         <Icon class="material-icons">local_atm</Icon>
       </Fab>
     </div>

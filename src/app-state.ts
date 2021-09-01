@@ -102,7 +102,7 @@ export type MakePaymentModel = BasePageModel & {
   type: 'MakePaymentModel'
 }
 
-export const VIEWED_QR_COIN_KEY = 'debtors.viewedQrCoin'
+export const DOWNLOADED_QR_COIN_KEY = 'debtors.downloadedQrCoin'
 
 export class AppState {
   private interactionId: number = 0
