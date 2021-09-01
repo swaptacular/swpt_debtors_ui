@@ -1,5 +1,6 @@
 <script lang="ts">
-  import type { Peg } from '../debtor-info'
+  import type { Peg, DebtorData } from '../debtor-info'
+  import { parseDebtorInfoDocument, InvalidDocument } from '../debtor-info'
   import Switch from '@smui/switch'
   import FormField from '@smui/form-field'
   import LayoutGrid, { Cell } from '@smui/layout-grid'
@@ -40,12 +41,26 @@
     exchangeRate = 0
   }
 
+  async function fetchDebtorInfo(coinUrl: string): Promise<DebtorData> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), appConfig.serverApiTimeout)
+    const response = await fetch(coinUrl, { signal: controller.signal })
+    clearTimeout(timeoutId);
+    if (response.status !== 200) {
+      throw new InvalidDocument('server error')
+    }
+    const contentType = response.headers.get('Content-Type') ?? 'text/plain'
+    const content = await response.arrayBuffer()
+    return await parseDebtorInfoDocument({content, contentType})
+  }
+
   $: invalid = pegged && (invalidCoinUrl || invalidExchangeRate)
   $: value = pegged ? getPeg(coinUrl, exchangeRate) : undefined
   $: if (!pegged) {
     reset()
   }
   $: showQrScanDialog = pegged && coinUrl === ''
+  $: debtorDataPromise = fetchDebtorInfo(coinUrl)
 </script>
 
 <style>
@@ -107,3 +122,11 @@
     </div>
   </Cell>
 </LayoutGrid>
+
+{#await debtorDataPromise}
+  waiting
+{:then debtorData}
+  {console.log(debtorData)}
+{:catch error}
+  {console.error(error)}
+{/await}
