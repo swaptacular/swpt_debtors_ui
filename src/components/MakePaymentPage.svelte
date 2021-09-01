@@ -36,7 +36,7 @@
   }
 </style>
 
-<Page title="Make payment">
+<Page title="Make a payment">
   <svelte:fragment slot="content">
     <QrScanner bind:result={scannedValue}/>
   </svelte:fragment>
