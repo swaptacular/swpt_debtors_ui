@@ -86,7 +86,7 @@
           {#if viewedQrCoin}
             Press
             <Icon class="material-icons" style="vertical-align: middle">local_atm</Icon>
-            to issue new "money" into existence.
+            to issue "money" into existence.
           {:else}
             Press
             <QrCodeIcon style="width: 20px; margin: 0 0.15em; fill: var(--no-actions-color); vertical-align: middle" />
