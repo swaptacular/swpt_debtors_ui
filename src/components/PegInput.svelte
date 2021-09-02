@@ -96,6 +96,7 @@
     unitValue = 0
     debtorData = undefined
     originalValue = undefined
+    invalidUnitValue = undefined
   }
   $: showQrScanDialog = pegged && coinUrl === ''
   $: fetchDebtorData(coinUrl)
