@@ -13,14 +13,14 @@
 
   export let amountDivisor: number = NaN
   export let unit: string = ''
-  export let invalid = false
+  export let invalid: boolean = false
   export let value : Peg | undefined = undefined
 
   let originalValue = value
   let pegged: boolean = value !== undefined
   let coinUrl: string = value ? getCoinUrl(value) : ''
   let unitValue: number = 0
-  let debtorData: DebtorData | undefined = undefined
+  let debtorData: DebtorData | undefined
   let invalidUnitValue: boolean
 
   function getCoinUrl(peg: Peg): string {
@@ -29,20 +29,23 @@
     return `${infoUri}#${debtorUri}`
   }
 
-  function getPeg(coinUrl: string, exchangeRate: number): Peg {
+  function calcPeg(coinUrl: string, unitValue: number, debtorData?: DebtorData): Peg | undefined {
+    if (coinUrl === '') {
+      return undefined
+    }
+    if (debtorData === undefined) {
+      return originalValue
+    }
     const [debtorInfoUri = '', debtorUri = ''] = coinUrl.split('#', 2)
+    if (debtorData.latestDebtorInfo.uri !== debtorInfoUri || debtorData.debtorIdentity.uri !== debtorUri) {
+      undefined
+    }
     return {
       type: 'Peg',
-      exchangeRate,
+      exchangeRate: (unitValue * (amountDivisor || 1) / (debtorData.amountDivisor || 1)),
       debtorIdentity: {  type: 'DebtorIdentity', uri: debtorUri },
       latestDebtorInfo: { uri: debtorInfoUri },
     }
-  }
-
-  function reset(): void {
-    coinUrl = ''
-    debtorData = undefined
-    unitValue = 0
   }
 
   async function fetchDocument(coinUrl: string): Promise<DebtorData> {
@@ -65,9 +68,10 @@
   async function fetchDebtorData(coinUrl: string): Promise<void> {
     try {
       debtorData = await fetchDocument(coinUrl)
-      unitValue = 0
+      unitValue = originalValue ? originalValue.exchangeRate * (debtorData.amountDivisor || 1) / (amountDivisor || 1) : 0
     } catch (e: unknown) {
-      reset()
+      throw e
+      // reset()
     }
   }
 
@@ -75,10 +79,14 @@
     pegged = false
   }
 
+  function reset(): void {
+    coinUrl = ''
+    unitValue = 0
+    originalValue = undefined
+  }
+
   $: invalid = pegged && (!debtorData || invalidUnitValue)
-  $: calculatedExchangeRate = debtorData ? (unitValue * (amountDivisor || 1) / (debtorData.amountDivisor || 1)) : undefined
-  $: exchangeRate = calculatedExchangeRate ?? (originalValue?.exchangeRate || 0)
-  $: value = pegged ? getPeg(coinUrl, exchangeRate) : undefined
+  $: value = calcPeg(coinUrl, unitValue, debtorData)
   $: if (!pegged) {
     reset()
   }
@@ -158,5 +166,3 @@
 </LayoutGrid>
 
 {coinUrl}
-{calculatedExchangeRate}
-{exchangeRate}
