@@ -45,12 +45,13 @@
   }
 
   async function fetchDebtorInfo(coinUrl: string): Promise<DebtorData> {
-    if (coinUrl.split('#', 1)[0] === '') {
+    const url = coinUrl.split('#', 1)[0]
+    if (url === '') {
       throw new InvalidDocument('empty URL')
     }
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), appConfig.serverApiTimeout)
-    const response = await fetch(coinUrl, { signal: controller.signal })
+    const response = await fetch(url, { signal: controller.signal })
     clearTimeout(timeoutId);
     if (response.status !== 200) {
       throw new InvalidDocument('server error')
@@ -136,7 +137,7 @@
           </svelte:fragment>
           <HelperText slot="helper">
             The value of one unit of your digital currency{unit ? ` (1 ${unit})`: ''},
-            expressed in the units of the other currency ({debtorData.unit}).
+            represented in the units of the "{debtorData.debtorName}" currency ({debtorData.unit}).
             {#if unit === debtorData.unit} If in doubt, set this to 1.{/if}
           </HelperText>
         </Textfield>
