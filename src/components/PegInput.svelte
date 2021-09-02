@@ -16,11 +16,12 @@
   export let invalid = false
   export let value : Peg | undefined = undefined
 
+  let originalValue = value
   let pegged: boolean = value !== undefined
   let coinUrl: string = value ? getCoinUrl(value) : ''
-  let exchangeRate: number = value ? value.exchangeRate : 0
-  let invalidCoinUrl: boolean
-  let invalidExchangeRate: boolean
+  let unitValue: number = 0
+  let debtorData: DebtorData | undefined = undefined
+  let invalidUnitValue: boolean
 
   function getCoinUrl(peg: Peg): string {
     const infoUri = peg.latestDebtorInfo.uri.split('#', 1)[0]
@@ -39,12 +40,12 @@
   }
 
   function reset(): void {
-    value = undefined
     coinUrl = ''
-    exchangeRate = 0
+    debtorData = undefined
+    unitValue = 0
   }
 
-  async function fetchDebtorInfo(coinUrl: string): Promise<DebtorData> {
+  async function fetchDocument(coinUrl: string): Promise<DebtorData> {
     const url = coinUrl.split('#', 1)[0]
     if (url === '') {
       throw new InvalidDocument('empty URL')
@@ -61,17 +62,28 @@
     return await parseDebtorInfoDocument({content, contentType})
   }
 
+  async function fetchDebtorData(coinUrl: string): Promise<void> {
+    try {
+      debtorData = await fetchDocument(coinUrl)
+      unitValue = 0
+    } catch (e: unknown) {
+      reset()
+    }
+  }
+
   function unpeg(): void {
     pegged = false
   }
 
-  $: invalid = pegged && (invalidCoinUrl || invalidExchangeRate)
+  $: invalid = pegged && (!debtorData || invalidUnitValue)
+  $: calculatedExchangeRate = debtorData ? (unitValue * (amountDivisor || 1) / (debtorData.amountDivisor || 1)) : undefined
+  $: exchangeRate = calculatedExchangeRate ?? (originalValue?.exchangeRate || 0)
   $: value = pegged ? getPeg(coinUrl, exchangeRate) : undefined
   $: if (!pegged) {
     reset()
   }
   $: showQrScanDialog = pegged && coinUrl === ''
-  $: debtorDataPromise = fetchDebtorInfo(coinUrl)
+  $: fetchDebtorData(coinUrl)
 
   // TODO: Dispatch onChange event when information has changed.
 </script>
@@ -96,6 +108,7 @@
       <QrScanner bind:result={coinUrl}/>
     </Content>
     <Actions>
+      <!-- The type="button" is necessary to prevent form submitting.-->
       <Button type="button">
         <Label>Close</Label>
       </Button>
@@ -114,9 +127,7 @@
   </Cell>
   <Cell>
     <div class:hidden={!pegged}>
-      {#await debtorDataPromise}
-        waiting
-      {:then debtorData}
+      {#if debtorData}
         <Textfield
           required
           variant="outlined"
@@ -124,14 +135,14 @@
           input$min={Number.EPSILON}
           input$step="any"
           style="width: 100%"
-          withTrailingIcon={invalidExchangeRate}
-          bind:value={exchangeRate}
-          bind:invalid={invalidExchangeRate}
+          withTrailingIcon={invalidUnitValue}
+          bind:value={unitValue}
+          bind:invalid={invalidUnitValue}
           label={`The value of one ${unit || "unit"}`}
           suffix={debtorData.unit}
           >
           <svelte:fragment slot="trailingIcon">
-            {#if invalidExchangeRate}
+            {#if invalidUnitValue}
               <TextfieldIcon class="material-icons">error</TextfieldIcon>
             {/if}
           </svelte:fragment>
@@ -141,11 +152,11 @@
             {#if unit === debtorData.unit} If in doubt, set this to 1.{/if}
           </HelperText>
         </Textfield>
-      {:catch}
-        error
-      {/await}
+      {/if}
     </div>
   </Cell>
 </LayoutGrid>
 
 {coinUrl}
+{calculatedExchangeRate}
+{exchangeRate}
