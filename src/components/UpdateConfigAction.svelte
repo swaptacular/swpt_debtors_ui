@@ -141,7 +141,7 @@
               required
               variant="outlined"
               style="width: 100%"
-              input$maxlength="40"
+              input$maxlength="4"
               input$spellcheck="false"
               bind:invalid={invalidCurrencyAbbreviation}
               bind:value={unit}
@@ -287,7 +287,7 @@
           </Cell>
 
           <Cell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
-            <PegInput bind:value={peg} bind:invalid={invalidPeg} />
+            <PegInput {amountDivisor} {unit} bind:value={peg} bind:invalid={invalidPeg} />
           </Cell>
         </LayoutGrid>
       </form>

@@ -11,6 +11,8 @@
   import QrScanner from './QrScanner.svelte'
   import Button, { Label } from '@smui/button'
 
+  export let amountDivisor: number = NaN
+  export let unit: string = ''
   export let invalid = false
   export let value : Peg | undefined = undefined
 
@@ -58,8 +60,8 @@
     return await parseDebtorInfoDocument({content, contentType})
   }
 
-  function setInvalidCoinUrl(): void {
-    coinUrl = '#'
+  function unpeg(): void {
+    pegged = false
   }
 
   $: invalid = pegged && (invalidCoinUrl || invalidExchangeRate)
@@ -69,6 +71,8 @@
   }
   $: showQrScanDialog = pegged && coinUrl === ''
   $: debtorDataPromise = fetchDebtorInfo(coinUrl)
+
+  // TODO: Dispatch onChange event when information has changed.
 </script>
 
 <style>
@@ -80,16 +84,18 @@
 {#if showQrScanDialog}
   <Dialog
     open
+    scrimClickAction=""
+    escapeKeyAction=""
     aria-labelledby="qrscan-title"
     aria-describedby="qrscan-content"
-    on:MDCDialog:closed={setInvalidCoinUrl}
+    on:MDCDialog:closed={unpeg}
     >
     <Title id="qrscan-title">Scan another currency's digital coin (a QR code)</Title>
     <Content id="qrscan-content">
       <QrScanner bind:result={coinUrl}/>
     </Content>
     <Actions>
-      <Button on:click={setInvalidCoinUrl}>
+      <Button type="button">
         <Label>Close</Label>
       </Button>
     </Actions>
@@ -107,37 +113,38 @@
   </Cell>
   <Cell>
     <div class:hidden={!pegged}>
-      <Textfield
-        required
-        variant="outlined"
-        type="number"
-        input$min={Number.EPSILON}
-        input$step="any"
-        style="width: 100%"
-        withTrailingIcon={invalidExchangeRate}
-        bind:value={exchangeRate}
-        bind:invalid={invalidExchangeRate}
-        label="Exchange rate"
-        >
-        <svelte:fragment slot="trailingIcon">
-          {#if invalidExchangeRate}
-            <TextfieldIcon class="material-icons">error</TextfieldIcon>
-          {/if}
-        </svelte:fragment>
-        <HelperText slot="helper">
-          For example, 2.0 would mean that your currency's
-          tokens are twice as valuable as other currency's
-          tokens.
-        </HelperText>
-      </Textfield>
+      {#await debtorDataPromise}
+        waiting
+      {:then debtorData}
+        <Textfield
+          required
+          variant="outlined"
+          type="number"
+          input$min={Number.EPSILON}
+          input$step="any"
+          style="width: 100%"
+          withTrailingIcon={invalidExchangeRate}
+          bind:value={exchangeRate}
+          bind:invalid={invalidExchangeRate}
+          label={`The value of one ${unit || "unit"}`}
+          suffix={debtorData.unit}
+          >
+          <svelte:fragment slot="trailingIcon">
+            {#if invalidExchangeRate}
+              <TextfieldIcon class="material-icons">error</TextfieldIcon>
+            {/if}
+          </svelte:fragment>
+          <HelperText slot="helper">
+            The value of one unit of your digital currency{unit ? ` (1 ${unit})`: ''},
+            expressed in the units of the other currency ({debtorData.unit}).
+            {#if unit === debtorData.unit} If in doubt, set this to 1.{/if}
+          </HelperText>
+        </Textfield>
+      {:catch}
+        error
+      {/await}
     </div>
   </Cell>
 </LayoutGrid>
 
-{#await debtorDataPromise}
-  waiting
-{:then debtorData}
-  {console.log(debtorData)}
-{:catch error}
-  {console.error(error)}
-{/await}
+{coinUrl}
