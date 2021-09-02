@@ -29,30 +29,34 @@
     return `${infoUri}#${debtorUri}`
   }
 
-  function calcPeg(coinUrl: string, unitValue: number, debtorData?: DebtorData): Peg | undefined {
+  function calcPeg(
+    coinUrl: string,
+    unitValue: number,
+    amountDivisor: number,
+    debtorData?: DebtorData,
+    originalValue?: Peg,
+  ): Peg | undefined {
     if (coinUrl === '') {
       return undefined
     }
-    if (debtorData === undefined) {
-      return originalValue
-    }
     const [debtorInfoUri = '', debtorUri = ''] = coinUrl.split('#', 2)
-    if (debtorData.latestDebtorInfo.uri !== debtorInfoUri || debtorData.debtorIdentity.uri !== debtorUri) {
-      undefined
+    if (
+      debtorData &&
+      debtorData.latestDebtorInfo.uri === debtorInfoUri &&
+      debtorData.debtorIdentity.uri === debtorUri
+    ) {
+      const uv = typeof unitValue === 'number' ? unitValue : 0
+      return {
+        type: 'Peg',
+        exchangeRate: (uv * (amountDivisor || 1) / (debtorData.amountDivisor || 1)),
+        debtorIdentity: {  type: 'DebtorIdentity', uri: debtorUri },
+        latestDebtorInfo: { uri: debtorInfoUri },
+      }
     }
-    return {
-      type: 'Peg',
-      exchangeRate: (unitValue * (amountDivisor || 1) / (debtorData.amountDivisor || 1)),
-      debtorIdentity: {  type: 'DebtorIdentity', uri: debtorUri },
-      latestDebtorInfo: { uri: debtorInfoUri },
-    }
+    return originalValue
   }
 
-  async function fetchDocument(coinUrl: string): Promise<DebtorData> {
-    const url = coinUrl.split('#', 1)[0]
-    if (url === '') {
-      throw new InvalidDocument('empty URL')
-    }
+  async function fetchDocument(url: string): Promise<DebtorData> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), appConfig.serverApiTimeout)
     const response = await fetch(url, { signal: controller.signal })
@@ -66,12 +70,15 @@
   }
 
   async function fetchDebtorData(coinUrl: string): Promise<void> {
-    try {
-      debtorData = await fetchDocument(coinUrl)
-      unitValue = originalValue ? originalValue.exchangeRate * (debtorData.amountDivisor || 1) / (amountDivisor || 1) : 0
-    } catch (e: unknown) {
-      throw e
-      // reset()
+    const url = coinUrl.split('#', 1)[0]
+    if (url) {
+      try {
+        debtorData = await fetchDocument(url)
+        unitValue = originalValue ? originalValue.exchangeRate * (debtorData.amountDivisor || 1) / (amountDivisor || 1) : 0
+      } catch (e: unknown) {
+        throw e
+        // reset()
+      }
     }
   }
 
@@ -79,16 +86,12 @@
     pegged = false
   }
 
-  function reset(): void {
+  $: value = calcPeg(coinUrl, unitValue, amountDivisor, debtorData, originalValue)
+  $: invalid = value !== undefined && invalidUnitValue
+  $: if (!pegged) {
     coinUrl = ''
     unitValue = 0
     originalValue = undefined
-  }
-
-  $: invalid = pegged && (!debtorData || invalidUnitValue)
-  $: value = calcPeg(coinUrl, unitValue, debtorData)
-  $: if (!pegged) {
-    reset()
   }
   $: showQrScanDialog = pegged && coinUrl === ''
   $: fetchDebtorData(coinUrl)
@@ -166,3 +169,4 @@
 </LayoutGrid>
 
 {coinUrl}
+{value}

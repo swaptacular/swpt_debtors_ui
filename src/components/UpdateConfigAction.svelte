@@ -71,7 +71,6 @@
     invalidDecimalPlaces ||
     invalidPeg
   )
-  $: console.log(peg)
 </script>
 
 <style>
