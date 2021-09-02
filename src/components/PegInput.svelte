@@ -45,7 +45,7 @@
       debtorData.latestDebtorInfo.uri === debtorInfoUri &&
       debtorData.debtorIdentity.uri === debtorUri
     ) {
-      const uv = typeof unitValue === 'number' ? unitValue : 0
+      const uv = typeof unitValue === 'number' ? unitValue : 0  // TODO: solve the NaN problem!
       return {
         type: 'Peg',
         exchangeRate: (uv * (amountDivisor || 1) / (debtorData.amountDivisor || 1)),
@@ -69,12 +69,15 @@
     return await parseDebtorInfoDocument({content, contentType})
   }
 
-  async function fetchDebtorData(coinUrl: string): Promise<void> {
-    const url = coinUrl.split('#', 1)[0]
+  async function fetchDebtorData(url: string): Promise<void> {
+    url = url.split('#', 1)[0]
     if (url) {
       try {
-        debtorData = await fetchDocument(url)
-        unitValue = originalValue ? originalValue.exchangeRate * (debtorData.amountDivisor || 1) / (amountDivisor || 1) : 0
+        const data = await fetchDocument(url)
+        if (data.latestDebtorInfo.uri.split('#', 1)[0] === coinUrl.split('#', 1)[0]) {
+          debtorData = data
+          unitValue = originalValue ? originalValue.exchangeRate * (debtorData.amountDivisor || 1) / (amountDivisor || 1) : 0
+        }
       } catch (e: unknown) {
         throw e
         // reset()
@@ -91,6 +94,7 @@
   $: if (!pegged) {
     coinUrl = ''
     unitValue = 0
+    debtorData = undefined
     originalValue = undefined
   }
   $: showQrScanDialog = pegged && coinUrl === ''
@@ -163,10 +167,9 @@
             {#if unit === debtorData.unit} If in doubt, set this to 1.{/if}
           </HelperText>
         </Textfield>
+      {:else}
+        waiting
       {/if}
     </div>
   </Cell>
 </LayoutGrid>
-
-{coinUrl}
-{value}
