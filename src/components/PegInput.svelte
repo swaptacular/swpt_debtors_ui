@@ -11,6 +11,14 @@
   import QrScanner from './QrScanner.svelte'
   import Button, { Label } from '@smui/button'
 
+  type PegStatus = {
+    amountDivisor: number,
+    coinUrl: string,
+    unitRate: number,
+    debtorData?: DebtorData,
+    originalValue?: Peg,
+  }
+
   export let amountDivisor: number = NaN
   export let unit: string = ''
   export let invalid: boolean = false
@@ -29,13 +37,7 @@
     return `${infoUri}#${debtorUri}`
   }
 
-  function calcPeg(
-    amountDivisor: number,
-    coinUrl: string,
-    unitRate: number,
-    debtorData?: DebtorData,
-    originalValue?: Peg,
-  ): Peg | undefined {
+  function calcPeg({amountDivisor, coinUrl, unitRate, debtorData, originalValue}: PegStatus): Peg | undefined {
     if (coinUrl !== '') {
       const [debtorInfoUri, debtorUri = ''] = coinUrl.split('#', 2)
       if (debtorData &&
@@ -98,16 +100,17 @@
     pegged = false
   }
 
-  $: value = calcPeg(amountDivisor, coinUrl, unitRate, debtorData, originalValue)
+  $: status = { amountDivisor, coinUrl, unitRate, debtorData, originalValue }
+  $: value = calcPeg(status)
   $: invalid = value !== undefined && Boolean(invalidUnitRate)
+  $: showQrScanDialog = pegged && coinUrl === ''
+  $: fetchDebtorData(coinUrl)
   $: if (!pegged) {
     coinUrl = ''
     debtorData = undefined
     originalValue = undefined
     invalidUnitRate = undefined
   }
-  $: showQrScanDialog = pegged && coinUrl === ''
-  $: fetchDebtorData(coinUrl)
 </script>
 
 <style>
