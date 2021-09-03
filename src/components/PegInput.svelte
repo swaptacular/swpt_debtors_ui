@@ -91,7 +91,7 @@
         unitRate = (
           originalValue
             ? originalValue.exchangeRate * (amountDivisor || 1) / (debtorData.amountDivisor || 1)
-            : NaN
+            : (unit === debtorData.unit ? 1 : NaN)
         )
       }
     }
@@ -172,7 +172,7 @@
       <HelperText slot="helper">
         The value of one unit of your digital currency{unit ? ` (1 ${unit})`: ''},
         represented in the units of the "{debtorData.debtorName}" currency ({debtorData.unit}).
-      {#if unit === debtorData.unit} If in doubt, set this to 1.{/if}
+      {#if unit === debtorData.unit} If in doubt, leave it at 1.{/if}
         </HelperText>
     </Textfield>
   {:else if coinUrl !== ''}
