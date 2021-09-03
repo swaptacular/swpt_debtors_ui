@@ -15,7 +15,6 @@
   aria-labelledby="alert-title"
   aria-describedby="alert-content"
   >
-  <!-- TODO: Title cannot contain leading whitespace due to mdc-typography-baseline-top() -->
   <Title id="alert-title">Error</Title>
   <Content id="alert-content">{alerts[0].message}</Content>
   <Actions>

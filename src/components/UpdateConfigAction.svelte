@@ -37,13 +37,13 @@
   function createUpdatedAction(): UpdateConfigActionWithId {
     return {
       ...action,
-      interestRate,
+      interestRate: Number(interestRate),
       debtorInfo: {
         summary: summary || undefined,
         debtorName,
         debtorHomepage: debtorHomepageUri ? { uri: debtorHomepageUri } : undefined,
-        amountDivisor: amountDivisor | Number.EPSILON,
-        decimalPlaces: Math.round(decimalPlaces),
+        amountDivisor: Number(amountDivisor),
+        decimalPlaces: Math.round(Number(decimalPlaces)),
         unit,
         peg,
       }

@@ -20,7 +20,7 @@
   let pegged: boolean = value !== undefined
   let coinUrl: string = value ? getCoinUrl(value) : ''
   let debtorData: DebtorData | undefined
-  let unitRate: number = 0
+  let unitRate: number = NaN
   let invalidUnitRate: boolean | undefined
 
   function getCoinUrl(peg: Peg): string {
@@ -42,10 +42,9 @@
           debtorData.latestDebtorInfo.uri === debtorInfoUri &&
           debtorData.debtorIdentity.uri === debtorUri
          ) {
-        const uv = typeof unitRate === 'number' ? unitRate : 0  // TODO: solve the NaN problem!
         return {
           type: 'Peg',
-          exchangeRate: (uv * (debtorData.amountDivisor || 1) / (amountDivisor || 1)),
+          exchangeRate: (Number(unitRate) * (debtorData.amountDivisor || 1) / (amountDivisor || 1)),
           debtorIdentity: {  type: 'DebtorIdentity', uri: debtorUri },
           latestDebtorInfo: { uri: debtorInfoUri },
         }
@@ -89,7 +88,7 @@
         unitRate = (
           originalValue
             ? originalValue.exchangeRate * (amountDivisor || 1) / (debtorData.amountDivisor || 1)
-            : 0
+            : NaN
         )
       }
     }
