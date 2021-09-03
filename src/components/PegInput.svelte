@@ -10,6 +10,7 @@
   import Dialog, { Title, Content, Actions } from '@smui/dialog'
   import QrScanner from './QrScanner.svelte'
   import Button, { Label } from '@smui/button'
+  import CircularProgress from '@smui/circular-progress'
 
   type PegStatus = {
     amountDivisor: number,
@@ -141,45 +142,43 @@
   </Dialog>
 {/if}
 
-<LayoutGrid>
-  <Cell>
-    <FormField>
-      <Switch color="primary" bind:checked={pegged} />
-      <span slot="label">
-        Set fixed exchange rate between your currency and another currency.
-      </span>
-    </FormField>
-  </Cell>
-  <Cell>
-    <div class:hidden={!pegged}>
-      {#if debtorData}
-        <Textfield
-          required
-          variant="outlined"
-          type="number"
-          input$min={Number.EPSILON}
-          input$step="any"
-          style="width: 100%"
-          withTrailingIcon={invalidUnitRate}
-          bind:value={unitRate}
-          bind:invalid={invalidUnitRate}
-          label={`The value of one ${unit || "unit"}`}
-          suffix={debtorData.unit}
-          >
-          <svelte:fragment slot="trailingIcon">
-            {#if invalidUnitRate}
-              <TextfieldIcon class="material-icons">error</TextfieldIcon>
-            {/if}
-          </svelte:fragment>
-          <HelperText slot="helper">
-            The value of one unit of your digital currency{unit ? ` (1 ${unit})`: ''},
-            represented in the units of the "{debtorData.debtorName}" currency ({debtorData.unit}).
-            {#if unit === debtorData.unit} If in doubt, set this to 1.{/if}
-          </HelperText>
-        </Textfield>
-      {:else}
-        waiting
-      {/if}
+<FormField>
+  <Switch color="primary" bind:checked={pegged} />
+  <span slot="label">
+    Set fixed exchange rate between your currency and another currency.
+  </span>
+</FormField>
+
+<div class:hidden={!pegged} style="margin-top: 16px; height: 10em">
+  {#if debtorData}
+    <Textfield
+      required
+      variant="outlined"
+      type="number"
+      input$min={Number.EPSILON}
+      input$step="any"
+      style="width: 100%"
+      withTrailingIcon={invalidUnitRate}
+      bind:value={unitRate}
+      bind:invalid={invalidUnitRate}
+      label={`The value of one ${unit || "unit"}`}
+      suffix={debtorData.unit}
+      >
+      <svelte:fragment slot="trailingIcon">
+        {#if invalidUnitRate}
+          <TextfieldIcon class="material-icons">error</TextfieldIcon>
+        {/if}
+      </svelte:fragment>
+      <HelperText slot="helper">
+        The value of one unit of your digital currency{unit ? ` (1 ${unit})`: ''},
+        represented in the units of the "{debtorData.debtorName}" currency ({debtorData.unit}).
+      {#if unit === debtorData.unit} If in doubt, set this to 1.{/if}
+        </HelperText>
+    </Textfield>
+  {:else if coinUrl !== ''}
+    <div style="display: flex; align-items: center">
+      <div style="margin-right: 1em; color: #c4c4c4">Loading...</div>
+      <CircularProgress style="height: 32px; width: 32px;" indeterminate />
     </div>
-  </Cell>
-</LayoutGrid>
+  {/if}
+</div>
