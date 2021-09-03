@@ -19,9 +19,9 @@
   let originalValue = value
   let pegged: boolean = value !== undefined
   let coinUrl: string = value ? getCoinUrl(value) : ''
-  let unitValue: number = 0
   let debtorData: DebtorData | undefined
-  let invalidUnitValue: boolean
+  let unitRate: number = 0
+  let invalidUnitRate: boolean | undefined
 
   function getCoinUrl(peg: Peg): string {
     const infoUri = peg.latestDebtorInfo.uri.split('#', 1)[0]
@@ -30,57 +30,67 @@
   }
 
   function calcPeg(
-    coinUrl: string,
-    unitValue: number,
     amountDivisor: number,
+    coinUrl: string,
+    unitRate: number,
     debtorData?: DebtorData,
     originalValue?: Peg,
   ): Peg | undefined {
-    if (coinUrl === '') {
-      return undefined
-    }
-    const [debtorInfoUri = '', debtorUri = ''] = coinUrl.split('#', 2)
-    if (
-      debtorData &&
-      debtorData.latestDebtorInfo.uri === debtorInfoUri &&
-      debtorData.debtorIdentity.uri === debtorUri
-    ) {
-      const uv = typeof unitValue === 'number' ? unitValue : 0  // TODO: solve the NaN problem!
-      return {
-        type: 'Peg',
-        exchangeRate: (uv * (amountDivisor || 1) / (debtorData.amountDivisor || 1)),
-        debtorIdentity: {  type: 'DebtorIdentity', uri: debtorUri },
-        latestDebtorInfo: { uri: debtorInfoUri },
+    if (coinUrl !== '') {
+      const [debtorInfoUri, debtorUri = ''] = coinUrl.split('#', 2)
+      if (debtorData &&
+          debtorData.latestDebtorInfo.uri === debtorInfoUri &&
+          debtorData.debtorIdentity.uri === debtorUri
+         ) {
+        const uv = typeof unitRate === 'number' ? unitRate : 0  // TODO: solve the NaN problem!
+        return {
+          type: 'Peg',
+          exchangeRate: (uv * (debtorData.amountDivisor || 1) / (amountDivisor || 1)),
+          debtorIdentity: {  type: 'DebtorIdentity', uri: debtorUri },
+          latestDebtorInfo: { uri: debtorInfoUri },
+        }
       }
     }
     return originalValue
   }
 
-  async function fetchDocument(url: string): Promise<DebtorData> {
+  async function fetchDocument(url: string): Promise<DebtorData | undefined> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), appConfig.serverApiTimeout)
-    const response = await fetch(url, { signal: controller.signal })
-    clearTimeout(timeoutId);
-    if (response.status !== 200) {
-      throw new InvalidDocument('server error')
+    let response
+    try {
+      response = await fetch(url, { signal: controller.signal })
+    } catch {
+      /* ignore */
     }
-    const contentType = response.headers.get('Content-Type') ?? 'text/plain'
-    const content = await response.arrayBuffer()
-    return await parseDebtorInfoDocument({content, contentType})
+    clearTimeout(timeoutId)
+    if (response && response.status === 200) {
+      const contentType = response.headers.get('Content-Type') ?? 'text/plain'
+      const content = await response.arrayBuffer()
+      try {
+        return await parseDebtorInfoDocument({content, contentType})
+      } catch (e: unknown) {
+        if (!(e instanceof InvalidDocument)) throw e
+      }
+    }
+    return undefined
   }
 
   async function fetchDebtorData(url: string): Promise<void> {
     url = url.split('#', 1)[0]
     if (url) {
-      try {
-        const data = await fetchDocument(url)
-        if (data.latestDebtorInfo.uri.split('#', 1)[0] === coinUrl.split('#', 1)[0]) {
-          debtorData = data
-          unitValue = originalValue ? originalValue.exchangeRate * (debtorData.amountDivisor || 1) / (amountDivisor || 1) : 0
-        }
-      } catch (e: unknown) {
-        throw e
-        // reset()
+      const data = await fetchDocument(url)
+      const [debtorInfoUri, debtorUri = ''] = coinUrl.split('#', 2)
+      if (data &&
+          data.latestDebtorInfo.uri === debtorInfoUri &&
+          data.debtorIdentity.uri === debtorUri
+         ) {
+        debtorData = data
+        unitRate = (
+          originalValue
+            ? originalValue.exchangeRate * (amountDivisor || 1) / (debtorData.amountDivisor || 1)
+            : 0
+        )
       }
     }
   }
@@ -89,19 +99,16 @@
     pegged = false
   }
 
-  $: value = calcPeg(coinUrl, unitValue, amountDivisor, debtorData, originalValue)
-  $: invalid = value !== undefined && invalidUnitValue
+  $: value = calcPeg(amountDivisor, coinUrl, unitRate, debtorData, originalValue)
+  $: invalid = value !== undefined && Boolean(invalidUnitRate)
   $: if (!pegged) {
     coinUrl = ''
-    unitValue = 0
     debtorData = undefined
     originalValue = undefined
-    invalidUnitValue = undefined
+    invalidUnitRate = undefined
   }
   $: showQrScanDialog = pegged && coinUrl === ''
   $: fetchDebtorData(coinUrl)
-
-  // TODO: Dispatch onChange event when information has changed.
 </script>
 
 <style>
@@ -151,14 +158,14 @@
           input$min={Number.EPSILON}
           input$step="any"
           style="width: 100%"
-          withTrailingIcon={invalidUnitValue}
-          bind:value={unitValue}
-          bind:invalid={invalidUnitValue}
+          withTrailingIcon={invalidUnitRate}
+          bind:value={unitRate}
+          bind:invalid={invalidUnitRate}
           label={`The value of one ${unit || "unit"}`}
           suffix={debtorData.unit}
           >
           <svelte:fragment slot="trailingIcon">
-            {#if invalidUnitValue}
+            {#if invalidUnitRate}
               <TextfieldIcon class="material-icons">error</TextfieldIcon>
             {/if}
           </svelte:fragment>
