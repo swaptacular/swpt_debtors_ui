@@ -196,7 +196,7 @@ export class AppState {
       }
     }, {
       alerts: [
-        [IvalidPaymentRequest, new Alert('Invalid payment request')],
+        [IvalidPaymentRequest, new Alert(INVALID_REQUEST_MESSAGE)],
       ],
     })
   }
