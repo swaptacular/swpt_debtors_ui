@@ -5,7 +5,7 @@
   import { generatePayment0TransferNote } from '../payment-requests'
   import Fab, { Icon, Label } from '@smui/fab';
   import LayoutGrid, { Cell } from '@smui/layout-grid'
-  import Banner, { Label as BannerLabel } from '@smui/banner'
+  import Banner, { Label as BannerLabel, Icon as BannerIcon } from '@smui/banner'
   import Button from '@smui/button'
   import Textfield from '@smui/textfield'
   import TextfieldIcon from '@smui/textfield/icon'
@@ -17,14 +17,13 @@
   export const snackbarBottom: string = "84px"
 
   const SEND = "Send"
-  const forbidAmountChange = action.requestedAmount > 0
-  const deadline = action.requestedDeadline
-  const description = action.paymentInfo.description
   let shakingElement: HTMLElement
-  let unitAmount: string | number = action.creationRequest.amount ? app.amountToString(action.creationRequest.amount): ''
-  let payeeName = action.paymentInfo.payeeName
-  let invalidPayeeName: boolean
-  let invalidUnitAmount: boolean
+  let shownAction: CreateTransferActionWithId | undefined
+  let payeeName: string
+  let unitAmount: string | number
+  let invalidPayeeName: boolean | undefined
+  let invalidUnitAmount: boolean | undefined
+  let activeBanner: boolean
 
   function createUpdatedAction(): CreateTransferActionWithId {
     const paymentInfo = {
@@ -54,14 +53,28 @@
     }
   }
 
-  $: status = getCreateTransferActionStatus(action)
+  $: if (shownAction !== action) {
+    shownAction = action
+    payeeName = action.paymentInfo.payeeName
+    unitAmount = action.creationRequest.amount ? app.amountToString(action.creationRequest.amount): ''
+    invalidPayeeName = undefined
+    invalidUnitAmount = undefined
+    activeBanner = true
+  }
+  $: forbidAmountChange = action.requestedAmount > 0
+  $: deadline = action.requestedDeadline
+  $: description = action.paymentInfo.description
   $: actionManager = app.createActionManager(action, createUpdatedAction)
+  $: status = getCreateTransferActionStatus(action)
+  $: forbidChange = status !== 'Draft'
   $: executeButtonLabel = (status !== 'Sent' && status !== 'Timed out' && status !== 'Failed') ? SEND : 'Acknowledge'
   $: executeButtonIsHidden = (status === 'Failed')
   $: dismissButtonIsHidden = (status === 'Not confirmed' || status === 'Sent' || status === 'Timed out')
+  $: showDeadlineWarning = activeBanner && deadline !== undefined && executeButtonLabel === SEND
   $: invalid = (
     invalidPayeeName ||
-    invalidUnitAmount
+    invalidUnitAmount ||
+    showDeadlineWarning
   )
 </script>
 
@@ -97,8 +110,9 @@
 <div class="shaking-container">
   <Page title="Payment">
     <div bind:this={shakingElement} slot="content">
-      {#if deadline && executeButtonLabel === SEND}
-        <Banner open>
+      {#if showDeadlineWarning && deadline !== undefined}
+        <Banner bind:open={activeBanner} mobileStacked>
+          <BannerIcon slot="icon" class="material-icons">warning</BannerIcon>
           <BannerLabel slot="label">
             The payment request specifies {deadline.toLocaleString()}
             as deadline for the payment. When issuing money into
@@ -124,6 +138,7 @@
               style="width: 100%"
               input$maxlength="200"
               input$spellcheck="false"
+              disabled={forbidChange}
               bind:invalid={invalidPayeeName}
               bind:value={payeeName}
               label="Payee name"
@@ -144,7 +159,7 @@
               required
               variant="outlined"
               type="number"
-              disabled={forbidAmountChange}
+              disabled={forbidChange || forbidAmountChange}
               input$min={Number.EPSILON}
               input$step="any"
               style="width: 100%"
