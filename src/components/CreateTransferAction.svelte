@@ -16,6 +16,7 @@
   export let action: CreateTransferActionWithId
   export const snackbarBottom: string = "84px"
 
+  const SEND = "Send"
   const forbidAmountChange = action.requestedAmount > 0
   const deadline = action.requestedDeadline
   const description = action.paymentInfo.description
@@ -55,9 +56,9 @@
 
   $: status = getCreateTransferActionStatus(action)
   $: actionManager = app.createActionManager(action, createUpdatedAction)
-  $: executeButtonLabel = (status !== 'Sent' && status !== 'Timed out') ? 'Send' : 'Acknowledge'
-  $: executeButtonIsDisabled = (status === 'Failed')
-  $: dismissButtonIsDisabled = (status === 'Not confirmed' || status === 'Sent' || status === 'Timed out')
+  $: executeButtonLabel = (status !== 'Sent' && status !== 'Timed out' && status !== 'Failed') ? SEND : 'Acknowledge'
+  $: executeButtonIsHidden = (status === 'Failed')
+  $: dismissButtonIsHidden = (status === 'Not confirmed' || status === 'Sent' || status === 'Timed out')
   $: invalid = (
     invalidPayeeName ||
     invalidUnitAmount
@@ -96,7 +97,7 @@
 <div class="shaking-container">
   <Page title="Payment">
     <div bind:this={shakingElement} slot="content">
-      {#if deadline}
+      {#if deadline && executeButtonLabel === SEND}
         <Banner open>
           <BannerLabel slot="label">
             The payment request specifies {deadline.toLocaleString()}
@@ -177,14 +178,14 @@
     </div>
 
     <svelte:fragment slot="floating">
-      {#if !dismissButtonIsDisabled}
+      {#if !dismissButtonIsHidden}
         <div class="fab-container">
           <Fab on:click={() => actionManager.remove()} extended>
             <Label>Dismiss</Label>
           </Fab>
         </div>
       {/if}
-      {#if !executeButtonIsDisabled}
+      {#if !executeButtonIsHidden}
         <div class="fab-container">
           <Fab color="primary" on:click={execute} extended>
             <Icon class="material-icons">monetization_on</Icon>
