@@ -3,9 +3,10 @@
   import type { CreateTransferActionWithId } from '../operations'
   import { getCreateTransferActionStatus } from '../operations'
   import { generatePayment0TransferNote } from '../payment-requests'
+  import Paper, { Title, Content } from '@smui/paper'
   import Fab, { Icon, Label } from '@smui/fab';
   import LayoutGrid, { Cell } from '@smui/layout-grid'
-  import Banner, { Label as BannerLabel, Icon as BannerIcon } from '@smui/banner'
+  import Banner, { Label as BannerLabel } from '@smui/banner'
   import Button from '@smui/button'
   import Textfield from '@smui/textfield'
   import TextfieldIcon from '@smui/textfield/icon'
@@ -16,7 +17,6 @@
   export let action: CreateTransferActionWithId
   export const snackbarBottom: string = "84px"
 
-  const SEND = "Send"
   let shakingElement: HTMLElement
   let shownAction: CreateTransferActionWithId | undefined
   let payeeName: string
@@ -67,10 +67,11 @@
   $: actionManager = app.createActionManager(action, createUpdatedAction)
   $: status = getCreateTransferActionStatus(action)
   $: forbidChange = status !== 'Draft'
-  $: executeButtonLabel = (status !== 'Sent' && status !== 'Timed out' && status !== 'Failed') ? SEND : 'Acknowledge'
+  $: executeButtonLabel = (status !== 'Sent' && status !== 'Timed out' && status !== 'Failed') ? "Send" : 'Acknowledge'
   $: executeButtonIsHidden = (status === 'Failed')
   $: dismissButtonIsHidden = (status === 'Not confirmed' || status === 'Sent' || status === 'Timed out')
-  $: showDeadlineWarning = activeBanner && deadline !== undefined && executeButtonLabel === SEND
+  $: showDeadlineWarning = activeBanner && deadline !== undefined && status === "Draft"
+  $: title = status === 'Draft' ? 'Payment request' : `${status} payment`
   $: invalid = (
     invalidPayeeName ||
     invalidUnitAmount ||
@@ -111,8 +112,7 @@
   <Page title="Payment">
     <div bind:this={shakingElement} slot="content">
       {#if showDeadlineWarning && deadline !== undefined}
-        <Banner bind:open={activeBanner} mobileStacked>
-          <BannerIcon slot="icon" class="material-icons">warning</BannerIcon>
+        <Banner bind:open={activeBanner} mobileStacked centered>
           <BannerLabel slot="label">
             The payment request specifies {deadline.toLocaleString()}
             as deadline for the payment. When issuing money into
@@ -124,6 +124,7 @@
           </svelte:fragment>
         </Banner>
       {/if}
+
       <form
         noValidate
         autoComplete="off"
@@ -131,6 +132,23 @@
         on:change={() => actionManager.save()}
         >
         <LayoutGrid>
+          <Cell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+            <Paper style="margin-top: 16px; margin-bottom: 28px" elevation={4}>
+              <Title>
+                {title}
+              </Title>
+              <Content>
+                {#if description.contentFormat === '.'}
+                  <a href="{description.content}" target="_blank">{description.content}</a>
+                {:else if description.content}
+                  {description.content}
+                {:else}
+                  <span style="color: #c4c4c4">The payment request does not contain a description.</span>
+                {/if}
+              </Content>
+            </Paper>
+          </Cell>
+
           <Cell spanDevices={{ desktop: 6, tablet: 4, phone: 4 }}>
             <Textfield
               required
@@ -179,17 +197,8 @@
               </HelperText>
             </Textfield>
           </Cell>
-
-          <Cell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
-            {#if description.contentFormat === '.'}
-              <p><a href="{description.content}" target="_blank">{description.content}</a></p>
-            {:else}
-              <p>{description.content}</p>
-            {/if}
-          </Cell>
         </LayoutGrid>
       </form>
-      <h2>{status}</h2>
     </div>
 
     <svelte:fragment slot="floating">
