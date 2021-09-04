@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { AppState } from '../app-state'
-  import type { CreateTransferActionWithId } from '../operations'
+  import type { CreateTransferActionWithId, CreateTransferActionStatus } from '../operations'
   import { getCreateTransferActionStatus } from '../operations'
   import { generatePayment0TransferNote } from '../payment-requests'
   import Paper, { Title, Content } from '@smui/paper'
@@ -19,6 +19,7 @@
   export let action: CreateTransferActionWithId
   export const snackbarBottom: string = "84px"
 
+  const maxUnitAmount =  Number(app.amountToString(2n ** 63n - 1000000n))
   let shakingElement: HTMLElement
   let shownAction: CreateTransferActionWithId | undefined
   let payeeName: string
@@ -41,6 +42,31 @@
         noteFormat: action.requestedAmount ? 'PAYMENT0' : 'payment0',
         note: generatePayment0TransferNote(paymentInfo, app.noteMaxBytes),
       },
+    }
+  }
+
+  function getInfoTooltip(status: CreateTransferActionStatus): string {
+    switch (status) {
+    case 'Draft':
+      return 'No attempts has been made to transfer the amount.'
+    case 'Not sent':
+      return 'An attempt has been made to transfer the amount, '
+        + 'but it was unsuccessful. '
+        + 'It is safe to retry the transfer, though.'
+    case 'Not confirmed':
+      return 'An attempt has been made to transfer the amount, '
+        + 'but it is unknown whether the amount was successfully transferred or not. '
+        + 'It is safe to retry the transfer, though.'
+    case 'Sent':
+      return 'The amount was successfully transferred.'
+    case 'Failed':
+      // JSON.stringify(result.errors)
+      return 'The recipient account is invalid. '
+        + 'Make sure that you are scanning the correct QR code, for the correct payment request.'
+    case 'Timed out':
+      return 'An attempt has been made to transfer the amount, '
+        + 'but it is unknown whether the amount has been successfully transferred or not. '
+        + 'It is not safe to retry the transfer.'
     }
   }
 
@@ -74,6 +100,7 @@
   $: dismissButtonIsHidden = (status === 'Not confirmed' || status === 'Sent' || status === 'Timed out')
   $: showDeadlineWarning = activeBanner && deadline !== undefined && status === "Draft"
   $: title = status === 'Draft' ? 'Payment request' : `${status} payment`
+  $: tooltip = getInfoTooltip(status)
   $: invalid = (
     invalidPayeeName ||
     invalidUnitAmount ||
@@ -142,11 +169,7 @@
                   <Chip chip="help" on:click={() => undefined}>
                     <Text tabindex="0">info</Text>
                   </Chip>
-                  <Tooltip>
-                    A rich tooltip can provide a lot more information
-                    than a regular toolip.  It is sized appropriately
-                    for a large amount of content.
-                  </Tooltip>
+                  <Tooltip>{tooltip}</Tooltip>
                 </Title>
                 <Content>
                   {#if description.contentFormat === '.'}
@@ -191,6 +214,7 @@
               type="number"
               disabled={forbidChange || forbidAmountChange}
               input$min={Number.EPSILON}
+              input$max={maxUnitAmount}
               input$step="any"
               style="width: 100%"
               withTrailingIcon={invalidUnitAmount}

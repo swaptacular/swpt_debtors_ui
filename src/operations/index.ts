@@ -29,6 +29,7 @@ import {
   ListQueryOptions,
   getCreateTransferActionStatus,
   DeleteTransferTaskWithId,
+  CreateTransferActionStatus,
 } from './db'
 import {
   parsePaymentRequest,
@@ -69,6 +70,7 @@ export type {
   AbortTransferActionWithId,
   UpdateConfigActionWithId,
   DebtorConfigData,
+  CreateTransferActionStatus,
 }
 
 export class TransferCreationTimeout extends Error {
