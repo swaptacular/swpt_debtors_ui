@@ -49,7 +49,7 @@
   function getInfoTooltip(status: CreateTransferActionStatus): string {
     switch (status) {
     case 'Draft':
-      return 'No attempts has been made to transfer the amount.'
+      return 'No attempts to transfer the amount have been made yet.'
     case 'Not sent':
       return 'An attempt has been made to transfer the amount, '
         + 'but it was unsuccessful. '

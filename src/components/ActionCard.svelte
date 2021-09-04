@@ -6,6 +6,7 @@
   import Card, { Content, Actions } from '@smui/card'
 
   const app: AppState = getContext('app')
+  const debtorConfigData = app.getDebtorConfigData()
 
   export let action: ActionRecordWithId
   export let show = () => { app.showAction(action.actionId) }
@@ -27,7 +28,10 @@
   function getDescription(action: ActionRecordWithId): string {
     switch (action.actionType) {
     case 'CreateTransfer':
-      return 'CreateTransfer'
+      const payeeName = action.paymentInfo.payeeName
+      const unitAmount = app.amountToString(action.creationRequest.amount)
+      const unit = debtorConfigData.debtorInfo?.unit ?? '\u00a4'
+      return `Send ${unitAmount} ${unit} to ${payeeName}.`
     case 'AbortTransfer':
       return 'AbortTransfer'
     case 'UpdateConfig':
