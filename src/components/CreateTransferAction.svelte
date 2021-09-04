@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { INVALID_REQUEST_MESSAGE } from '../app-state'
   import type { AppState } from '../app-state'
   import type { CreateTransferActionWithId, CreateTransferActionStatus } from '../operations'
   import { getCreateTransferActionStatus } from '../operations'
@@ -61,8 +62,7 @@
       return 'The amount was successfully transferred.'
     case 'Failed':
       // JSON.stringify(result.errors)
-      return 'The recipient account is invalid. '
-        + 'Make sure that you are scanning the correct QR code, for the correct payment request.'
+      return INVALID_REQUEST_MESSAGE
     case 'Timed out':
       return 'An attempt has been made to transfer the amount, '
         + 'but it is unknown whether the amount has been successfully transferred or not. '

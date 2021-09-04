@@ -25,6 +25,12 @@ type AttemptOptions = {
   startInteraction?: boolean
 }
 
+export const INVALID_REQUEST_MESSAGE = 'Invalid payment request. '
+  + 'Make sure that you are scanning the correct QR code, '
+  + 'for the correct payment request.'
+
+export const CAN_NOT_PERFORM_ACTOIN_MESSAGE = 'The requested action can not be performed.'
+
 export type {
   TransferRecord,
 }
@@ -341,10 +347,10 @@ export class AppState {
     }, {
       alerts: [
         [ServerSessionError, new Alert('Network error', { continue: reloadAction })],
-        [ForbiddenOperation, new Alert('Forbidden operation', { continue: reloadAction })],
-        [WrongTransferData, new Alert('Wrong transfer data', { continue: reloadAction })],
-        [TransferCreationTimeout, new Alert('Transfer creation timeout.', { continue: reloadAction })],
-        [RecordDoesNotExist, new Alert('The requested action can not be performed.', { continue: showActions })],
+        [ForbiddenOperation, new Alert(CAN_NOT_PERFORM_ACTOIN_MESSAGE, { continue: reloadAction })],
+        [WrongTransferData, new Alert(INVALID_REQUEST_MESSAGE, { continue: reloadAction })],
+        [TransferCreationTimeout, new Alert(CAN_NOT_PERFORM_ACTOIN_MESSAGE, { continue: reloadAction })],
+        [RecordDoesNotExist, new Alert(CAN_NOT_PERFORM_ACTOIN_MESSAGE, { continue: showActions })],
       ],
     })
   }
