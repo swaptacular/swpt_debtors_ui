@@ -240,7 +240,7 @@
     <svelte:fragment slot="floating">
       {#if !dismissButtonIsHidden}
         <div class="fab-container">
-          <Fab on:click={() => actionManager.remove()} extended>
+          <Fab color={executeButtonIsHidden ? "primary" : "secondary"} on:click={() => actionManager.remove()} extended>
             <Label>Dismiss</Label>
           </Fab>
         </div>
