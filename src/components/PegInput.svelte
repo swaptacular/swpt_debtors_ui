@@ -1,9 +1,11 @@
 <script lang="ts">
+  import { getContext } from 'svelte'
+  import { Alert } from '../app-state'
+  import type { AppState } from '../app-state'
   import type { Peg, DebtorData } from '../debtor-info'
   import { parseDebtorInfoDocument, InvalidDocument } from '../debtor-info'
   import Switch from '@smui/switch'
   import FormField from '@smui/form-field'
-  import LayoutGrid, { Cell } from '@smui/layout-grid'
   import Textfield from '@smui/textfield'
   import TextfieldIcon from '@smui/textfield/icon'
   import HelperText from '@smui/textfield/helper-text/index'
@@ -25,6 +27,7 @@
   export let invalid: boolean = false
   export let value : Peg | undefined = undefined
 
+  const app: AppState = getContext('app')
   let originalValue = value
   let pegged: boolean = value !== undefined
   let coinUrl: string = value ? getCoinUrl(value) : ''
@@ -75,6 +78,12 @@
         if (!(e instanceof InvalidDocument)) throw e
       }
     }
+    app.addAlert(new Alert(
+      "Can not load information about the specified currency. "
+        + "Check your network connection, and make sure "
+        + "that you are scanning the correct QR code.",
+      { continue: unpeg },
+    ))
     return undefined
   }
 
