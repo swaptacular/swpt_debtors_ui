@@ -137,7 +137,7 @@ export class AppState {
     return amountToString(amount, amountDivisor, decimalPlaces)
   }
 
-  stringToAmount(s: string): bigint {
+  stringToAmount(s: string | number): bigint {
     const { amountDivisor = 1 } = this.getDebtorConfigData().debtorInfo ?? {}
     return stringToAmount(s, amountDivisor)
   }

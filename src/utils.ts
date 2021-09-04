@@ -1,5 +1,5 @@
-export function stringToAmount(s: string, amountDivisor: number): bigint {
-  return BigInt(Number(s) * amountDivisor)
+export function stringToAmount(s: string | number, amountDivisor: number): bigint {
+  return BigInt(Math.round(Number(s) * amountDivisor))
 }
 
 export function amountToString(value: bigint, amountDivisor: number, decimalPlaces: number): string {
