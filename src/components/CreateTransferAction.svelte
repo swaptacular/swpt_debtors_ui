@@ -11,6 +11,8 @@
   import Textfield from '@smui/textfield'
   import TextfieldIcon from '@smui/textfield/icon'
   import HelperText from '@smui/textfield/helper-text/index'
+  import Chip, { Text } from '@smui/chips'
+  import Tooltip, { Wrapper } from '@smui/tooltip'
   import Page from './Page.svelte'
 
   export let app: AppState
@@ -133,20 +135,30 @@
         >
         <LayoutGrid>
           <Cell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
-            <Paper style="margin-top: 16px; margin-bottom: 28px" elevation={4}>
-              <Title>
-                {title}
-              </Title>
-              <Content>
-                {#if description.contentFormat === '.'}
-                  <a href="{description.content}" target="_blank">{description.content}</a>
-                {:else if description.content}
-                  {description.content}
-                {:else}
-                  <span style="color: #c4c4c4">The payment request does not contain a description.</span>
-                {/if}
-              </Content>
-            </Paper>
+            <Wrapper>
+              <Paper style="margin-top: 16px; margin-bottom: 28px" elevation={4}>
+                <Title style="display: flex; justify-content: space-between; align-items: center">
+                  {title}
+                  <Chip chip="help" on:click={() => undefined}>
+                    <Text tabindex="0">info</Text>
+                  </Chip>
+                  <Tooltip>
+                    A rich tooltip can provide a lot more information
+                    than a regular toolip.  It is sized appropriately
+                    for a large amount of content.
+                  </Tooltip>
+                </Title>
+                <Content>
+                  {#if description.contentFormat === '.'}
+                    <a href="{description.content}" target="_blank">{description.content}</a>
+                  {:else if description.content}
+                    {description.content}
+                  {:else}
+                    <span style="color: #c4c4c4">The payment request does not contain a description.</span>
+                  {/if}
+                </Content>
+              </Paper>
+            </Wrapper>
           </Cell>
 
           <Cell spanDevices={{ desktop: 6, tablet: 4, phone: 4 }}>
