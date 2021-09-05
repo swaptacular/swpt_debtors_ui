@@ -64,7 +64,6 @@
     case 'Sent':
       return 'The amount was successfully transferred.'
     case 'Failed':
-      // JSON.stringify(result.errors)
       return INVALID_REQUEST_MESSAGE
     case 'Timed out':
       return 'An attempt has been made to transfer the amount, '
