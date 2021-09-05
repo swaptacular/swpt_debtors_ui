@@ -19,7 +19,7 @@
     coinUrl: string,
     unitRate: number,
     debtorData?: DebtorData,
-    originalValue?: Peg,
+    unchangedValue?: Peg,
   }
 
   export let amountDivisor: number = NaN
@@ -28,11 +28,16 @@
   export let value : Peg | undefined = undefined
 
   const app: AppState = getContext('app')
-  let originalValue = value
-  let pegged: boolean = value !== undefined
-  let coinUrl: string = value ? getCoinUrl(value) : ''
+  let currentValue: Peg | undefined | null = null
+
+  // Stores the peg value received from the parent component. When the
+  // user switches the peg off, it becomes `undefined`.
+  let unchangedValue: Peg | undefined
+
+  let pegged: boolean
+  let coinUrl: string
   let debtorData: DebtorData | undefined
-  let unitRate: number = NaN
+  let unitRate: number
   let invalidUnitRate: boolean | undefined
 
   function getCoinUrl(peg: Peg): string {
@@ -41,7 +46,7 @@
     return `${infoUri}#${debtorUri}`
   }
 
-  function calcPeg({amountDivisor, coinUrl, unitRate, debtorData, originalValue}: PegStatus): Peg | undefined {
+  function calcPeg({amountDivisor, coinUrl, unitRate, debtorData, unchangedValue}: PegStatus): Peg | undefined {
     if (coinUrl !== '') {
       const [debtorInfoUri, debtorUri = ''] = coinUrl.split('#', 2)
       if (debtorData &&
@@ -56,7 +61,7 @@
         }
       }
     }
-    return originalValue
+    return unchangedValue
   }
 
   async function fetchDocument(url: string): Promise<DebtorData | undefined> {
@@ -98,8 +103,8 @@
          ) {
         debtorData = data
         unitRate = (
-          originalValue
-            ? originalValue.exchangeRate * (amountDivisor || 1) / (debtorData.amountDivisor || 1)
+          unchangedValue && unchangedValue.latestDebtorInfo.uri === debtorInfoUri
+            ? unchangedValue.exchangeRate * (amountDivisor || 1) / (debtorData.amountDivisor || 1)
             : (unit === debtorData.unit ? 1 : NaN)
         )
       }
@@ -110,15 +115,29 @@
     pegged = false
   }
 
-  $: status = { amountDivisor, coinUrl, unitRate, debtorData, originalValue }
-  $: value = calcPeg(status)
+  $: if (currentValue !== value) {
+    currentValue = unchangedValue = value
+    pegged = value !== undefined
+    coinUrl = value ? getCoinUrl(value) : ''
+    debtorData = undefined
+    unitRate = NaN
+    invalidUnitRate = undefined
+  } else {
+    currentValue = value = calcPeg({
+      amountDivisor,
+      coinUrl,
+      unitRate,
+      debtorData,
+      unchangedValue,
+    })
+  }
   $: invalid = value !== undefined && Boolean(invalidUnitRate)
   $: showQrScanDialog = pegged && coinUrl === ''
   $: fetchDebtorData(coinUrl)
   $: if (!pegged) {
     coinUrl = ''
     debtorData = undefined
-    originalValue = undefined
+    unchangedValue = undefined
     invalidUnitRate = undefined
   }
 </script>
@@ -181,8 +200,8 @@
       <HelperText slot="helper">
         The value of one unit of your digital currency{unit ? ` (1 ${unit})`: ''},
         represented in the units of the "{debtorData.debtorName}" currency ({debtorData.unit}).
-      {#if unit === debtorData.unit} If in doubt, leave it at 1.{/if}
-        </HelperText>
+        {#if unit === debtorData.unit} If in doubt, leave it at 1.{/if}
+      </HelperText>
     </Textfield>
   {:else if coinUrl !== ''}
     <div style="display: flex; align-items: center">
