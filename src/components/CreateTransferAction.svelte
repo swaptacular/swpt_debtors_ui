@@ -23,7 +23,7 @@
 
   const maxUnitAmount =  Number(app.amountToString(2n ** 63n - 1000000n))
   let shakingElement: HTMLElement
-  let shownAction: CreateTransferActionWithId | undefined
+  let currentAction: CreateTransferActionWithId
   let actionManager: ActionManager
 
   let payeeName: string
@@ -89,8 +89,8 @@
     }
   }
 
-  $: if (shownAction !== action) {
-    shownAction = action
+  $: if (currentAction !== action) {
+    currentAction = action
     actionManager = app.createActionManager(action, createUpdatedAction)
     payeeName = action.paymentInfo.payeeName
     unitAmount = action.creationRequest.amount ? app.amountToString(action.creationRequest.amount): ''

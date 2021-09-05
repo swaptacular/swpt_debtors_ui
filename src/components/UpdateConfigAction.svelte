@@ -17,7 +17,7 @@
 
   const homepagePattern = "(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_\\+.~#?&//=]*)"
 
-  let shownAction: UpdateConfigActionWithId | undefined
+  let currentAction: UpdateConfigActionWithId
   let actionManager: ActionManager
   let shakingElement: HTMLElement
 
@@ -65,8 +65,8 @@
     }
   }
 
-  $: if (shownAction !== action) {
-    shownAction = action
+  $: if (currentAction !== action) {
+    currentAction = action
     actionManager = app.createActionManager(action, createUpdatedAction)
     interestRate = action.interestRate ?? 0
     summary = action.debtorInfo?.summary ?? ''
