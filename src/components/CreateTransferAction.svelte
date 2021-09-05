@@ -1,6 +1,6 @@
 <script lang="ts">
   import { INVALID_REQUEST_MESSAGE } from '../app-state'
-  import type { AppState } from '../app-state'
+  import type { AppState, ActionManager } from '../app-state'
   import type { CreateTransferActionWithId, CreateTransferActionStatus } from '../operations'
   import { getCreateTransferActionStatus } from '../operations'
   import { generatePayment0TransferNote } from '../payment-requests'
@@ -23,8 +23,11 @@
   const maxUnitAmount =  Number(app.amountToString(2n ** 63n - 1000000n))
   let shakingElement: HTMLElement
   let shownAction: CreateTransferActionWithId | undefined
+  let actionManager: ActionManager
+
   let payeeName: string
   let unitAmount: string | number
+
   let invalidPayeeName: boolean | undefined
   let invalidUnitAmount: boolean | undefined
   let activeBanner: boolean
@@ -83,6 +86,7 @@
 
   $: if (shownAction !== action) {
     shownAction = action
+    actionManager = app.createActionManager(action, createUpdatedAction)
     payeeName = action.paymentInfo.payeeName
     unitAmount = action.creationRequest.amount ? app.amountToString(action.creationRequest.amount): ''
     invalidPayeeName = undefined
@@ -92,7 +96,6 @@
   $: forbidAmountChange = action.requestedAmount > 0
   $: deadline = action.requestedDeadline
   $: description = action.paymentInfo.description
-  $: actionManager = app.createActionManager(action, createUpdatedAction)
   $: status = getCreateTransferActionStatus(action)
   $: forbidChange = status !== 'Draft'
   $: executeButtonLabel = (status !== 'Sent' && status !== 'Timed out' && status !== 'Failed') ? "Send" : 'Acknowledge'

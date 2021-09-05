@@ -1,6 +1,7 @@
 <script lang="ts">
-  import type { AppState } from '../app-state'
+  import type { AppState, ActionManager } from '../app-state'
   import type { UpdateConfigActionWithId } from '../operations'
+  import type { Peg } from '../debtor-info'
   import Fab, { Icon, Label } from '@smui/fab'
   import Textfield from '@smui/textfield'
   import TextfieldIcon from '@smui/textfield/icon'
@@ -16,16 +17,19 @@
 
   const homepagePattern = "(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_\\+.~#?&//=]*)"
 
-  let interestRate = action.interestRate ?? 0
-  let summary = action.debtorInfo?.summary ?? ''
-  let debtorName = action.debtorInfo?.debtorName ?? ''
-  let debtorHomepageUri = action.debtorInfo?.debtorHomepage?.uri ?? ''
-  let amountDivisor = action.debtorInfo?.amountDivisor ?? 100
-  let decimalPlaces = action.debtorInfo?.decimalPlaces ?? 2
-  let unit = action.debtorInfo?.unit ?? ''
-  let peg = action.debtorInfo?.peg
-
+  let shownAction: UpdateConfigActionWithId | undefined
+  let actionManager: ActionManager
   let shakingElement: HTMLElement
+
+  let interestRate: number
+  let summary: string
+  let debtorName:string
+  let debtorHomepageUri: string
+  let amountDivisor: number
+  let decimalPlaces: number
+  let unit: string
+  let peg: Peg | undefined
+
   let invalidCurrencyName: boolean
   let invalidCurrencyAbbreviation: boolean
   let invalidHomepage: boolean
@@ -61,7 +65,18 @@
     }
   }
 
-  $: actionManager = app.createActionManager(action, createUpdatedAction)
+  $: if (shownAction !== action) {
+    shownAction = action
+    actionManager = app.createActionManager(action, createUpdatedAction)
+    interestRate = action.interestRate ?? 0
+    summary = action.debtorInfo?.summary ?? ''
+    debtorName = action.debtorInfo?.debtorName ?? ''
+    debtorHomepageUri = action.debtorInfo?.debtorHomepage?.uri ?? ''
+    amountDivisor = action.debtorInfo?.amountDivisor ?? 100
+    decimalPlaces = action.debtorInfo?.decimalPlaces ?? 2
+    unit = action.debtorInfo?.unit ?? ''
+    peg = action.debtorInfo?.peg
+  }
   $: invalid = (
     invalidCurrencyName ||
     invalidCurrencyAbbreviation ||
