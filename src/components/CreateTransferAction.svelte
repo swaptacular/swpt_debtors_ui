@@ -3,6 +3,7 @@
   import type { AppState, ActionManager } from '../app-state'
   import type { CreateTransferActionWithId, CreateTransferActionStatus } from '../operations'
   import { getCreateTransferActionStatus } from '../operations'
+  import type { PaymentDescription } from '../payment-requests'
   import { generatePayment0TransferNote } from '../payment-requests'
   import Paper, { Title, Content } from '@smui/paper'
   import Fab, { Icon, Label } from '@smui/fab';
@@ -27,6 +28,10 @@
 
   let payeeName: string
   let unitAmount: string | number
+  let forbidAmountChange: boolean
+  let deadline: Date | undefined
+  let description: PaymentDescription
+  let status: CreateTransferActionStatus
 
   let invalidPayeeName: boolean | undefined
   let invalidUnitAmount: boolean | undefined
@@ -89,14 +94,14 @@
     actionManager = app.createActionManager(action, createUpdatedAction)
     payeeName = action.paymentInfo.payeeName
     unitAmount = action.creationRequest.amount ? app.amountToString(action.creationRequest.amount): ''
+    forbidAmountChange = action.requestedAmount > 0
+    deadline = action.requestedDeadline
+    description = action.paymentInfo.description
+    status = getCreateTransferActionStatus(action)
     invalidPayeeName = undefined
     invalidUnitAmount = undefined
     activeBanner = true
   }
-  $: forbidAmountChange = action.requestedAmount > 0
-  $: deadline = action.requestedDeadline
-  $: description = action.paymentInfo.description
-  $: status = getCreateTransferActionStatus(action)
   $: forbidChange = status !== 'Draft'
   $: executeButtonLabel = (status !== 'Sent' && status !== 'Timed out' && status !== 'Failed') ? "Send" : 'Acknowledge'
   $: executeButtonIsHidden = (status === 'Failed')
