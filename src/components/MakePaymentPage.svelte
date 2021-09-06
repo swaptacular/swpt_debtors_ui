@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { AppState, MakePaymentModel } from '../app-state'
   import QrScanner from './QrScanner.svelte'
-  import Fab, { Icon } from '@smui/fab';
+  import Fab, { Label } from '@smui/fab';
   import Page from './Page.svelte'
 
   export let app: AppState
@@ -10,27 +10,28 @@
   assert(model)
 
   let scannedValue: string | undefined
+  let fileInputElement: HTMLElement
+  let files: FileList | undefined
 
-  const blob = new Blob([
-    'PR0\n',
-    '\n',
-    'swpt:6199429176/998877665544332211\n',
-    'Payee Name\n',
-    '1000\n',
-    '2001-01-01\n',
-    '12d3a45642665544\n',
-    '.\n',
-    'http://example.com'
-  ])
+  function chooseFile() {
+    fileInputElement.click()
+  }
 
   $: {
     if (scannedValue) {
       app.initiatePayment(new Blob([scannedValue]))
     }
   }
+  $: chosenFile = files?.[0]
+  $: if (chosenFile) {
+    app.initiatePayment(chosenFile)
+  }
 </script>
 
 <style>
+  .invisible {
+    display: none;
+  }
   .fab-container {
     margin: 16px 16px;
   }
@@ -42,9 +43,16 @@
   </svelte:fragment>
 
   <svelte:fragment slot="floating">
+    <input
+      type="file"
+      class="invisible"
+      accept=".pr0,application/vnd.swaptacular.pr0"
+      bind:this={fileInputElement}
+      bind:files
+      />
     <div class="fab-container">
-      <Fab on:click={() => app.initiatePayment(blob)}>
-        <Icon class="material-icons">insert_drive_file</Icon>
+      <Fab on:click={chooseFile} extended>
+        <Label>Select file</Label>
       </Fab>
     </div>
   </svelte:fragment>
