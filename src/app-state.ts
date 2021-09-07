@@ -66,7 +66,6 @@ export type PageModel =
   | TransfersModel
   | TransferModel
   | ConfigDataModel
-  | MakePaymentModel
 
 type BasePageModel = {
   type: string,
@@ -102,10 +101,6 @@ export type TransferModel = BasePageModel & {
 
 export type ConfigDataModel = BasePageModel & {
   type: 'ConfigDataModel',
-}
-
-export type MakePaymentModel = BasePageModel & {
-  type: 'MakePaymentModel'
 }
 
 export const DOWNLOADED_QR_COIN_KEY = 'debtors.downloadedQrCoin'
@@ -175,14 +170,6 @@ export class AppState {
       alert.options.continue?.()
     }, {
       startInteraction: false,
-    })
-  }
-
-  scanQrCode(): void {
-    this.pageModel.set({
-      type: 'MakePaymentModel',
-      reload: () => { this.scanQrCode() },
-      goBack: () => { this.showActions() },
     })
   }
 

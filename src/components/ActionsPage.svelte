@@ -13,6 +13,7 @@
   import Card, { Actions, Content as CardContent } from '@smui/card'
   import Button, { Label } from '@smui/button'
   import QrCodeIcon from './QrCodeIcon.svelte'
+  import MakePaymentDialog from './MakePaymentDialog.svelte'
 
   export let app: AppState
   export let model: ActionsModel
@@ -23,6 +24,7 @@
   const scrollElement = document.documentElement
   const downloadedQrCoin = localStorage.getItem(DOWNLOADED_QR_COIN_KEY) === 'true'
   let showForeignActions = localStorage.getItem(SHOW_FOREIGN_ACTIONS_KEY) === 'true'
+  let showMakePaymentDialog = false
 
   function separateForeignActions(allActions: ActionRecordWithId[]): [ActionRecordWithId[], ActionRecordWithId[]] {
     let regularActions = []
@@ -143,6 +145,8 @@
         {/if}
       </LayoutGrid>
     {/if}
+
+    <MakePaymentDialog bind:open={showMakePaymentDialog}/>
   </svelte:fragment>
 
   <svelte:fragment slot="floating">
@@ -157,7 +161,10 @@
       </Fab>
     </div>
     <div class="fab-container">
-      <Fab color={hasConfiguredCurrency && !hasRegularActions && downloadedQrCoin ? "primary" : "secondary"} on:click={() => app.scanQrCode()}>
+      <Fab
+        color={hasConfiguredCurrency && !hasRegularActions && downloadedQrCoin ? "primary" : "secondary"}
+        on:click={() => showMakePaymentDialog = true}
+        >
         <Icon class="material-icons">local_atm</Icon>
       </Fab>
     </div>
