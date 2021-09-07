@@ -58,6 +58,10 @@
     font-size: 1.1em;
     white-space: nowrap;
   }
+  em {
+    font-weight: bold;
+    color: #444;
+  }
 </style>
 
 {#if info}
@@ -89,16 +93,19 @@
               his/hers mobile device. Therefore, you should:
               <ol>
                 <li>
-                  Download the image.
+                  <a href="download" on:click|preventDefault={save}>
+                    Download the image.
+                  </a>
                 </li>
                 <li>
                   Make sure that the image is publicly available, and
-                  people are able to undoubtedly associate it with you
-                  &ndash; the issuer of the currency.
+                  people are able <em>to undoubtedly associate it with
+                  you</em> &ndash; the issuer of the currency.
                 </li>
                 <li>
-                  Issue tokens of your digital currency (new money)
-                  in circulation.
+                  <a href="issue" on:click|preventDefault={model.goBack}>
+                    Issue money in circulation.
+                  </a>
                 </li>
               </ol>
               Currently, you have a total of
