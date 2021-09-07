@@ -59,7 +59,7 @@
       <div class="payment-request-help">
         First, a payment request must be created by the payee. Then,
         you should scan the QR code of the payment request, or load it
-        from a file.
+        from file.
       </div>
     </Content>
     <Actions>
