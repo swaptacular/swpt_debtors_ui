@@ -25,6 +25,10 @@
     localStorage.setItem(DOWNLOADED_QR_COIN_KEY, 'true')
     downloadLinkElement.click()
   }
+
+  $: balance = model.debtorRecord.balance
+  $: totalIssuedUnits = app.amountToString(-balance)
+  $: unit = app.unit
 </script>
 
 <style>
@@ -48,6 +52,9 @@
   }
   li {
     margin: 0.5em 0;
+  }
+  b {
+    font-weight: bold;
   }
 </style>
 
@@ -87,7 +94,13 @@
                   people are able to undoubtedly associate it with you
                   &ndash; the issuer of the currency.
                 </li>
+                <li>
+                  Issue tokens of your digital currency (new money)
+                  in circulation.
+                </li>
               </ol>
+              Currently, you have <b>{`${totalIssuedUnits} ${unit}`}</b>
+              of your digital currency in circulation.
             </Content>
           </Paper>
         </Cell>

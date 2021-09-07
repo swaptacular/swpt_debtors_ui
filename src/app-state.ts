@@ -18,6 +18,7 @@ import {
   WrongTransferData,
   TransferCreationTimeout,
   RecordDoesNotExist,
+  DebtorRecordWithId,
 } from './operations'
 
 type AttemptOptions = {
@@ -101,6 +102,7 @@ export type TransferModel = BasePageModel & {
 
 export type ConfigDataModel = BasePageModel & {
   type: 'ConfigDataModel',
+  debtorRecord: DebtorRecordWithId,
 }
 
 export const DOWNLOADED_QR_COIN_KEY = 'debtors.downloadedQrCoin'
@@ -364,11 +366,13 @@ export class AppState {
     if (debtorConfigData.debtorInfo) {
       return this.attempt(async () => {
         const interactionId = this.interactionId
+        const debtorRecord = await this.uc.getDebtorRecord()
         if (this.interactionId === interactionId) {
           this.pageModel.set({
             type: 'ConfigDataModel',
             reload: () => { this.showConfig() },
             goBack: () => { this.showActions() },
+            debtorRecord,
           })
         }
       })

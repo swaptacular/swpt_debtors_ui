@@ -146,8 +146,8 @@
         <Banner bind:open={activeBanner} mobileStacked centered>
           <BannerLabel slot="label">
             The payment request specifies {deadline.toLocaleString()}
-            as deadline for the payment. When issuing money into
-            existence, payment deadlines are not supported, and will
+            as deadline for the payment. When issuing money in
+            circulation, payment deadlines are not supported, and will
             be ignored.
           </BannerLabel>
           <svelte:fragment slot="actions">
