@@ -53,8 +53,10 @@
   li {
     margin: 0.5em 0;
   }
-  b {
+  .amount {
     font-weight: bold;
+    font-size: 1.1em;
+    white-space: nowrap;
   }
 </style>
 
@@ -99,7 +101,8 @@
                   in circulation.
                 </li>
               </ol>
-              Currently, you have <b>{`${totalIssuedUnits} ${unit}`}</b>
+              Currently, you have a total of
+              <span class="amount">{`${totalIssuedUnits} ${unit}`}</span>
               of your digital currency in circulation.
             </Content>
           </Paper>
