@@ -345,7 +345,7 @@ export class UserContext {
         }
         break
 
-      case 'Sent':
+      case 'Initiated':
         const transferUri: string = (action.execution?.result as any).transferUri
         transferRecord = await db.getTransferRecord(transferUri)
         assert(transferRecord, 'missing transfer record')

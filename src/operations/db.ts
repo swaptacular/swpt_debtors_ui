@@ -113,7 +113,7 @@ export type CreateTransferActionStatus =
   | 'Draft'
   | 'Not sent'
   | 'Not confirmed'
-  | 'Sent'
+  | 'Initiated'
   | 'Failed'
   | 'Timed out'
 
@@ -200,7 +200,7 @@ export function getCreateTransferActionStatus(
       if (unresolvedRequestAt) return 'Not confirmed'
       return 'Not sent'
     case true:
-      return 'Sent'
+      return 'Initiated'
     case false:
       return 'Failed'
   }

@@ -460,7 +460,7 @@ test("Get create transfer action status", async () => {
   expect(getCreateTransferActionStatus({
     ...createTransferAction,
     execution: { startedAt: new Date(now), result: { ok: true, transferUri: 'http://example.com/transfer' } }
-  })).toBe('Sent')
+  })).toBe('Initiated')
 
   expect(getCreateTransferActionStatus({
     ...createTransferAction,
