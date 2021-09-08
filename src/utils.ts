@@ -1,3 +1,5 @@
+import type { TransferRecord } from './operations'
+
 export function stringToAmount(s: string | number, amountDivisor: number): bigint {
   return BigInt(Math.round(Number(s) * amountDivisor))
 }
@@ -46,4 +48,43 @@ function scientificToRegular(scientific: string): string {
 
 function removeLeadingZeroes(s: string): string {
   return s.match(/^0*([\s\S]*)$/)?.[1] as string
+}
+
+function getFailureReason(errorCode: string): string {
+  switch (errorCode) {
+    case 'CANCELED_BY_THE_SENDER':
+      return 'The payment has been canceled the sender.'
+    case 'RECIPIENT_IS_UNREACHABLE':
+      return "The recipient's account does not exist, or does not accept incoming payments."
+    case 'NO_RECIPIENT_CONFIRMATION':
+      return "A confirmation from the recipient is required, but has not been obtained."
+    case 'TRANSFER_NOTE_IS_TOO_LONG':
+      return "The byte-length of the payment note is too big."
+    case 'INSUFFICIENT_AVAILABLE_AMOUNT':
+      return "The requested amount is not available on the sender's account."
+    case 'TERMINATED':
+      return "The payment has been terminated due to expired deadline, unapproved "
+        + "interest rate change, or some other temporary or correctable condition. If "
+        + "the payment is retried with the correct options, chances are that it can "
+        + "be committed successfully."
+    default:
+      return errorCode
+  }
+}
+
+export function getTooltip(t: TransferRecord): string {
+  let tooltip = `The payment was initiated at ${new Date(t.initiatedAt).toLocaleString()}`
+  if (t.result) {
+    const finalizedAt = new Date(t.result.finalizedAt).toLocaleString()
+    if (t.result.error) {
+      const reason = getFailureReason(t.result.error.errorCode)
+      tooltip += `, and failed at ${finalizedAt}.`
+      tooltip += `The reason for the failure is: "${reason}"`
+    } else {
+      tooltip += `, and succeeded at ${finalizedAt}.`
+    }
+  } else {
+    tooltip += '.'
+  }
+  return tooltip
 }

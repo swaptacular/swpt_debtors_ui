@@ -1,29 +1,42 @@
 <script lang="ts">
+  import { getTooltip } from '../utils'
   import type { AppState } from '../app-state'
   import type { AbortTransferActionWithId } from '../operations'
   import Fab, { Label } from '@smui/fab';
+  import Button, { Label as ButtonLabel } from '@smui/button'
+  import Dialog, { Title, Content, Actions, InitialFocus } from '@smui/dialog'
+  import PaymentInfo from './PaymentInfo.svelte'
   import Page from './Page.svelte'
 
   export let app: AppState
   export let action: AbortTransferActionWithId
   export const snackbarBottom: string = "84px"
 
+  const maxUnitAmount =  Number(app.amountToString(2n ** 63n - 1000000n))
   let showFailedCancellationDialog = false
 
   function retry() {
     app.retryTransfer(action)
   }
+
   function dismiss() {
     app.dismissTransfer(action)
   }
+
   function cancel() {
     app.cancelTransfer(action, () => { showFailedCancellationDialog = true })
   }
+
   function closeDialog() {
     showFailedCancellationDialog = false
   }
 
   $: transfer = action.transfer
+  $: payeeName = transfer.paymentInfo.payeeName
+  $: unitAmount = app.amountToString(transfer.amount)
+  $: description = transfer.paymentInfo.description
+  $: title = transfer.result ? "Failed payment" : "Delayed payment"
+  $: tooltip = getTooltip(transfer)
 </script>
 
 <style>
@@ -32,18 +45,43 @@
   }
 </style>
 
-<Page title={transfer.result ? "Failed payment" : "Delayed payment"}>
+<Page title={title}>
   <svelte:fragment slot="content">
-    <h1>Abort Transfer Action</h1>
-    <dl>
-      <dt>actionId:</dt> <dd>{action.actionId}</dd>
-      <dt>createdAt:</dt> <dd>{action.createdAt.toISOString()}</dd>
-    </dl>
-    <!-- TODO: Make this a real dialog. -->
+    <PaymentInfo
+      {payeeName}
+      {unitAmount}
+      {description}
+      {title}
+      {tooltip}
+      {maxUnitAmount}
+      unit={app.unit}
+      />
+
     {#if showFailedCancellationDialog}
-      <h1>Failed Cancellation Dialog</h1>
-      <button on:click={closeDialog}>OK</button>
-      <button on:click={dismiss}>Get rid of this payment</button>
+      <Dialog
+        open
+        scrimClickAction=""
+        escapeKeyAction=""
+        aria-labelledby="failed-cancellation-title"
+        aria-describedby="failed-cancellation-content"
+        on:MDCDialog:closed={closeDialog}
+        >
+        <Title id="failed-cancellation-title">Failed payment cancellation</Title>
+        <Content id="failed-cancellation-content">
+          The attempt to cancel the delayed payment has failed. You
+          can get rid of this payment, but please note that it is not
+          certain whether the amount was successfully transferred or
+          not.
+        </Content>
+        <Actions>
+          <Button on:click={dismiss}>
+            <ButtonLabel>Get rid of this payment</ButtonLabel>
+          </Button>
+          <Button default use={[InitialFocus]}>
+            <ButtonLabel>OK</ButtonLabel>
+          </Button>
+        </Actions>
+      </Dialog>
     {/if}
   </svelte:fragment>
 
