@@ -72,6 +72,11 @@
         shakingElement.className = 'shaking-block'
         setTimeout(() => { shakingElement.className = '' }, 1000)
       }
+    } else if (status === 'Timed out') {
+      // Timed out payments can not be executed, but still must be
+      // acknowledged (not dismissed), because they may have resulted
+      // in a transfer.
+      actionManager.remove()
     } else {
       actionManager.execute()
     }
