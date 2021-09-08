@@ -56,8 +56,7 @@
         + 'but it is unknown whether the amount was successfully transferred or not. '
         + 'It is safe to retry the transfer, though.'
     case 'Initiated':
-      return 'The payment has been initiated successfully. You will be notified '
-        + 'if something has gone wrong.'
+      return 'The payment has been initiated successfully.'
     case 'Failed':
       return INVALID_REQUEST_MESSAGE
     case 'Timed out':
