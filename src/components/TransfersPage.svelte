@@ -1,8 +1,9 @@
 <script lang="ts">
   import { onMount } from "svelte"
   import type { AppState, TransfersModel, TransferRecord } from '../app-state'
+  import { Icon } from '@smui/common'
   import LayoutGrid, { Cell } from '@smui/layout-grid'
-  import Card, { PrimaryAction } from '@smui/card'
+  import Card, { PrimaryAction, Content } from '@smui/card'
   import InfiniteScroll from "./InfiniteScroll.svelte"
   import Page from './Page.svelte'
 
@@ -26,22 +27,54 @@
     })
   }
 
+  function getIconName(t: TransferRecord): string {
+    if (!t.result) {
+      return 'schedule'
+    } else if (t.result.error) {
+      return 'close'
+    } else {
+      return 'check'
+    }
+  }
+
+  function getDate(t: TransferRecord): string {
+    const initiatedAt = new Date(t.initiatedAt)
+    return `${initiatedAt.toDateString()}, ${initiatedAt.toLocaleTimeString()}`
+  }
+
   onMount(() => {
     scrollElement.scrollTop = model.scrollTop ?? scrollElement.scrollTop
     scrollElement.scrollLeft = model.scrollLeft ?? scrollElement.scrollLeft
   })
 
   $: transfers = [...transfers, ...newBatch]
+  $: unit = app.unit
 </script>
+
+<style>
+  h5 {
+    font-weight: bold;
+    font-size: 1.1em;
+    margin-bottom: 0.5em;
+  }
+</style>
 
 <Page title="Payments">
   <svelte:fragment slot="content">
     <LayoutGrid>
-      {#each transfers as transfer, n }
+      {#each transfers as transfer }
         <Cell>
           <Card>
-            <PrimaryAction on:click={() => showTransfer(transfer.uri)} padded >
-              {n}. {`${transfer.amount} to ${transfer.paymentInfo.payeeName}`}
+            <PrimaryAction on:click={() => showTransfer(transfer.uri)}>
+              <Content>
+                <h5>
+                  <Icon style="vertical-align: -20%" class="material-icons">{getIconName(transfer)}</Icon>
+                  {getDate(transfer)}
+                </h5>
+                <p>
+                  {`${app.amountToString(transfer.amount)} ${unit} to ${transfer.paymentInfo.payeeName}`}
+                </p>
+              </Content>
             </PrimaryAction>
           </Card>
         </Cell>
