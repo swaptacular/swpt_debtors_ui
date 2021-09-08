@@ -137,6 +137,11 @@
     animation: shake 0.5s;
     animation-iteration-count: 1;
   }
+  pre {
+    font-family: monospace;
+    white-space: pre-wrap;
+    width: 100%;
+  }
 </style>
 
 <div class="shaking-container">
@@ -177,7 +182,9 @@
                   {#if description.contentFormat === '.'}
                     <a href="{description.content}" target="_blank">{description.content}</a>
                   {:else if description.content}
-                    {description.content}
+                    <pre>
+                      {description.content}
+                    </pre>
                   {:else}
                     <span style="color: #c4c4c4">The payment request does not contain a description.</span>
                   {/if}
