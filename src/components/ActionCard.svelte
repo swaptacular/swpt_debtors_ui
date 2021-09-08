@@ -26,14 +26,22 @@
   }
 
   function getDescription(action: ActionRecordWithId): string {
+    let payeeName
+    let unitAmount
+    let unit
     switch (action.actionType) {
     case 'CreateTransfer':
-      const payeeName = action.paymentInfo.payeeName
-      const unitAmount = app.amountToString(action.creationRequest.amount)
-      const unit = debtorConfigData.debtorInfo?.unit ?? '\u00a4'
+      payeeName = action.paymentInfo.payeeName
+      unitAmount = app.amountToString(action.creationRequest.amount)
+      unit = debtorConfigData.debtorInfo?.unit ?? '\u00a4'
       return `Send ${unitAmount} ${unit} to ${payeeName}.`
     case 'AbortTransfer':
-      return 'AbortTransfer'
+      const transfer = action.transfer
+      const title = transfer.result ? "Failed payment" : "Delayed payment"
+      payeeName = transfer.paymentInfo.payeeName
+      unitAmount = app.amountToString(transfer.amount)
+      unit = debtorConfigData.debtorInfo?.unit ?? '\u00a4'
+      return `${title}: ${unitAmount} ${unit} to ${payeeName}.`
     case 'UpdateConfig':
       return 'Specify information about your currency.'
     default:
