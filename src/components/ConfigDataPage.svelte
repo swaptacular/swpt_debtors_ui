@@ -109,7 +109,8 @@
               </ol>
               Currently, you have a total of
               <em class="amount">{`${totalIssuedUnits} ${unit}`}</em>
-              of your digital currency in circulation.
+              of your digital currency in circulation. (This figure
+              may lag behind.)
             </Content>
           </Paper>
         </Cell>
