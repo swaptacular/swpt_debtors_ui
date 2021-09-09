@@ -16,10 +16,10 @@
     fileInputElement.click()
   }
 
-  $: {
-    if (scannedValue) {
-      app.initiatePayment(new Blob([scannedValue]))
-    }
+  $: if (scannedValue) {
+    app.initiatePayment(new Blob([scannedValue]))
+    open = false
+    scannedValue = undefined
   }
   $: chosenFile = files?.[0]
   $: if (chosenFile) {
