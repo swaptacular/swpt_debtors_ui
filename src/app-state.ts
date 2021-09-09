@@ -32,6 +32,15 @@ export const INVALID_REQUEST_MESSAGE = 'Invalid payment request. '
 
 export const CAN_NOT_PERFORM_ACTOIN_MESSAGE = 'The requested action can not be performed.'
 
+export const NETWORK_ERROR_MESSAGE = 'A network problem has occured. '
+  + 'Please, check your Internet connection.'
+
+export const UNEXPECTED_ERROR_MESSAGE = 'Oops, something went wrong.'
+
+export const ACTION_DOES_NOT_EXIST_MESSAGE = 'The requested action record does not exist.'
+
+export const PAYMENT_DOES_NOT_EXIST_MESSAGE = 'The requested payment record does not exist.'
+
 export type {
   TransferRecord,
 }
@@ -153,7 +162,7 @@ export class AppState {
       startInteraction: false,
       alerts: [
         [AuthenticationError, null],
-        [ServerSessionError, new Alert('Network error')],
+        [ServerSessionError, new Alert(NETWORK_ERROR_MESSAGE)],
       ],
     })
   }
@@ -217,7 +226,7 @@ export class AppState {
             action,
           })
         } else {
-          this.addAlert(new Alert('The requested action does not exist.', { continue: () => this.showActions() }))
+          this.addAlert(new Alert(ACTION_DOES_NOT_EXIST_MESSAGE, { continue: () => this.showActions() }))
         }
       }
     })
@@ -261,7 +270,7 @@ export class AppState {
             transfer: transfer as Store<TransferRecord>,
           })
         } else {
-          this.addAlert(new Alert('The requested transfer does not exist.', { continue: goBack }))
+          this.addAlert(new Alert(PAYMENT_DOES_NOT_EXIST_MESSAGE, { continue: goBack }))
         }
       }
     })
@@ -293,7 +302,7 @@ export class AppState {
       }
     }, {
       alerts: [
-        [ServerSessionError, new Alert('Network error')],
+        [ServerSessionError, new Alert(NETWORK_ERROR_MESSAGE)],
       ],
     })
   }
@@ -335,7 +344,7 @@ export class AppState {
       showTransfer(transferRecord.uri)
     }, {
       alerts: [
-        [ServerSessionError, new Alert('Network error', { continue: reloadAction })],
+        [ServerSessionError, new Alert(NETWORK_ERROR_MESSAGE, { continue: reloadAction })],
         [ForbiddenOperation, new Alert(CAN_NOT_PERFORM_ACTOIN_MESSAGE, { continue: reloadAction })],
         [WrongTransferData, new Alert(INVALID_REQUEST_MESSAGE, { continue: reloadAction })],
         [TransferCreationTimeout, new Alert(CAN_NOT_PERFORM_ACTOIN_MESSAGE, { continue: reloadAction })],
@@ -356,7 +365,7 @@ export class AppState {
       showActions()
     }, {
       alerts: [
-        [RecordDoesNotExist, new Alert('Deleted action', { continue: showActions })],
+        [RecordDoesNotExist, new Alert(ACTION_DOES_NOT_EXIST_MESSAGE, { continue: showActions })],
       ],
     })
   }
@@ -426,8 +435,8 @@ export class AppState {
       showActions()
     }, {
       alerts: [
-        [ServerSessionError, new Alert('Network error')],
-        [RecordDoesNotExist, new Alert('The requested action can not be performed.', { continue: reloadAction })],
+        [ServerSessionError, new Alert(NETWORK_ERROR_MESSAGE)],
+        [RecordDoesNotExist, new Alert(CAN_NOT_PERFORM_ACTOIN_MESSAGE, { continue: reloadAction })],
       ],
     })
   }
@@ -503,7 +512,7 @@ export class AppState {
         showActions()
       }, {
         alerts: [
-          [RecordDoesNotExist, new Alert('The action can not be removed.', { continue: reloadAction })],
+          [RecordDoesNotExist, new Alert(CAN_NOT_PERFORM_ACTOIN_MESSAGE, { continue: reloadAction })],
         ],
       })
     }
@@ -517,7 +526,7 @@ export class AppState {
         default:
           const e = new Error('unknown action type')
           console.error(e)
-          this.addAlert(new Alert('An unexpected error has occurred.'))
+          this.addAlert(new Alert(UNEXPECTED_ERROR_MESSAGE))
           throw e
       }
     }
@@ -579,7 +588,7 @@ export class AppState {
       switch (alert) {
         case undefined:
           console.error(e)
-          this.addAlert(new Alert('An unexpected error has occurred.'))
+          this.addAlert(new Alert(UNEXPECTED_ERROR_MESSAGE))
           throw e
         case null:
           // ignore the error
