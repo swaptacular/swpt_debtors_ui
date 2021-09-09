@@ -2,7 +2,7 @@
   import type { TransferRecord } from '../operations'
   import { getTooltip } from '../utils'
   import type { AppState, TransferModel } from '../app-state'
-  import Fab, { Icon } from '@smui/fab';
+  import Fab, { Label } from '@smui/fab';
   import PaymentInfo from './PaymentInfo.svelte'
   import Page from './Page.svelte'
 
@@ -54,8 +54,14 @@
   <svelte:fragment slot="floating">
     {#if $transfer.result}
       <div class="fab-container">
-        <Fab on:click={() => app.retryTransfer($transfer)}>
-          <Icon class="material-icons">replay</Icon>
+        <Fab on:click={() => app.retryTransfer($transfer)} extended>
+          <Label>
+            {#if $transfer.result.error}
+              Retry
+            {:else}
+              Pay again
+            {/if}
+          </Label>
         </Fab>
       </div>
     {/if}
