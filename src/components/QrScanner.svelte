@@ -1,9 +1,11 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import QrScanner from 'qr-scanner'
+  import { Icon } from '@smui/common'
 
   export let result: string | undefined = undefined
   let videoElement: HTMLVideoElement
+  let noCamera = false
 
   // QrScanner.WORKER_PATH = 'path/to/qr-scanner-worker.min.js'
 
@@ -30,6 +32,8 @@
         }
         qrScanner.destroy()
       }
+    } else {
+      noCamera = true
     }
 
     return destructor
@@ -41,7 +45,24 @@
     width: 100%;
     max-width: 640px;
   }
+  .no-camera {
+    width: 98%;
+    text-align: center;
+    color: #c4c4c4;
+    padding: 20px 0 10px 0;
+    border: 4px dotted;
+  }
+  .no-camera :global(i) {
+    font-size: 150px;
+  }
 </style>
 
-<!-- svelte-ignore a11y-media-has-caption -->
-<video bind:this={videoElement}></video>
+{#if noCamera}
+  <div class="no-camera">
+    <Icon class="material-icons">videocam_off</Icon>
+    <!-- No camera -->
+  </div>
+{:else}
+  <!-- svelte-ignore a11y-media-has-caption -->
+  <video bind:this={videoElement}></video>
+{/if}
