@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { fly, fade } from 'svelte/transition'
   import { onMount, getContext } from 'svelte'
   import type { Writable } from 'svelte/store'
   import type { AppState } from '../app-state'
@@ -58,42 +59,44 @@
   }
 </style>
 
-<TopAppBar variant="fixed" dense bind:this={topAppBar}>
-  <Row>
-    <Section>
-      {#if $pageModel.goBack}
-        <IconButton class="material-icons" on:click={() => $pageModel.goBack?.()}>
-          arrow_back
-        </IconButton>
-      {/if}
-      <Title>{title}</Title>
-    </Section>
-
-    <Section align="end" toolbar>
-      <IconButton class="material-icons" aria-label="Reload" on:click={update}>
-        {#if $unauthenticated}
-          sync_problem
-        {:else}
-          sync
+<div in:fly="{{ x: 250, duration: 200 }}">
+  <TopAppBar variant="fixed" dense bind:this={topAppBar}>
+    <Row>
+      <Section>
+        {#if $pageModel.goBack}
+          <IconButton class="material-icons" on:click={() => $pageModel.goBack?.()}>
+            arrow_back
+          </IconButton>
         {/if}
-      </IconButton>
+        <Title>{title}</Title>
+      </Section>
 
-      <IconButton class="material-icons" aria-label="Logout" on:click={confirmLogout}>
-        exit_to_app
-      </IconButton>
-    </Section>
-  </Row>
-</TopAppBar>
+      <Section align="end" toolbar>
+        <IconButton class="material-icons" aria-label="Reload" on:click={update}>
+          {#if $unauthenticated}
+            sync_problem
+          {:else}
+            sync
+          {/if}
+        </IconButton>
 
-<AutoAdjust {topAppBar}>
-  {#if $alerts.length > 0}
-    <Alerts alerts={$alerts} {app} />
-  {:else if $waitingInteractions.size > 0 }
-    <Hourglass />
-  {/if}
-  <slot name="content"></slot>
+        <IconButton class="material-icons" aria-label="Logout" on:click={confirmLogout}>
+          exit_to_app
+        </IconButton>
+      </Section>
+    </Row>
+  </TopAppBar>
 
-  <div class="floating">
-    <slot name="floating"></slot>
-  </div>
-</AutoAdjust>
+  <AutoAdjust {topAppBar}>
+    {#if $alerts.length > 0}
+      <Alerts alerts={$alerts} {app} />
+    {:else if $waitingInteractions.size > 0 }
+      <Hourglass />
+    {/if}
+    <slot name="content"></slot>
+
+    <div class="floating" in:fade="{{ duration: 300, delay: 210 }}">
+      <slot name="floating"></slot>
+    </div>
+  </AutoAdjust>
+</div>
