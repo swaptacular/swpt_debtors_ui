@@ -1,0 +1,24 @@
+window.appConfig = {
+  serverApiEntrypoint: '${SERVER_API_ENTRYPOINT}',
+  serverApiTimeout: ${SERVER_API_TIMEOUT},
+  oauth2: {
+    authorizationUrl: '${AUTHORIZATION_URL}',
+    tokenUrl: '${TOKEN_URL}',
+    clientId: '${CLIENT_ID}',
+    redirectUrl: '${REDIRECT_URL}',
+    useLocalStorage: false,
+  },
+  TransferDeletionDelaySeconds: ${TRANSFER_DELETION_DELAY_SECONDS},
+}
+
+window.assert = function assert(condition, msg) {
+  if (!condition) {
+    let e = new Error(msg)
+    e.name = 'AssertionError'
+    throw e
+  }
+}
+
+if('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js')
+}
