@@ -7,6 +7,9 @@ const appFiles = [
   'global.css',
   'config.js',
   'qr-scanner-worker.min.js',
+  'material.min.css',
+  'material-icons.css',
+  'fonts/material-icons.woff2',
   'build/bundle.css',
   'build/bundle.js',
 ]
