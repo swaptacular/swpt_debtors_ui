@@ -1,6 +1,6 @@
 {
-  "short_name": "Debtor",
-  "name": "Swaptacular Debtors Agent Client",
+  "short_name": "My Currency",
+  "name": "Swaptacular Currency Issuing Client",
   "description": "Allows you to connect to a debtors agent and create and manage your own digital currency.",
   "lang": "en",
   "dir": "ltr",
