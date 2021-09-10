@@ -39,7 +39,7 @@
 
   function getDate(t: TransferRecord): string {
     const initiatedAt = new Date(t.initiatedAt)
-    return `${initiatedAt.toDateString()}, ${initiatedAt.toLocaleTimeString()}`
+    return initiatedAt.toLocaleString()
   }
 
   onMount(() => {
