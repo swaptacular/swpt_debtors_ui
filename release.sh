@@ -5,6 +5,16 @@ if [ -z "$1" ]; then
     return
 fi
 
+echo -n "Checking whether the service worker has been updated... "
+text="Version $1"
+if grep -q "$text" public/sw.js; then
+    echo "OK"
+else
+    echo
+    echo "Error: public/sw.js does not contain the string '$text'."
+    return
+fi
+
 swpt_debtors_ui="epandurski/swpt_debtors_ui:$1"
 docker build -t "$swpt_debtors_ui" --target app-image .
 git tag "v$1"

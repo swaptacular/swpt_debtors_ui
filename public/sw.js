@@ -1,3 +1,5 @@
+/* Version 0.1.2 */
+
 const cacheName = 'swpt-debtors-ui-v1';
 const appFiles = [
   './',
