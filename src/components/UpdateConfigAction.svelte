@@ -144,7 +144,7 @@
                   <TextfieldIcon class="material-icons">error</TextfieldIcon>
                 {/if}
               </svelte:fragment>
-              <HelperText slot="helper">
+              <HelperText slot="helper" persistent>
                 Must be unambiguous, and unlikely to be duplicated
                 accidentally.
               </HelperText>
@@ -167,7 +167,7 @@
                   <TextfieldIcon class="material-icons">error</TextfieldIcon>
                 {/if}
               </svelte:fragment>
-              <HelperText slot="helper">
+              <HelperText slot="helper" persistent>
                 This will be shown shown right after the displayed
                 amount: "500.00 USD", for example. If your currency
                 has a recognized name &ndash; enter its abbreviation
@@ -195,9 +195,9 @@
                   <TextfieldIcon class="material-icons">error</TextfieldIcon>
                 {/if}
               </svelte:fragment>
-              <HelperText slot="helper">
-                A secure Internet address, where the users of your
-                currency can learn more about it.
+              <HelperText slot="helper" persistent>
+                A secure web page, where the users of your currency
+                can learn more about it (optional).
               </HelperText>
             </Textfield>
           </Cell>
@@ -212,10 +212,10 @@
               label="Summary"
               >
               <CharacterCounter slot="internalCounter">0 / 1000</CharacterCounter>
-              <HelperText slot="helper">
-                A short description of your digital currency. Currency
-                holders will see this, when they are about to create
-                an account.
+              <HelperText slot="helper" persistent>
+                A short description of your digital currency
+                (optional). Currency holders will see this, when they
+                are about to create an account.
               </HelperText>
             </Textfield>
           </Cell>
@@ -240,7 +240,7 @@
                   <TextfieldIcon class="material-icons">error</TextfieldIcon>
                 {/if}
               </svelte:fragment>
-              <HelperText slot="helper">
+              <HelperText slot="helper" persistent>
                 The annual rate at which interest accumulates on
                 currency holders' accounts. Must be a number between
                 -50 and 100. If in doubt, leave it at 0.
@@ -266,7 +266,7 @@
                   <TextfieldIcon class="material-icons">error</TextfieldIcon>
                 {/if}
               </svelte:fragment>
-              <HelperText slot="helper">
+              <HelperText slot="helper" persistent>
                 To avoid rounding errors, internally, amounts are stored
                 as whole numbers. Before being displayed, the whole
                 numbers will be divided by this number.
@@ -293,7 +293,7 @@
                   <TextfieldIcon class="material-icons">error</TextfieldIcon>
                 {/if}
               </svelte:fragment>
-              <HelperText slot="helper">
+              <HelperText slot="helper" persistent>
                 The number of digits to show after the decimal point,
                 when displaying the amount. Must be a number between -20
                 and 20.
