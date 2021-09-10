@@ -1,6 +1,5 @@
-/* Version 0.1.2 */
-
-const cacheName = 'swpt-debtors-ui-v1';
+const appName = 'swpt-debtors-ui'
+const cacheName = `${appName}-v0.1.2`
 const appFiles = [
   './',
   'index.html',
@@ -25,8 +24,16 @@ self.addEventListener('install', (e) => {
 })
 self.addEventListener('fetch', (e) => {
   e.respondWith((async () => {
-    const r = await caches.match(e.request, {ignoreSearch: true})
+    const cache = await caches.open(cacheName)
+    const r = await cache.match(e.request, {ignoreSearch: true})
     if (r) { return r }
     return await fetch(e.request)
+  })())
+})
+self.addEventListener('activate', async (e) => {
+  e.waitUntil((async () => {
+    const keyList = await caches.keys()
+    const deleteList = keyList.filter(key => key.startsWith(appName) && key !== cacheName)
+    await Promise.all(deleteList.map(key => caches.delete(key)))
   })())
 })

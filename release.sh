@@ -6,7 +6,7 @@ if [ -z "$1" ]; then
 fi
 
 echo -n "Checking whether the service worker has been updated... "
-text="Version $1"
+text="\${appName}-v$1"
 if grep -q "$text" public/sw.js; then
     echo "OK"
 else
