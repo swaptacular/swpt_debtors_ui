@@ -115,6 +115,7 @@ export type ConfigDataModel = BasePageModel & {
 }
 
 export const DOWNLOADED_QR_COIN_KEY = 'debtors.downloadedQrCoin'
+export const IS_A_NEWBIE_KEY = 'debtors.IsANewbie'
 
 export class AppState {
   private interactionId: number = 0

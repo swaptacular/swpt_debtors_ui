@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { DOWNLOADED_QR_COIN_KEY } from '../app-state'
+  import { DOWNLOADED_QR_COIN_KEY, IS_A_NEWBIE_KEY } from '../app-state'
   import type { AppState, ConfigDataModel } from '../app-state'
   import Fab, { Icon } from '@smui/fab';
   import LayoutGrid, { Cell } from '@smui/layout-grid'
@@ -9,11 +9,14 @@
 
   export let app: AppState
   export let model: ConfigDataModel
-  export const snackbarBottom: string = "84px"
+  export let snackbarBottom: string = "84px"
   assert(model)
 
   let downloadLinkElement: HTMLAnchorElement
   let dataUrl: string
+  const isANewbie = localStorage.getItem(IS_A_NEWBIE_KEY) === 'true'
+  const downloadedQrCoin = localStorage.getItem(DOWNLOADED_QR_COIN_KEY) === 'true'
+  const hideButtons = isANewbie && !downloadedQrCoin
   const debtorConfigData = app.getDebtorConfigData()
   const info = debtorConfigData.debtorInfo
   const link = `${app.publicInfoDocumentUri}#${app.debtorIdentityUri}`
@@ -29,6 +32,7 @@
   $: balance = model.debtorRecord.balance
   $: totalIssuedUnits = app.amountToString(-balance)
   $: unit = app.unit
+  $: snackbarBottom = hideButtons ? "0px" : "84px"
 </script>
 
 <style>
@@ -118,16 +122,18 @@
     </svelte:fragment>
 
     <svelte:fragment slot="floating">
-      <div class="fab-container">
-        <Fab on:click={() => app.editConfig(debtorConfigData)}>
-          <Icon class="material-icons">settings</Icon>
-        </Fab>
-      </div>
-      <div class="fab-container">
-        <Fab color="primary" on:click={save}>
-          <Icon class="material-icons">save_alt</Icon>
-        </Fab>
-      </div>
+      {#if !hideButtons}
+        <div class="fab-container">
+          <Fab on:click={() => app.editConfig(debtorConfigData)}>
+            <Icon class="material-icons">settings</Icon>
+          </Fab>
+        </div>
+        <div class="fab-container">
+          <Fab color="primary" on:click={save}>
+            <Icon class="material-icons">save_alt</Icon>
+          </Fab>
+        </div>
+      {/if}
     </svelte:fragment>
   </Page>
 {:else}

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte"
-  import { DOWNLOADED_QR_COIN_KEY } from '../app-state'
+  import { DOWNLOADED_QR_COIN_KEY, IS_A_NEWBIE_KEY } from '../app-state'
   import type { AppState, ActionsModel } from '../app-state'
   import type { ActionRecordWithId } from '../operations'
   import Fab, { Icon } from '@smui/fab';
@@ -20,7 +20,6 @@
   export const snackbarBottom: string = '84px'
 
   const SHOW_FOREIGN_ACTIONS_KEY = 'debtors.showForeignActions'
-  const IS_A_NEWBIE_KEY = 'debtors.IsANewbie'
   const debtorConfigData = app.getDebtorConfigData()
   const scrollElement = document.documentElement
   const downloadedQrCoin = localStorage.getItem(DOWNLOADED_QR_COIN_KEY) === 'true'
