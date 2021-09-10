@@ -20,9 +20,11 @@
   export const snackbarBottom: string = '84px'
 
   const SHOW_FOREIGN_ACTIONS_KEY = 'debtors.showForeignActions'
+  const IS_A_NEWBIE_KEY = 'debtors.IsANewbie'
   const debtorConfigData = app.getDebtorConfigData()
   const scrollElement = document.documentElement
   const downloadedQrCoin = localStorage.getItem(DOWNLOADED_QR_COIN_KEY) === 'true'
+  let isANewbie = localStorage.getItem(IS_A_NEWBIE_KEY) === 'true'
   let showForeignActions = localStorage.getItem(SHOW_FOREIGN_ACTIONS_KEY) === 'true'
   let showMakePaymentDialog = false
 
@@ -58,6 +60,11 @@
   $: hasForeignActions = foreignActions.length > 0
   $: hasConfiguredCurrency = debtorConfigData.debtorInfo !== undefined
   $: localStorage.setItem(SHOW_FOREIGN_ACTIONS_KEY, String(showForeignActions))
+  $: suggestQrCoinDownload = isANewbie && hasConfiguredCurrency && !hasRegularActions && !downloadedQrCoin
+  $: if (!hasConfiguredCurrency) {
+    localStorage.setItem(IS_A_NEWBIE_KEY, 'true')
+    isANewbie = true
+  }
 </script>
 
 <style>
@@ -84,17 +91,26 @@
       </LayoutGrid>
     {:else}
       {#if hasConfiguredCurrency}
-        <p class="no-actions">
-          {#if downloadedQrCoin}
+        {#if suggestQrCoinDownload}
+          <LayoutGrid>
+            <Cell span={12}>
+              <Paper elevation={8} style="margin-bottom: 16px">
+                <Title>Congratulations!</Title>
+                <Content>
+                  You have successfully configured your digital currency. Press the
+                  <QrCodeIcon style="width: 24px; margin: 0 0.15em; fill: var(--no-actions-color); vertical-align: middle" />
+                  button bellow, to download your digital coin.
+                </Content>
+              </Paper>
+            </Cell>
+          </LayoutGrid>
+        {:else}
+          <p class="no-actions">
             Press
             <Icon class="material-icons" style="vertical-align: middle">local_atm</Icon>
             to issue money in circulation.
-          {:else}
-            Press
-            <QrCodeIcon style="width: 20px; margin: 0 0.15em; fill: var(--no-actions-color); vertical-align: middle" />
-            to download your digital coin.
-          {/if}
-        </p>
+          </p>
+        {/if}
       {:else}
         <LayoutGrid>
           <Cell span={12}>
@@ -151,7 +167,7 @@
 
   <svelte:fragment slot="floating">
     <div class="fab-container">
-      <Fab color={hasConfiguredCurrency && !hasRegularActions && !downloadedQrCoin ? "primary" : "secondary"} on:click={() => app.showConfig()}>
+      <Fab color={suggestQrCoinDownload ? "primary" : "secondary"} on:click={() => app.showConfig()}>
         <QrCodeIcon />
       </Fab>
     </div>
@@ -162,7 +178,7 @@
     </div>
     <div class="fab-container">
       <Fab
-        color={hasConfiguredCurrency && !hasRegularActions && downloadedQrCoin ? "primary" : "secondary"}
+        color={!suggestQrCoinDownload && hasConfiguredCurrency ? "primary" : "secondary"}
         on:click={() => showMakePaymentDialog = true}
         >
         <Icon class="material-icons">local_atm</Icon>
