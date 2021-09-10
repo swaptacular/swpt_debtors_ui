@@ -152,7 +152,6 @@
   <Dialog
     open
     scrimClickAction=""
-    escapeKeyAction=""
     aria-labelledby="qrscan-title"
     aria-describedby="qrscan-content"
     on:MDCDialog:closed={unpeg}

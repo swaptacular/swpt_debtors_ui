@@ -48,7 +48,6 @@
   <Dialog
     open
     scrimClickAction=""
-    escapeKeyAction=""
     aria-labelledby="payment-dialog-title"
     aria-describedby="payment-dialog-content"
     on:MDCDialog:closed={() => open = false}

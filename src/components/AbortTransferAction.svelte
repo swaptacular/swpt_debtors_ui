@@ -61,7 +61,6 @@
       <Dialog
         open
         scrimClickAction=""
-        escapeKeyAction=""
         aria-labelledby="failed-cancellation-title"
         aria-describedby="failed-cancellation-content"
         on:MDCDialog:closed={closeDialog}

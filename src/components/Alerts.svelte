@@ -11,7 +11,6 @@
 <Dialog
   open
   scrimClickAction=""
-  escapeKeyAction=""
   aria-labelledby="alert-title"
   aria-describedby="alert-content"
   >
