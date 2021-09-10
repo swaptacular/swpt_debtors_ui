@@ -42,8 +42,11 @@
   <Paper style="margin: 36px 18px" elevation={8}>
     <Title>Welcome to Swaptacular!</Title>
     <Content>
-      With Swaptacular you can create your own digital currency, which
-      everybody can use. And it is easy!
+      Swaptacular tries to make creating and issuing new digital
+      currencies possible for everyone. Currency issuers are also
+      called "debtors". This app connects you to a Swaptacular Debtors
+      Agent, which will create and manage your digital currency for
+      you.
     </Content>
   </Paper>
 </div>
