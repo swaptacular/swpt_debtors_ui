@@ -43,8 +43,10 @@
   }
 
   onMount(() => {
-    scrollElement.scrollTop = model.scrollTop ?? scrollElement.scrollTop
-    scrollElement.scrollLeft = model.scrollLeft ?? scrollElement.scrollLeft
+    if (scrollElement) {
+      scrollElement.scrollTop = model.scrollTop ?? scrollElement.scrollTop
+      scrollElement.scrollLeft = model.scrollLeft ?? scrollElement.scrollLeft
+    }
   })
 
   $: transfers = [...transfers, ...newBatch]
@@ -57,29 +59,40 @@
     font-size: 1.1em;
     margin-bottom: 0.5em;
   }
+  .no-payments {
+    margin: 36px 18px 26px 18px;
+    text-align: center;
+    color: #c4c4c4;
+  }
 </style>
 
 <Page title="Payments">
   <svelte:fragment slot="content">
-    <LayoutGrid>
-      {#each transfers as transfer }
-        <Cell>
-          <Card>
-            <PrimaryAction on:click={() => showTransfer(transfer.uri)}>
-              <Content>
-                <h5>
-                  <Icon style="vertical-align: -20%" class="material-icons">{getIconName(transfer)}</Icon>
-                  {getDate(transfer)}
-                </h5>
-                <p>
-                  {`${app.amountToString(transfer.amount)} ${unit} to ${transfer.paymentInfo.payeeName}`}
-                </p>
-              </Content>
-            </PrimaryAction>
-          </Card>
-        </Cell>
-      {/each}
-    </LayoutGrid>
-    <InfiniteScroll bind:scrollElement hasMore={newBatch.length > 0} threshold={100} on:loadMore={fetchNewBatch} />
+    {#if transfers.length === 0}
+      <p class="no-payments">
+        You have not initiated any payments yet.
+      </p>
+    {:else}
+      <LayoutGrid>
+        {#each transfers as transfer }
+          <Cell>
+            <Card>
+              <PrimaryAction on:click={() => showTransfer(transfer.uri)}>
+                <Content>
+                  <h5>
+                    <Icon style="vertical-align: -20%" class="material-icons">{getIconName(transfer)}</Icon>
+                    {getDate(transfer)}
+                  </h5>
+                  <p>
+                    {`${app.amountToString(transfer.amount)} ${unit} to ${transfer.paymentInfo.payeeName}`}
+                  </p>
+                </Content>
+              </PrimaryAction>
+            </Card>
+          </Cell>
+        {/each}
+      </LayoutGrid>
+      <InfiniteScroll bind:scrollElement hasMore={newBatch.length > 0} threshold={100} on:loadMore={fetchNewBatch} />
+    {/if}
   </svelte:fragment>
 </Page>
