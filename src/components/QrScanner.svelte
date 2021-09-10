@@ -6,6 +6,8 @@
   export let result: string | undefined = undefined
   let videoElement: HTMLVideoElement
   let noCamera = false
+  let windowHeight: number
+  let videoHeight: number
 
   // QrScanner.WORKER_PATH = 'path/to/qr-scanner-worker.min.js'
 
@@ -38,6 +40,9 @@
 
     return destructor
   })
+
+  $: maxVideoHeight = windowHeight - 200
+  $: height = videoHeight > maxVideoHeight ? maxVideoHeight : undefined
 </script>
 
 <style>
@@ -57,12 +62,16 @@
   }
 </style>
 
+<svelte:window bind:innerHeight={windowHeight} />
+
 {#if noCamera}
   <div class="no-camera">
     <Icon class="material-icons">videocam_off</Icon>
     <!-- No camera -->
   </div>
 {:else}
-  <!-- svelte-ignore a11y-media-has-caption -->
-  <video bind:this={videoElement}></video>
+  <div bind:clientHeight={videoHeight}>
+    <!-- svelte-ignore a11y-media-has-caption -->
+    <video bind:this={videoElement} {height}></video>
+  </div>
 {/if}
