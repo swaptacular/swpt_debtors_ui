@@ -9,13 +9,15 @@ The generated image is a simple static web server (using nginx), which
 uses the following environment variables for configuration (along with
 some example values):
 
-> SERVER_API_ENTRYPOINT=https://demo.swaptacular.org/debtors/.debtor
-> SERVER_API_TIMEOUT=8000
-> AUTHORIZATION_URL=https://demo.swaptacular.org/debtors-hydra/oauth2/auth
-> TOKEN_URL=https://demo.swaptacular.org/debtors-hydra/oauth2/token
-> CLIENT_ID=debtors-webapp
-> REDIRECT_URL=https://demo.swaptacular.org/debtors-webapp/
-> TRANSFER_DELETION_DELAY_SECONDS=1296000
+```
+SERVER_API_ENTRYPOINT=https://demo.swaptacular.org/debtors/.debtor
+SERVER_API_TIMEOUT=8000
+AUTHORIZATION_URL=https://demo.swaptacular.org/debtors-hydra/oauth2/auth
+TOKEN_URL=https://demo.swaptacular.org/debtors-hydra/oauth2/token
+CLIENT_ID=debtors-webapp
+REDIRECT_URL=https://demo.swaptacular.org/debtors-webapp/
+TRANSFER_DELETION_DELAY_SECONDS=1296000
+```
 
 ## How to run it
 
