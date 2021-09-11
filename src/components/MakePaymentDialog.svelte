@@ -1,6 +1,7 @@
 <script lang="ts">
   import { getContext } from 'svelte'
   import type { AppState } from '../app-state'
+  import { HAS_LOADED_PAYMENT_REQUEST_KEY } from '../app-state'
   import Dialog, { Title, Content, Actions, InitialFocus } from '@smui/dialog'
   import Button, { Label } from '@smui/button'
   import QrScanner from './QrScanner.svelte'
@@ -12,6 +13,10 @@
   let fileInputElement: HTMLElement
   let files: FileList | undefined
 
+  function markDone() {
+    localStorage.setItem(HAS_LOADED_PAYMENT_REQUEST_KEY, 'true')
+  }
+
   function chooseFile() {
     fileInputElement.click()
   }
@@ -20,19 +25,18 @@
     app.initiatePayment(new Blob([scannedValue]))
     open = false
     scannedValue = undefined
+    markDone()
   }
   $: chosenFile = files?.[0]
   $: if (chosenFile) {
     app.initiatePayment(chosenFile)
+    markDone()
   }
 </script>
 
 <style>
   .invisible {
     display: none;
-  }
-  .payment-request-help {
-    margin-top: 1em;
   }
 </style>
 
@@ -55,11 +59,6 @@
     <Title id="payment-dialog-title">Scan the QR code of the payment request</Title>
     <Content id="payment-dialog-content">
       <QrScanner bind:result={scannedValue}/>
-      <div class="payment-request-help">
-        First, a payment request must be created by the payee. Then,
-        you should scan the QR code of the payment request, or load it
-        from file.
-      </div>
     </Content>
     <Actions>
       <Button on:click={chooseFile}>

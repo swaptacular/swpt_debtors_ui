@@ -41,7 +41,7 @@
     return destructor
   })
 
-  $: maxVideoHeight = windowHeight - 200
+  $: maxVideoHeight = windowHeight - 205
   $: height = videoHeight > maxVideoHeight ? maxVideoHeight : undefined
 </script>
 

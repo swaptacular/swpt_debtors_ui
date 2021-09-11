@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte"
-  import { DOWNLOADED_QR_COIN_KEY, IS_A_NEWBIE_KEY } from '../app-state'
+  import { DOWNLOADED_QR_COIN_KEY, IS_A_NEWBIE_KEY, HAS_LOADED_PAYMENT_REQUEST_KEY } from '../app-state'
   import type { AppState, ActionsModel } from '../app-state'
   import type { ActionRecordWithId } from '../operations'
   import Fab, { Icon } from '@smui/fab';
@@ -25,6 +25,7 @@
   const downloadedQrCoin = localStorage.getItem(DOWNLOADED_QR_COIN_KEY) === 'true'
   let isANewbie = localStorage.getItem(IS_A_NEWBIE_KEY) === 'true'
   let showForeignActions = localStorage.getItem(SHOW_FOREIGN_ACTIONS_KEY) === 'true'
+  let hasLoadedPaymentRequest = localStorage.getItem(HAS_LOADED_PAYMENT_REQUEST_KEY) === 'true'
   let showMakePaymentDialog = false
 
   function separateForeignActions(allActions: ActionRecordWithId[]): [ActionRecordWithId[], ActionRecordWithId[]] {
@@ -97,18 +98,41 @@
                 <Title>Congratulations!</Title>
                 <Content>
                   You have successfully configured your digital currency. Press the
-                  <QrCodeIcon style="width: 24px; margin: 0 0.15em; fill: var(--no-actions-color); vertical-align: middle" />
+                  <QrCodeIcon style="width: 24px; margin: 0 0.15em; vertical-align: middle" />
                   button bellow, to download your digital coin.
                 </Content>
               </Paper>
             </Cell>
           </LayoutGrid>
         {:else}
-          <p class="no-actions">
-            Press
-            <Icon class="material-icons" style="vertical-align: middle">local_atm</Icon>
-            to issue money in circulation.
-          </p>
+          {#if !isANewbie || hasLoadedPaymentRequest}
+            <p class="no-actions">
+              Press
+              <Icon class="material-icons" style="vertical-align: middle">local_atm</Icon>
+              to issue money in circulation.
+            </p>
+          {:else}
+            <LayoutGrid>
+              <Cell span={12}>
+                <Paper elevation={8} style="margin-bottom: 16px">
+                  <Title>How money is issued in circulation?</Title>
+                  <Content>
+                    New "fresh" money gets created when someone
+                    accepts a payment in your currency, from you
+                    &ndash the issuer of the currency. First, a
+                    payment request must be created from the payee's
+                    app. Then, you should scan the QR code of the
+                    payment request, or load it from file.
+                    <br>
+                    <br>
+                    Press the
+                    <Icon class="material-icons" style="margin: 0 0.15em; vertical-align: middle">local_atm</Icon>
+                    button bellow, to load a payment request.
+                  </Content>
+                </Paper>
+              </Cell>
+            </LayoutGrid>
+          {/if}
         {/if}
       {:else}
         <LayoutGrid>
