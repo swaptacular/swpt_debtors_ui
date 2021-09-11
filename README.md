@@ -11,7 +11,7 @@ some example values):
 
 ```
 SERVER_API_ENTRYPOINT=https://demo.swaptacular.org/debtors/.debtor
-SERVER_API_TIMEOUT=8000
+SERVER_API_TIMEOUT=8000  # milliseconds
 AUTHORIZATION_URL=https://demo.swaptacular.org/debtors-hydra/oauth2/auth
 TOKEN_URL=https://demo.swaptacular.org/debtors-hydra/oauth2/token
 CLIENT_ID=debtors-webapp
