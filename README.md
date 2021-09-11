@@ -17,7 +17,7 @@ TOKEN_URL=https://demo.swaptacular.org/debtors-hydra/oauth2/token
 CLIENT_ID=debtors-webapp
 REDIRECT_URL=https://demo.swaptacular.org/debtors-webapp/
 TRANSFER_DELETION_DELAY_SECONDS=1296000
-`
+```
 
 ## How to run it
 
