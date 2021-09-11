@@ -1,9 +1,28 @@
 # UI for the Swaptacular service that manages debtors
 
+This service implements a [Simple Issuing Web
+API](https://epandurski.github.io/swaptacular/swpt_debtors/redoc.html)
+client. The main deliverable is a docker image, generated from the
+project's
+[Dockerfile](https://github.com/epandurski/swpt_debtors_ui/blob/master/Dockerfile).
+The generated image is a simple static web server (using nginx), which
+uses the following environment variables for configuration (along with
+some example values):
+
+`
+SERVER_API_ENTRYPOINT=https://demo.swaptacular.org/debtors/.debtor
+SERVER_API_TIMEOUT=8000
+AUTHORIZATION_URL=https://demo.swaptacular.org/debtors-hydra/oauth2/auth
+TOKEN_URL=https://demo.swaptacular.org/debtors-hydra/oauth2/token
+CLIENT_ID=debtors-webapp
+REDIRECT_URL=https://demo.swaptacular.org/debtors-webapp/
+TRANSFER_DELETION_DELAY_SECONDS=1296000
+`
+
+## How to run it
+
 *Note that you will need to have [Node.js](https://nodejs.org)
 installed.*
-
-## Get started
 
 Install the dependencies...
 
@@ -58,36 +77,4 @@ it so by editing the `"start"` command in package.json:
 
 ```js
 "start": "sirv public --single"
-```
-
-## Deploying to the web
-
-### With [Vercel](https://vercel.com)
-
-Install `vercel` if you haven't already:
-
-```bash
-npm install -g vercel
-```
-
-Then, from within your project folder:
-
-```bash
-cd public
-vercel deploy --name my-project
-```
-
-### With [surge](https://surge.sh/)
-
-Install `surge` if you haven't already:
-
-```bash
-npm install -g surge
-```
-
-Then, from within your project folder:
-
-```bash
-npm run build
-surge public my-project.surge.sh
 ```
