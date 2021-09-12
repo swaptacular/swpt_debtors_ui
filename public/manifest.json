@@ -4,7 +4,7 @@
   "description": "Allows you to connect to a debtors agent and create and manage your own digital currency.",
   "lang": "en",
   "dir": "ltr",
-  "start_url": "http://localhost:5000/",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
