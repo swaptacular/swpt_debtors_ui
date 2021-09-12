@@ -11,7 +11,7 @@
     margin-left: -16px;
     margin-top: -16px;
     justify-content: center;
-    z-index: -100;
+    z-index: 100;
   }
 </style>
 
