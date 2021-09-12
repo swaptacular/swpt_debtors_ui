@@ -161,7 +161,6 @@ export class AppState {
       await this.uc.ensureAuthenticated()
       this.uc.scheduleUpdate(callback)
     }, {
-      startInteraction: false,
       alerts: [
         [AuthenticationError, null],
         [ServerSessionError, new Alert(NETWORK_ERROR_MESSAGE)],
