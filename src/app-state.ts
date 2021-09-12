@@ -157,14 +157,18 @@ export class AppState {
   }
 
   fetchDataFromServer(callback?: () => void): Promise<void> {
+    let interactionId = this.interactionId
     const executeCallbackAfterUpdate = () => new Promise(resolve => {
       this.uc.scheduleUpdate(() => {
-        callback?.()
+        if (this.interactionId === interactionId) {
+          callback?.()
+        }
         resolve(undefined)
       })
     })
 
     return this.attempt(async () => {
+      interactionId = this.interactionId
       await this.uc.ensureAuthenticated()
       await executeCallbackAfterUpdate()
     }, {
