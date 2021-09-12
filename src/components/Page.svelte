@@ -26,9 +26,8 @@
       logout()
     }
   }
-  async function update(): Promise<void> {
-    await app.fetchDataFromServer()
-    $pageModel.reload()
+  function update(): void {
+    app.fetchDataFromServer(() => $pageModel.reload())
   }
 
   onMount(() => {

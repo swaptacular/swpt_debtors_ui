@@ -157,9 +157,16 @@ export class AppState {
   }
 
   fetchDataFromServer(callback?: () => void): Promise<void> {
+    const executeCallbackAfterUpdatePromise = new Promise(resolve => {
+      this.uc.scheduleUpdate(() => {
+        callback?.()
+        resolve(undefined)
+      })
+    })
+
     return this.attempt(async () => {
       await this.uc.ensureAuthenticated()
-      this.uc.scheduleUpdate(callback)
+      await executeCallbackAfterUpdatePromise
     }, {
       alerts: [
         [AuthenticationError, null],
