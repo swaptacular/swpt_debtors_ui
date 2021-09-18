@@ -49,10 +49,6 @@
   bind:files
   />
 
-<!-- TODO: Close modal dialogs when the "back" -->
-<!-- button is pressed. This will probably involve -->
-<!-- browser history manipulations. -->
-
 {#if open}
   <Dialog
     open
