@@ -10,7 +10,7 @@
 
   export let app: AppState
   export let model: TransferModel
-  export let snackbarBottom: string
+  export const snackbarBottom: string = '84px'
 
   const maxUnitAmount =  Number(app.amountToString(2n ** 63n - 1000000n))
   let downloadLinkElement: HTMLAnchorElement
@@ -47,7 +47,6 @@
   onDestroy(revokeCurrentDataUrl)
 
   $: transfer = model.transfer
-  $: snackbarBottom = $transfer.result ? '84px' : '0px'
   $: payeeName = $transfer.paymentInfo.payeeName
   $: payeeReference = $transfer.paymentInfo.payeeReference
   $: unitAmount = app.amountToString($transfer.amount)
