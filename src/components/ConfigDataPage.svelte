@@ -130,7 +130,7 @@
         </div>
         <div class="fab-container">
           <Fab color="primary" on:click={save}>
-            <Icon class="material-icons">save_alt</Icon>
+            <Icon class="material-icons">download</Icon>
           </Fab>
         </div>
       {/if}
