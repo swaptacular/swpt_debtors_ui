@@ -2,9 +2,10 @@
   import { getContext } from 'svelte'
   import type { AppState } from '../app-state'
   import { HAS_LOADED_PAYMENT_REQUEST_KEY } from '../app-state'
-  import Dialog, { Title, Content, Actions, InitialFocus } from '@smui/dialog'
+  import { Title, Content, Actions, InitialFocus } from '@smui/dialog'
   import Button, { Label } from '@smui/button'
   import QrScanner from './QrScanner.svelte'
+  import Dialog from './Dialog.svelte'
 
   export let open: boolean = true
 

@@ -39,7 +39,11 @@
   }
   function goBack() {
     hijackBackButton()
-    $pageModel.goBack?.()
+    if (app.goBack) {
+      app.goBack()
+    } else {
+      $pageModel.goBack?.()
+    }
   }
 
   setContext('app', app)

@@ -4,7 +4,8 @@
   import type { AbortTransferActionWithId } from '../operations'
   import Fab, { Label } from '@smui/fab';
   import Button, { Label as ButtonLabel } from '@smui/button'
-  import Dialog, { Title, Content, Actions, InitialFocus } from '@smui/dialog'
+  import { Title, Content, Actions, InitialFocus } from '@smui/dialog'
+  import Dialog from './Dialog.svelte'
   import PaymentInfo from './PaymentInfo.svelte'
   import Page from './Page.svelte'
 

@@ -1,7 +1,8 @@
 <script lang="ts">
   import type { AppState, Alert } from '../app-state'
-  import Dialog, { Title, Content, Actions } from '@smui/dialog'
+  import { Title, Content, Actions } from '@smui/dialog'
   import Button, { Label } from '@smui/button'
+  import Dialog from './Dialog.svelte'
 
   export let app: AppState
   export let alerts: Alert[]
@@ -13,11 +14,12 @@
   scrimClickAction=""
   aria-labelledby="alert-title"
   aria-describedby="alert-content"
+  on:MDCDialog:closed={() => app.dismissAlert(alerts[0])}
   >
   <Title id="alert-title">Error</Title>
   <Content id="alert-content">{alerts[0].message}</Content>
   <Actions>
-    <Button on:click={() => app.dismissAlert(alerts[0])}>
+    <Button>
       <Label>OK</Label>
     </Button>
   </Actions>

@@ -127,6 +127,7 @@ export class AppState {
   readonly getDebtorConfigData: () => DebtorConfigData
   readonly debtorIdentityUri: string
   readonly publicInfoDocumentUri: string
+  goBack?: () => void
 
   constructor(private uc: UserContext, actions: Store<ActionRecordWithId[]>) {
     this.waitingInteractions = writable(new Set())
