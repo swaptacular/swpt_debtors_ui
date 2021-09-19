@@ -13,6 +13,7 @@
   export const snackbarBottom: string = '84px'
 
   const maxUnitAmount =  Number(app.amountToString(2n ** 63n - 1000000n))
+  const debtorName = app.getDebtorConfigData()?.debtorInfo?.debtorName
   let downloadLinkElement: HTMLAnchorElement
   let currentDataUrl: string
 
@@ -54,8 +55,9 @@
   $: title = getTitle($transfer)
   $: tooltip = getTooltip($transfer)
   $: dataUrl = generateDataUrl($transfer)
-  $: downloadName = payeeReference ? `${payeeName} - ${payeeReference}` : `${payeeName}`
-  $: fileName = downloadName.slice(0, 60) + '.pr0'
+  $: downloadNameShort = `${payeeName} - ${debtorName}`
+  $: downloadName = payeeReference ? `${downloadNameShort}, ${payeeReference}` : downloadNameShort
+  $: fileName = downloadName.slice(0, 120) + '.pr0'
 </script>
 
 <style>
