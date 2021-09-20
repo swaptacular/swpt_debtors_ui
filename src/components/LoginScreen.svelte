@@ -20,6 +20,9 @@
     height: 250px;
     z-index: 1;
   }
+  .logo-container :global(img) {
+    height: 100%;
+  }
   .floating {
     z-index: 3;
   }
