@@ -92,7 +92,7 @@
       {#if hasConfiguredCurrency}
         {#if suggestQrCoinDownload}
           <LayoutGrid>
-            <Cell span={12}>
+            <Cell>
               <Paper elevation={8} style="margin-bottom: 16px">
                 <Title>Congratulations!</Title>
                 <Content>
@@ -112,7 +112,7 @@
             </p>
           {:else}
             <LayoutGrid>
-              <Cell span={12}>
+              <Cell>
                 <Paper elevation={8} style="margin-bottom: 16px">
                   <Title>How to issue money in circulation?</Title>
                   <Content>
@@ -138,14 +138,14 @@
         {/if}
       {:else}
         <LayoutGrid>
-          <Cell span={12}>
+          <Cell>
             <Paper elevation={8} style="margin-bottom: 16px">
               <Title>Are you new to Swaptacular?</Title>
               <Content>
                 Every time this app starts, you will see the "Actions"
                 screen first. It shows things that require your
                 attention &ndash; like actions that have been started,
-                but have not been finalized:
+                but have not been finalized.
               </Content>
             </Paper>
           </Cell>

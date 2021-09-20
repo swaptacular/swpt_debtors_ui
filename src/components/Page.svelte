@@ -80,7 +80,7 @@
         </IconButton>
 
         <IconButton class="material-icons" aria-label="Logout" on:click={confirmLogout}>
-          exit_to_app
+          logout
         </IconButton>
       </Section>
     </Row>

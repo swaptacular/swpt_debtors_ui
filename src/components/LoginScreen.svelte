@@ -27,6 +27,8 @@
     z-index: 3;
   }
   .paper-container {
+    display: flex;
+    justify-content: center;
     position: fixed;
     z-index: 2;
     top: 0;
@@ -42,7 +44,7 @@
 </style>
 
 <div class="paper-container">
-  <Paper style="margin: 36px 18px" elevation={8}>
+  <Paper style="margin: 36px 18px; max-width: 600px" elevation={8}>
     <Title>Welcome to Swaptacular!</Title>
     <Content>
       Swaptacular tries to make creating and issuing new digital
