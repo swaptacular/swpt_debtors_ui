@@ -107,14 +107,24 @@ export async function obtainUserContext(
   if (entrypoint === undefined) {
     return undefined
   }
-  let alreadyTriedToUpdate = false
   let userId
-  while ((userId = await db.getUserId(entrypoint)) === undefined) {
-    if (alreadyTriedToUpdate) {
-      await logout(server)
+  try {
+    userId = await getOrCreateUserId(server, entrypoint)
+  } catch (e: unknown) {
+    console.error(e)
+    switch (true) {
+      case e instanceof AuthenticationError:
+      case e instanceof HttpError:
+        alert('There seems to be a problem on the server. Please, try again later.')
+        break
+      case e instanceof ServerSessionError:
+        alert('A network problem has occured. Please, check your Internet connection.')
+        break
+      default:
+        alert('An unexpected problem has occured.')
     }
-    await update(server, false)
-    alreadyTriedToUpdate = true
+    await server.logout()
+    throw e
   }
   return new UserContext(
     server,
@@ -126,9 +136,9 @@ export async function obtainUserContext(
 
 /* Tries to update the local database, reading the latest data from
  * the server. Any network failures will be swallowed. */
-export async function update(server: ServerSession, getTransfers = true): Promise<void> {
+export async function update(server: ServerSession): Promise<void> {
   try {
-    const data = await getUserData(server, getTransfers)
+    const data = await getUserData(server)
     const userId = await db.storeUserData(data)
     await executeReadyTasks(server, userId)
 
@@ -151,6 +161,18 @@ export async function update(server: ServerSession, getTransfers = true): Promis
       console.error(error)
     }
   }
+}
+
+/* Returns the user ID corresponding to the given `entrypoint`. If the
+ * user does not exist, tries to create a new user in the local
+ * database, reading the user's data from the server. */
+export async function getOrCreateUserId(server: ServerSession, entrypoint: string): Promise<number> {
+  let userId = await db.getUserId(entrypoint)
+  if (userId === undefined) {
+    const userData = await getUserData(server, false)
+    userId = await db.storeUserData(userData)
+  }
+  return userId
 }
 
 export class UserContext {
