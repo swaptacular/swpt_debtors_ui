@@ -11,7 +11,7 @@
 
   const app: AppState = getContext('app')
   let scannedValue: string | undefined
-  let fileInputElement: HTMLElement
+  let fileInputElement: HTMLInputElement
   let files: FileList | undefined
 
   function markDone() {
@@ -32,6 +32,7 @@
   $: if (chosenFile) {
     app.initiatePayment(chosenFile)
     markDone()
+    fileInputElement.value = ''
   }
 </script>
 

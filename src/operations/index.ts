@@ -34,6 +34,7 @@ import {
 import {
   parsePaymentRequest,
   IvalidPaymentRequest,
+  IvalidPaymentData,
   generatePayment0TransferNote,
 } from '../payment-requests'
 import { UpdateScheduler } from '../update-scheduler'
@@ -55,6 +56,7 @@ import {
 export {
   RecordDoesNotExist,
   IvalidPaymentRequest,
+  IvalidPaymentData,
   AuthenticationError,
   ServerSessionError,
   getCreateTransferActionStatus,

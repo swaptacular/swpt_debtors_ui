@@ -25,6 +25,7 @@
   pre {
     font-family: monospace;
     white-space: pre-wrap;
+    overflow-wrap: break-word;
     width: 100%;
   }
 </style>

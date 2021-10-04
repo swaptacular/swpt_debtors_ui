@@ -11,6 +11,7 @@ import {
   UpdateConfigActionWithId,
   DebtorConfigData,
   TransferRecord,
+  IvalidPaymentData,
   IvalidPaymentRequest,
   ServerSessionError,
   AuthenticationError,
@@ -208,6 +209,7 @@ export class AppState {
     }, {
       alerts: [
         [IvalidPaymentRequest, new Alert(INVALID_REQUEST_MESSAGE)],
+        [IvalidPaymentData, new Alert(INVALID_REQUEST_MESSAGE)],
       ],
     })
   }
