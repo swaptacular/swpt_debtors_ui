@@ -34,7 +34,7 @@ export const INVALID_REQUEST_MESSAGE = 'Invalid payment request. '
 export const CAN_NOT_PERFORM_ACTOIN_MESSAGE = 'The requested action can not be performed.'
 
 export const NETWORK_ERROR_MESSAGE = 'A network problem has occured. '
-  + 'Please, check your Internet connection.'
+  + 'Please check your Internet connection.'
 
 export const UNEXPECTED_ERROR_MESSAGE = 'Oops, something went wrong.'
 
