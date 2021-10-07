@@ -28,6 +28,10 @@
     overflow-wrap: break-word;
     width: 100%;
   }
+  a {
+    overflow-wrap: break-word;
+    width: 100%;
+  }
 </style>
 
 <LayoutGrid>
