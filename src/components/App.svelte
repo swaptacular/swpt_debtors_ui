@@ -1,7 +1,6 @@
 <script lang="ts">
   import { setContext, onMount } from 'svelte'
-  import { writable } from 'svelte/store'
-  import { createAppState } from '../app-state'
+  import { createAppState, authenticated } from '../app-state'
   import type { AppState } from  '../app-state'
   import Paper, { Title, Content } from '@smui/paper'
   import Snackbar, { Actions, Label } from '@smui/snackbar'
@@ -11,8 +10,7 @@
   import Router from './Router.svelte'
   import Hourglass from './Hourglass.svelte'
 
-  const unauthenticated = writable(false)
-  setContext('unauthenticated', unauthenticated)
+  setContext('authenticated', authenticated)
 
   let snackbarBottom: string = '0px'
   let authenticationErrorSnackbar: any
@@ -40,7 +38,7 @@
 
   onMount(() => {
     addEventListener('update-authentication-error', (event) => {
-      unauthenticated.set(true)
+      authenticated.set(false)
       if (!authenticationErrorSnackbar.isOpen()) {
         authenticationErrorSnackbar.open()
       }

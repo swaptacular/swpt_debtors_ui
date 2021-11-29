@@ -119,6 +119,8 @@ export const DOWNLOADED_QR_COIN_KEY = 'debtors.downloadedQrCoin'
 export const IS_A_NEWBIE_KEY = 'debtors.IsANewbie'
 export const HAS_LOADED_PAYMENT_REQUEST_KEY = 'debtors.hasLoadedPaymentRequest'
 
+export const authenticated = writable(true)
+
 export class AppState {
   private interactionId: number = 0
   readonly waitingInteractions: Writable<Set<number>>
@@ -172,6 +174,7 @@ export class AppState {
     return this.attempt(async () => {
       interactionId = this.interactionId
       await this.uc.ensureAuthenticated()
+      authenticated.set(true)
       await executeCallbackAfterUpdate()
     }, {
       alerts: [
