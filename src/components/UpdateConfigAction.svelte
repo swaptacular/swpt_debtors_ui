@@ -45,7 +45,7 @@
       debtorInfo: {
         summary: summary || undefined,
         debtorName,
-        debtorHomepage: debtorHomepageUri ? { uri: debtorHomepageUri } : undefined,
+        debtorHomepage: debtorHomepageUri ? { uri: `https://${debtorHomepageUri}` } : undefined,
         amountDivisor: Number(amountDivisor),
         decimalPlaces: Math.round(Number(decimalPlaces)),
         unit,
@@ -65,13 +65,17 @@
     }
   }
 
+  function removeHttpsPrefix(url: string = ''): string {
+    return url.startsWith('https://') ? url.slice(8) : ''
+  }
+
   $: if (currentAction !== action) {
     currentAction = action
     actionManager = app.createActionManager(action, createUpdatedAction)
     interestRate = action.interestRate ?? 0
     summary = action.debtorInfo?.summary ?? ''
     debtorName = action.debtorInfo?.debtorName ?? ''
-    debtorHomepageUri = action.debtorInfo?.debtorHomepage?.uri ?? ''
+    debtorHomepageUri = removeHttpsPrefix(action.debtorInfo?.debtorHomepage?.uri)
     amountDivisor = action.debtorInfo?.amountDivisor ?? 100
     decimalPlaces = action.debtorInfo?.decimalPlaces ?? 2
     unit = action.debtorInfo?.unit ?? ''
