@@ -186,7 +186,7 @@
             <Textfield
               variant="outlined"
               style="width: 100%"
-              input$maxlength="10000"
+              input$maxlength="192"
               input$pattern={homepagePattern}
               input$spellcheck="false"
               bind:invalid={invalidHomepage}
@@ -210,12 +210,12 @@
             <Textfield
               textarea
               variant="outlined"
-              input$maxlength="1000"
+              input$maxlength="500"
               style="width: 100%"
               bind:value={summary}
               label="Summary"
               >
-              <CharacterCounter slot="internalCounter">0 / 1000</CharacterCounter>
+              <CharacterCounter slot="internalCounter">0 / 500</CharacterCounter>
               <HelperText slot="helper" persistent>
                 A short description of your digital currency
                 (optional). Currency holders will see this, when they
