@@ -47,7 +47,7 @@
         debtorName,
         debtorHomepage: debtorHomepageUri ? { uri: `https://${debtorHomepageUri}` } : undefined,
         amountDivisor: Number(amountDivisor),
-        decimalPlaces: Math.round(Number(decimalPlaces)),
+        decimalPlaces: BigInt(Math.round(Number(decimalPlaces))),
         unit,
         peg,
       }
@@ -77,7 +77,7 @@
     debtorName = action.debtorInfo?.debtorName ?? ''
     debtorHomepageUri = removeHttpsPrefix(action.debtorInfo?.debtorHomepage?.uri)
     amountDivisor = action.debtorInfo?.amountDivisor ?? 100
-    decimalPlaces = action.debtorInfo?.decimalPlaces ?? 2
+    decimalPlaces = Number(action.debtorInfo?.decimalPlaces ?? 2n)
     unit = action.debtorInfo?.unit ?? ''
     peg = action.debtorInfo?.peg
   }

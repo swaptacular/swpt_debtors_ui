@@ -151,7 +151,7 @@ export class AppState {
   }
 
   amountToString(amount: bigint): string {
-    const { amountDivisor = 1, decimalPlaces = 0 } = this.getDebtorConfigData().debtorInfo ?? {}
+    const { amountDivisor = 1, decimalPlaces = 0n } = this.getDebtorConfigData().debtorInfo ?? {}
     return amountToString(amount, amountDivisor, decimalPlaces)
   }
 

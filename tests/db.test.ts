@@ -354,7 +354,7 @@ test("Create update config action", async () => {
       debtorName: 'name',
       debtorHomepage: { uri: 'http://example.com/homepage' },
       amountDivisor: 100,
-      decimalPlaces: 2,
+      decimalPlaces: 2n,
       unit: 'USD',
       peg: {
         type: 'Peg' as const,
