@@ -183,7 +183,7 @@ export class UserContext {
   private configUri: string
   private createTransferUri: string
   private saveDocumentUri: string
-  private debtorConfigData: DebtorConfigData & { debtorInfoRevision: number }
+  private debtorConfigData: DebtorConfigData & { debtorInfoRevision: bigint }
 
   readonly debtorIdentityUri: string
   readonly publicInfoDocumentUri: string
@@ -475,7 +475,7 @@ export class UserContext {
     const document = await generateCoinInfoDocument({
       ...data,
       debtorIdentity: { type: 'DebtorIdentity', uri: this.debtorIdentityUri },
-      revision: currentRevision + 1,
+      revision: currentRevision + 1n,
       latestDebtorInfo: { uri: this.publicInfoDocumentUri },
     })
     const response = await this.server.postDocument(
@@ -624,7 +624,7 @@ async function getDebtorConfigData(userId: number): Promise<UserContext['debtorC
   const interestRate = configData?.rate
 
   let debtorInfo
-  let debtorInfoRevision = 0
+  let debtorInfoRevision = 0n
   if (configData?.info) {
     const document = await db.getDocumentRecord(configData.info.iri)
     if (

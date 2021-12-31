@@ -70,7 +70,7 @@ const delayedTranfer = {
 
 const debtorData = {
   uri: 'https:/example.com/1/documents/0/public',
-  revision: 0,
+  revision: 0n,
   willNotChangeUntil: new Date('2021-01-01T10:00:00Z'),
   latestDebtorInfo: { uri: 'https://example.com/example.com/1/public' },
   summary: "bla-bla",
@@ -273,7 +273,7 @@ test("Create and delete update config action", async () => {
   expect(debtorConfigData.debtorInfo?.decimalPlaces).toBe(debtorData.decimalPlaces)
   expect(debtorConfigData.debtorInfo?.unit).toBe(debtorData.unit)
   expect(debtorConfigData.debtorInfo?.peg).toEqual(debtorData.peg)
-  expect(debtorConfigData.debtorInfoRevision).toBe(0)
+  expect(debtorConfigData.debtorInfoRevision).toBe(0n)
 
   // create an update config action
   const updateConfigAction = await uc.editDebtorConfigData(debtorConfigData)
@@ -311,7 +311,7 @@ test("Edit and execute an update config action", async () => {
   const editedDebtorConfigData = uc.getDebtorConfigData()
   expect(editedDebtorConfigData.interestRate).toBe(6)
   expect(editedDebtorConfigData.debtorInfo?.debtorName).toBe('Updated name')
-  expect(editedDebtorConfigData.debtorInfoRevision).toEqual(debtorConfigData.debtorInfoRevision + 1)
+  expect(editedDebtorConfigData.debtorInfoRevision).toEqual(debtorConfigData.debtorInfoRevision + 1n)
 
   // assert a new docuemnt is saved to the server
   expect(serverMock.post.mock.calls.length).toBe(1)
