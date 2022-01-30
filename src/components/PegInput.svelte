@@ -59,6 +59,12 @@
           exchangeRate: (Number(unitRate) * (debtorData.amountDivisor || 1) / (amountDivisor || 1)),
           debtorIdentity: {  type: 'DebtorIdentity', uri: debtorUri },
           latestDebtorInfo: { uri: debtorInfoUri },
+          display: {
+            type: 'PegDisplay',
+            amountDivisor: debtorData.amountDivisor,
+            decimalPlaces: debtorData.decimalPlaces,
+            unit: debtorData.unit,
+          },
         }
       }
     }

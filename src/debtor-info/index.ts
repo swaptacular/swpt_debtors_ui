@@ -25,11 +25,18 @@ function validateOptionalDate(date: Date | undefined, errorMsg: string): void {
   ) throw new InvalidDocument(errorMsg)
 }
 
-function parseOptionalDate(s?: string): Date | undefined {
+function parseOptionalDate(value: unknown, errorMsg?: string): Date | undefined {
   let date
-  if (s !== undefined) {
-    date = new Date(s)
-    if (Number.isNaN(date.getTime())) {
+  if (value !== undefined) {
+    date = typeof value === 'string' ? new Date(value) : new Date(NaN)
+    if (
+      Number.isNaN(date.getTime()) ||
+      date.getFullYear() > 9998 ||
+      date.getFullYear() < 1970
+    ) {
+      if (errorMsg !== undefined) {
+        throw new InvalidDocument(errorMsg)
+      }
       return undefined
     }
   }
@@ -50,6 +57,14 @@ export type Peg = {
   exchangeRate: number,
   debtorIdentity: DebtorIdentity,
   latestDebtorInfo: ResourceReference,
+  display: PegDisplay,
+}
+
+export type PegDisplay = {
+  type: 'PegDisplay',
+  amountDivisor: number,
+  decimalPlaces: bigint,
+  unit: string,
 }
 
 export type BaseDebtorData = {
@@ -84,11 +99,7 @@ export class InvalidDocument extends Error {
 
 export const MIME_TYPE_COIN_INFO = 'application/vnd.swaptacular.coin-info+json'
 
-/*
- This function serializes debtor data to bytes. An `InvalidDocument`
- error will be thrown when invalid data is passed.
-*/
-export function serializeDebtorData(debtorData: DebtorData): Uint8Array {
+function serializeDebtorData(debtorData: DebtorData): Uint8Array {
   validateOptionalDate(debtorData.willNotChangeUntil, '/willNotChangeUntil must be a valid Date')
   const data = {
     ...debtorData,
@@ -96,6 +107,13 @@ export function serializeDebtorData(debtorData: DebtorData): Uint8Array {
     revision: Number(debtorData.revision),
     decimalPlaces: Number(debtorData.decimalPlaces),
     willNotChangeUntil: debtorData.willNotChangeUntil?.toISOString(),
+    peg: debtorData.peg ? {
+      ...debtorData.peg,
+      display: {
+        ...debtorData.peg.display,
+        decimalPlaces: Number(debtorData.peg.display.decimalPlaces),
+      },
+    } : undefined,
   }
   if (!validate(data)) {
     const e = validate.errors[0]
@@ -150,6 +168,9 @@ export async function parseDebtorInfoDocument(document: Document): Promise<Debto
   data.willNotChangeUntil = parseOptionalDate(data.willNotChangeUntil)
   data.decimalPlaces = BigInt(Math.ceil(data.decimalPlaces))
   data.revision = BigInt(Math.ceil(data.revision))
+  if (data.peg?.display.decimalPlaces) {
+    data.peg.display.decimalPlaces = BigInt(Math.ceil(data.peg.display.decimalPlaces))
+  }
   delete data.type
   return data
 }
