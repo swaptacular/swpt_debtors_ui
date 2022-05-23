@@ -9,6 +9,7 @@ import typescript from '@rollup/plugin-typescript';
 import css from 'rollup-plugin-css-only';
 
 const production = !process.env.ROLLUP_WATCH;
+const sourceMap = true  //!production
 
 function serve() {
   let server;
@@ -34,14 +35,15 @@ function serve() {
 export default {
   input: 'src/main.ts',
   output: {
-    sourcemap: !production,
-    format: 'iife',
+    sourcemap: sourceMap,
+    format: 'es',
     name: 'app',
-    file: 'public/build/bundle.js'
+    dir: 'public/build/',
+    chunkFileNames: '[name].js',
   },
   plugins: [
     svelte({
-      preprocess: sveltePreprocess({ sourceMap: !production }),
+      preprocess: sveltePreprocess({ sourceMap }),
       compilerOptions: {
 	// enable run-time checks when not in production
 	dev: !production
@@ -49,7 +51,7 @@ export default {
     }),
     // we'll extract any component CSS out into
     // a separate file - better for performance
-    css({ output: 'bundle.css' }),
+    css({ output: 'main.css' }),
 
     // If you have external dependencies installed from
     // npm, you'll most likely need these plugins. In
@@ -63,8 +65,8 @@ export default {
     commonjs(),
     json(),
     typescript({
-      sourceMap: !production,
-      inlineSources: !production,
+      sourceMap,
+      inlineSources: sourceMap,
 
       // Manually added. Do not compile tests.
       include: ["src/**/*.ts"],

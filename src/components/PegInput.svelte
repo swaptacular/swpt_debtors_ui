@@ -35,11 +35,18 @@
   // user switches the peg off, it becomes `undefined`.
   let unchangedValue: Peg | undefined
 
+  let hasFlash: boolean = false
+  let flashlightOn: boolean = false
+  let showQrScanDialog: boolean = false
   let pegged: boolean
   let coinUrl: string
   let debtorData: DebtorData | undefined
   let unitRate: number
   let invalidUnitRate: boolean | undefined
+
+  function toggleFlashlight() {
+    flashlightOn = !flashlightOn
+  }
 
   function getCoinUrl(peg: Peg): string {
     const infoUri = peg.latestDebtorInfo.uri.split('#', 1)[0]
@@ -124,6 +131,9 @@
 
   $: if (currentValue !== value) {
     currentValue = unchangedValue = value
+    hasFlash = false
+    flashlightOn = false
+    showQrScanDialog = false
     pegged = value !== undefined
     coinUrl = value ? getCoinUrl(value) : ''
     debtorData = undefined
@@ -138,20 +148,38 @@
       unchangedValue,
     })
   }
-  $: invalid = value !== undefined && Boolean(invalidUnitRate)
-  $: showQrScanDialog = pegged && coinUrl === ''
-  $: fetchDebtorData(coinUrl)
+
+  $: if (pegged && coinUrl === '') {
+    flashlightOn = false
+    showQrScanDialog = true
+  } else {
+    showQrScanDialog = false
+  }
+
   $: if (!pegged) {
     coinUrl = ''
     debtorData = undefined
     unchangedValue = undefined
     invalidUnitRate = undefined
   }
+
+  $: invalid = value !== undefined && Boolean(invalidUnitRate)
+  $: fetchDebtorData(coinUrl)
 </script>
 
 <style>
   .hidden {
     visibility: hidden;
+  }
+  .buttons-container {
+    display: flex;
+    width: 100%;
+    justify-content: right;
+    align-items: center;
+  }
+  .flashlight-button {
+    flex-grow: 1;
+    margin-left: 10px;
   }
 </style>
 
@@ -165,13 +193,29 @@
     >
     <Title id="qrscan-title">Scan another currency's digital coin (a QR code)</Title>
     <Content id="qrscan-content">
-      <QrScanner bind:result={coinUrl}/>
+      <QrScanner bind:hasFlash bind:result={coinUrl} {flashlightOn} />
     </Content>
     <Actions>
-      <!-- The type="button" is necessary to prevent form submitting.-->
-      <Button type="button">
-        <Label>Close</Label>
-      </Button>
+      <div class="buttons-container">
+        <div class="flashlight-button">
+          {#if hasFlash}
+            <i
+              on:click={toggleFlashlight}
+              style="user-select: none"
+              class="material-icons"
+              aria-hidden="true"
+              >
+              {flashlightOn ? 'flashlight_off' : 'flashlight_on'}
+            </i>
+          {/if}
+        </div>
+        <div>
+          <!-- The type="button" is necessary to prevent form submitting.-->
+          <Button type="button">
+            <Label>Close</Label>
+          </Button>
+        </div>
+      </div>
     </Actions>
   </Dialog>
 {/if}

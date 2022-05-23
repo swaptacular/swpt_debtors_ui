@@ -4,48 +4,71 @@
   import { Icon } from '@smui/common'
 
   export let result: string | undefined = undefined
+  export let hasFlash: boolean = false
+  export let flashlightOn: boolean = false
+
+  let qrScanner: QrScanner | undefined
   let videoElement: HTMLVideoElement
   let noCamera = false
   let windowHeight: number
   let videoHeight: number
 
-  // QrScanner.WORKER_PATH = 'path/to/qr-scanner-worker.min.js'
-
-  function onScannedValue(value: string): void {
+  function onScannedValue(v: string | { data: string }): void {
+    const value = typeof(v) === 'string'? v : v.data
     if (value !== result) {
       result = value
     }
   }
 
+  async function setFlashlightState(qrScanner: QrScanner | undefined, flashlightIsOn: boolean): Promise<void> {
+    if (qrScanner) {
+      hasFlash = await qrScanner.hasFlash()
+      if (hasFlash) {
+        if (flashlightIsOn) {
+          await qrScanner?.turnFlashOn()
+        } else {
+          await qrScanner?.turnFlashOff()
+        }
+      }
+    }
+  }
+
+  async function initQrScanner(): Promise<QrScanner | undefined> {
+    let scanner: QrScanner | undefined
+    if (await QrScanner.hasCamera()) {
+      scanner = new QrScanner(
+        videoElement,
+        onScannedValue,
+        { returnDetailedScanResult: true } as any,  // This is passed only to silence a deprecation warning.
+      )
+      await scanner.start()
+    } else {
+      noCamera = true
+    }
+    return scanner
+  }
+
   onMount(() => {
-    let destructor
-
-    QrScanner.hasCamera().then(ok => { noCamera = !ok })
-    const qrScanner = new QrScanner(videoElement, onScannedValue)
-    const startedScannerPromise = qrScanner.start()
-    const tryTurningFlashOn = async (): Promise<boolean> => {
-      let mustTurnFlashOff = false
-      await startedScannerPromise
-      if (await qrScanner.hasFlash()) {
-        mustTurnFlashOff = qrScanner.isFlashOn()
-        await qrScanner.turnFlashOn()
-      }
-      return mustTurnFlashOff
+    if (qrScanner === undefined) {
+      initQrScanner().then(
+        (newQrScanner) => {
+          qrScanner = newQrScanner
+        },
+        (error) => {
+          noCamera = true
+          console.error(error)
+        },
+      )
     }
-    const flashEffortPromise = tryTurningFlashOn()
-
-    destructor = async () => {
-      if (await flashEffortPromise) {
-        await qrScanner.turnFlashOff()
-      }
-      qrScanner.destroy()
+    return () => {
+      qrScanner?.destroy()
+      qrScanner = undefined
     }
-
-    return destructor
   })
 
   $: maxVideoHeight = windowHeight - 205
   $: height = videoHeight > maxVideoHeight ? maxVideoHeight : undefined
+  $: setFlashlightState(qrScanner, flashlightOn)
 </script>
 
 <style>
@@ -54,11 +77,13 @@
     max-width: 640px;
   }
   .no-camera {
-    width: 98%;
-    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     color: #c4c4c4;
     padding: 20px 0 10px 0;
     border: 4px dotted;
+    overflow: hidden;
   }
   .no-camera :global(i) {
     font-size: 150px;

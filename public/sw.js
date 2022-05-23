@@ -1,5 +1,5 @@
 const appName = 'swpt-debtors-ui'
-const cacheName = `${appName}-v0.2.10`
+const cacheName = `${appName}-v0.2.11`
 const appFiles = [
   './',
   'index.html',
@@ -7,12 +7,17 @@ const appFiles = [
   'favicon.svg',
   'global.css',
   'config.js',
-  'qr-scanner-worker.min.js',
   'material.min.css',
   'material-icons.css',
   'fonts/material-icons.woff2',
-  'build/bundle.css',
-  'build/bundle.js',
+  'fonts/Roboto_300.woff2',
+  'fonts/Roboto_400.woff2',
+  'fonts/Roboto_500.woff2',
+  'fonts/Roboto_700.woff2',
+  'fonts/Roboto_Mono.woff2',
+  'build/main.css',
+  'build/main.js',
+  'build/qr-scanner-worker.min.js',
 ]
 self.addEventListener('install', (e) => {
   console.log('[Service Worker] Install')

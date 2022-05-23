@@ -74,15 +74,7 @@
   <Page title={info.debtorName}>
     <svelte:fragment slot="content">
       <div class="qrcode-container">
-        <QrGenerator
-          value="{link}"
-          size={320}
-          padding={28}
-          errorCorrection="L"
-          background="#FFFFFF"
-          color="#000000"
-          bind:dataUrl
-          />
+        <QrGenerator value={link} bind:dataUrl />
       </div>
       <a class="download-link" href={dataUrl} download={`${info.debtorName}.png`} bind:this={downloadLinkElement}>download</a>
 
