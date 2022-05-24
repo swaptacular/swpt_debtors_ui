@@ -247,7 +247,7 @@
           <TextfieldIcon class="material-icons">error</TextfieldIcon>
         {/if}
       </svelte:fragment>
-      <HelperText slot="helper">
+      <HelperText slot="helper" persistent>
         The value of one unit of your digital currency{unit ? ` (1 ${unit})`: ''},
         represented in the units of the "{debtorData.debtorName}" currency ({debtorData.unit}).
         {#if unit === debtorData.unit} If in doubt, leave it at 1.{/if}

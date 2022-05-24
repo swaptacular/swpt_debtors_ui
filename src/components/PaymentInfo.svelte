@@ -74,7 +74,7 @@
           <TextfieldIcon class="material-icons">error</TextfieldIcon>
         {/if}
       </svelte:fragment>
-      <HelperText slot="helper">
+      <HelperText slot="helper" persistent>
         The name of the recipient of the payment.
       </HelperText>
     </Textfield>
@@ -101,7 +101,7 @@
           <TextfieldIcon class="material-icons">error</TextfieldIcon>
         {/if}
       </svelte:fragment>
-      <HelperText slot="helper">
+      <HelperText slot="helper" persistent>
         The amount that will be transferred to the payee.
       </HelperText>
     </Textfield>
