@@ -1,7 +1,7 @@
 <script lang="ts">
   import { setContext, onMount } from 'svelte'
-  import { createAppState, authenticated } from '../app-state'
-  import type { AppState } from  '../app-state'
+  import { createAppState, authenticated } from './app-state'
+  import type { AppState } from  './app-state'
   import Paper, { Title, Content } from '@smui/paper'
   import Snackbar, { Actions, Label } from '@smui/snackbar'
   import IconButton from '@smui/icon-button'
