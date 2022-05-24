@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { AppState, ActionManager } from '../app-state'
+  import type { AppState } from '../app-state'
   import type { UpdateConfigActionWithId } from '../operations'
   import type { Peg } from '../debtor-info'
   import Fab, { Icon, Label } from '@smui/fab'
@@ -17,19 +17,18 @@
 
   const homepagePattern = "(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_\\+.~#?&//=]*)"
 
-  let currentAction: UpdateConfigActionWithId
-  let actionManager: ActionManager
+  let actionManager = app.createActionManager(action, createUpdatedAction)
   let shakingElement: HTMLElement
 
-  let interestRate: number
-  let summary: string
-  let debtorName:string
-  let debtorHomepageUri: string
-  let amountDivisor: number
-  let decimalPlaces: number
-  let unit: string
-  let peg: Peg | undefined
-
+  let interestRate: number = action.interestRate ?? 0
+  let summary: string = action.debtorInfo?.summary ?? ''
+  let debtorName:string = action.debtorInfo?.debtorName ?? ''
+  let debtorHomepageUri: string = removeHttpsPrefix(action.debtorInfo?.debtorHomepage?.uri)
+  let amountDivisor: number = action.debtorInfo?.amountDivisor ?? 100
+  let decimalPlaces: number = Number(action.debtorInfo?.decimalPlaces ?? 2n)
+  let unit: string = action.debtorInfo?.unit ?? ''
+  let peg: Peg | undefined = action.debtorInfo?.peg
+  
   let invalidCurrencyName: boolean
   let invalidCurrencyAbbreviation: boolean
   let invalidHomepage: boolean
@@ -69,18 +68,6 @@
     return url.startsWith('https://') ? url.slice(8) : ''
   }
 
-  $: if (currentAction !== action) {
-    currentAction = action
-    actionManager = app.createActionManager(action, createUpdatedAction)
-    interestRate = action.interestRate ?? 0
-    summary = action.debtorInfo?.summary ?? ''
-    debtorName = action.debtorInfo?.debtorName ?? ''
-    debtorHomepageUri = removeHttpsPrefix(action.debtorInfo?.debtorHomepage?.uri)
-    amountDivisor = action.debtorInfo?.amountDivisor ?? 100
-    decimalPlaces = Number(action.debtorInfo?.decimalPlaces ?? 2n)
-    unit = action.debtorInfo?.unit ?? ''
-    peg = action.debtorInfo?.peg
-  }
   $: invalid = (
     invalidCurrencyName ||
     invalidCurrencyAbbreviation ||

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { INVALID_REQUEST_MESSAGE } from '../app-state'
-  import type { AppState, ActionManager } from '../app-state'
+  import type { AppState } from '../app-state'
   import type { CreateTransferActionWithId, CreateTransferActionStatus } from '../operations'
   import { getCreateTransferActionStatus } from '../operations'
   import { generatePayment0TransferNote } from '../payment-requests'
@@ -16,15 +16,12 @@
 
   const maxUnitAmount =  Number(app.amountToString(2n ** 63n - 1000000n))
   let shakingElement: HTMLElement
-  let currentAction: CreateTransferActionWithId
-  let actionManager: ActionManager
-
-  let payeeName: string
-  let unitAmount: string | number
-
-  let invalidPayeeName: boolean | undefined
-  let invalidUnitAmount: boolean | undefined
-  let activeBanner: boolean
+  let actionManager = app.createActionManager(action, createUpdatedAction)
+  let payeeName: string = action.paymentInfo.payeeName
+  let unitAmount: string | number = action.creationRequest.amount ? app.amountToString(action.creationRequest.amount): ''
+  let invalidPayeeName: boolean | undefined = undefined
+  let invalidUnitAmount: boolean | undefined = undefined
+  let activeBanner: boolean = true
 
   function createUpdatedAction(): CreateTransferActionWithId {
     const paymentInfo = {
@@ -82,15 +79,6 @@
     }
   }
 
-  $: if (currentAction !== action) {
-    currentAction = action
-    actionManager = app.createActionManager(action, createUpdatedAction)
-    payeeName = action.paymentInfo.payeeName
-    unitAmount = action.creationRequest.amount ? app.amountToString(action.creationRequest.amount): ''
-    invalidPayeeName = undefined
-    invalidUnitAmount = undefined
-    activeBanner = true
-  }
   $: forbidAmountChange = action.requestedAmount > 0
   $: deadline = action.requestedDeadline
   $: description = action.paymentInfo.description
