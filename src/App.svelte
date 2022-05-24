@@ -76,7 +76,7 @@
   }
 </style>
 
-<div class="container" style="--snackbar-bottom: {snackbarBottom}">
+<div class="container" style="--snackbar-bottom: {snackbarBottom}; overflow: hidden">
   {#await appStatePromise}
     <Hourglass />
   {:then appState}
