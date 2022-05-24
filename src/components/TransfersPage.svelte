@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from "svelte"
   import type { AppState, TransfersModel, TransferRecord } from '../app-state'
   import { Icon } from '@smui/common'
   import LayoutGrid, { Cell } from '@smui/layout-grid'
@@ -42,13 +41,6 @@
     return initiatedAt.toLocaleString()
   }
 
-  onMount(() => {
-    if (scrollElement) {
-      scrollElement.scrollTop = model.scrollTop ?? scrollElement.scrollTop
-      scrollElement.scrollLeft = model.scrollLeft ?? scrollElement.scrollLeft
-    }
-  })
-
   $: transfers = [...transfers, ...newBatch]
   $: unit = app.unit
 </script>
@@ -66,7 +58,7 @@
   }
 </style>
 
-<Page title="Payments">
+<Page title="Payments" scrollTop={model.scrollTop} scrollLeft={model.scrollLeft}>
   <svelte:fragment slot="content">
     {#if transfers.length === 0}
       <p class="no-payments">

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { fly, fade } from 'svelte/transition'
-  import { onMount, getContext } from 'svelte'
+  import { onMount, getContext, tick } from 'svelte'
   import type { Writable } from 'svelte/store'
   import type { AppState } from '../app-state'
   import { logout } from '../operations'
@@ -15,6 +15,8 @@
   import Hourglass from './Hourglass.svelte'
 
   export let title: string
+  export let scrollTop: number | undefined = undefined
+  export let scrollLeft: number | undefined = undefined
 
   const app: AppState = getContext('app')
   const { waitingInteractions, alerts, pageModel } = app
@@ -30,9 +32,10 @@
     app.fetchDataFromServer(() => $pageModel.reload())
   }
 
-  onMount(() => {
-    document.documentElement.scrollTop = 0
-    document.documentElement.scrollLeft = 0
+  onMount(async () => {
+    await tick()
+    document.documentElement.scrollTop = scrollTop ?? 0
+    document.documentElement.scrollLeft = scrollLeft ?? 0
   })
 </script>
 

@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from "svelte"
   import { DOWNLOADED_QR_COIN_KEY, IS_A_NEWBIE_KEY, HAS_LOADED_PAYMENT_REQUEST_KEY } from '../app-state'
   import type { AppState, ActionsModel } from '../app-state'
   import type { ActionRecordWithId } from '../operations'
@@ -48,11 +47,6 @@
     })
   }
 
-  onMount(() => {
-    scrollElement.scrollTop = model.scrollTop ?? scrollElement.scrollTop
-    scrollElement.scrollLeft = model.scrollLeft ?? scrollElement.scrollLeft
-  })
-
   $: actions = model.actions
   $: [regularActions, foreignActions] = separateForeignActions($actions)
   $: hasRegularActions = regularActions.length > 0
@@ -78,7 +72,7 @@
   }
 </style>
 
-<Page title="Actions">
+<Page title="Actions" scrollTop={model.scrollTop} scrollLeft={model.scrollLeft}>
   <svelte:fragment slot="content">
     {#if hasRegularActions }
       <LayoutGrid>
