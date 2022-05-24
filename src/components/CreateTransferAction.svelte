@@ -83,6 +83,7 @@
   $: deadline = action.requestedDeadline
   $: description = action.paymentInfo.description
   $: status = getCreateTransferActionStatus(action)
+  $: forbidChange = status !== 'Draft'
   $: executeButtonLabel = (status !== 'Initiated' && status !== 'Timed out' && status !== 'Failed') ? "Send" : 'Acknowledge'
   $: executeButtonIsHidden = (status === 'Failed')
   $: dismissButtonIsHidden = (status === 'Not confirmed' || status === 'Initiated' || status === 'Timed out')
@@ -156,6 +157,7 @@
           {description}
           {title}
           {tooltip}
+          {forbidChange}
           {forbidAmountChange}
           {maxUnitAmount}
           unit={app.unit}

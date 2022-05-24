@@ -15,6 +15,7 @@
   export let tooltip: string
   export let unit: string
   export let maxUnitAmount: number
+  export let forbidChange: boolean = true
   export let forbidAmountChange: boolean = true
   export let invalidPayeeName: boolean | undefined = undefined
   export let invalidUnitAmount: boolean | undefined = undefined
@@ -62,9 +63,9 @@
       required
       variant="outlined"
       style="width: 100%"
-      input$readonly
       input$maxlength="200"
       input$spellcheck="false"
+      disabled={forbidChange}
       bind:invalid={invalidPayeeName}
       bind:value={payeeName}
       label="Payee name"
@@ -85,7 +86,7 @@
       required
       variant="outlined"
       type="number"
-      input$readonly={forbidAmountChange}
+      disabled={forbidChange || forbidAmountChange}
       input$min={Number.EPSILON}
       input$max={maxUnitAmount}
       input$step="any"
