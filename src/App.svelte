@@ -6,9 +6,9 @@
   import Snackbar, { Actions, Label } from '@smui/snackbar'
   import IconButton from '@smui/icon-button'
   import Button from '@smui/button'
-  import LoginScreen from './LoginScreen.svelte'
-  import Router from './Router.svelte'
-  import Hourglass from './Hourglass.svelte'
+  import LoginScreen from './components/LoginScreen.svelte'
+  import Router from './components/Router.svelte'
+  import Hourglass from './components/Hourglass.svelte'
 
   setContext('authenticated', authenticated)
 
