@@ -36,26 +36,26 @@
 
 <LayoutGrid>
   <Cell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
-    <Wrapper>
-      <Paper style="margin-top: 16px; margin-bottom: 28px" elevation={4}>
-        <Title style="display: flex; justify-content: space-between; align-items: center">
-          {title}
+    <Paper style="margin-top: 16px; margin-bottom: 28px" elevation={4}>
+      <Title style="display: flex; justify-content: space-between; align-items: center">
+        {title}
+        <Wrapper>
           <Chip chip="help" on:click={() => undefined}>
             <Text tabindex="0">info</Text>
           </Chip>
           <Tooltip>{tooltip}</Tooltip>
-        </Title>
-        <Content>
-          {#if description.contentFormat === '.'}
-            <a href="{description.content}" target="_blank">{description.content}</a>
-          {:else if description.content}
-            <pre>{description.content}</pre>
-          {:else}
-            <span style="color: #c4c4c4">The payment request does not contain a description.</span>
-          {/if}
-        </Content>
-      </Paper>
-    </Wrapper>
+        </Wrapper>
+      </Title>
+      <Content>
+        {#if description.contentFormat === '.'}
+          <a href="{description.content}" target="_blank">{description.content}</a>
+        {:else if description.content}
+          <pre>{description.content}</pre>
+        {:else}
+          <span style="color: #c4c4c4">The payment request does not contain a description.</span>
+        {/if}
+      </Content>
+    </Paper>
   </Cell>
 
   <Cell spanDevices={{ desktop: 6, tablet: 4, phone: 4 }}>
