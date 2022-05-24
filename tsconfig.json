@@ -1,20 +1,31 @@
 {
   "extends": "@tsconfig/svelte/tsconfig.json",
-
-  "include": ["src/**/*", "tests/**/*"],
-  "exclude": ["node_modules/*", "public/*"],
-
+  "exclude": [
+    "src/debtor-info/validate-schema.js",
+    "src/web-api/json-bigint/stringify.js"
+  ],
   "compilerOptions": {
     "target": "es2020",
     "strict": true,
     "noUnusedLocals": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
+    "useDefineForClassFields": true,
     "importHelpers": true,
+    "module": "esnext",
+    "resolveJsonModule": true,
+    "baseUrl": ".",
     "types": ["svelte", "jest"],
     "lib": [      
       "es2020",
       "dom"
     ]
-  }
+  },
+  "include": [
+    "src/**/*.d.ts",
+    "src/**/*.ts",
+    "src/**/*.js",
+    "src/**/*.svelte",
+    "tests/**/*.ts"
+  ]
 }
