@@ -49,9 +49,7 @@
           {#if description.contentFormat === '.'}
             <a href="{description.content}" target="_blank">{description.content}</a>
           {:else if description.content}
-            <pre>
-              {description.content}
-            </pre>
+            <pre>{description.content}</pre>
           {:else}
             <span style="color: #c4c4c4">The payment request does not contain a description.</span>
           {/if}
