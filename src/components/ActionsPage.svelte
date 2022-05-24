@@ -76,7 +76,7 @@
   <svelte:fragment slot="content">
     {#if hasRegularActions }
       <LayoutGrid>
-        {#each regularActions as action }
+        {#each regularActions as action (action.actionId)}
           <Cell>
             <ActionCard {action} show={() => showAction(action.actionId)} />
           </Cell>
@@ -172,7 +172,7 @@
           </FormField>
         </Cell>
         {#if showForeignActions }
-          {#each foreignActions as action }
+          {#each foreignActions as action (action.actionId)}
             <Cell>
               <ActionCard color="secondary" {action} show={() => showAction(action.actionId)} />
             </Cell>

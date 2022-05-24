@@ -1,5 +1,6 @@
 <script lang="ts">
   import { getContext } from 'svelte'
+  import { fly, fade } from 'svelte/transition'
   import type { ActionRecordWithId } from '../operations'
   import type { AppState } from '../app-state'
   import Button, { Label } from '@smui/button'
@@ -50,12 +51,14 @@
   }
 </script>
 
-<Card>
-  <Content>{getDescription(action)}</Content>
-  <Actions fullBleed>
-    <Button {color} on:click={show}>
-      <Label>{getButtonLabel(action)}</Label>
-      <i class="material-icons" aria-hidden="true">arrow_forward</i>
-    </Button>
-  </Actions>
-</Card>
+<div in:fly|local="{{ x: -350, duration: 1000 }}" out:fade|local="{{ duration: 1000 }}">
+  <Card>
+    <Content>{getDescription(action)}</Content>
+    <Actions fullBleed>
+      <Button {color} on:click={show}>
+        <Label>{getButtonLabel(action)}</Label>
+        <i class="material-icons" aria-hidden="true">arrow_forward</i>
+      </Button>
+    </Actions>
+  </Card>
+</div>
