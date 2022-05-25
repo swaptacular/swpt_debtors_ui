@@ -27,6 +27,9 @@ type AttemptOptions = {
   startInteraction?: boolean
 }
 
+export const MAX_INT64 = (1n << 63n) - 1n
+export const MIN_INT64 = -MAX_INT64 - 1n
+
 export const INVALID_REQUEST_MESSAGE = 'Invalid payment request. '
   + 'Make sure that you are scanning the correct QR code, '
   + 'for the correct payment request.'

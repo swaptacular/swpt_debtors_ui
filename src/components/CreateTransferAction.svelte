@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { INVALID_REQUEST_MESSAGE } from '../app-state'
+  import { INVALID_REQUEST_MESSAGE, MAX_INT64 } from '../app-state'
   import type { AppState } from '../app-state'
   import type { CreateTransferActionWithId, CreateTransferActionStatus } from '../operations'
   import { getCreateTransferActionStatus } from '../operations'
@@ -33,11 +33,28 @@
       paymentInfo,
       creationRequest: {
         ...action.creationRequest,
-        amount: app.stringToAmount(unitAmount),
+        amount: action.requestedAmount || amountToBigint(unitAmount),
         noteFormat: action.requestedAmount ? 'PAYMENT0' : 'payment0',
         note: generatePayment0TransferNote(paymentInfo, app.noteMaxBytes),
       },
     }
+  }
+
+  function amountToBigint(amount: unknown): bigint {
+    let result = 0n
+    if (amount !== '') {
+      let x = Number(amount)
+      if (Number.isFinite(x)) {
+        result = app.stringToAmount(unitAmount)
+        if (result < 0n) {
+          result = 0n
+        }
+        if (result > MAX_INT64) {
+          result = MAX_INT64
+        }
+      }
+    }
+    return result
   }
 
   function getInfoTooltip(status: CreateTransferActionStatus): string {
