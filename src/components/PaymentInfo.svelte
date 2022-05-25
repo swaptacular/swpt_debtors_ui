@@ -15,7 +15,6 @@
   export let tooltip: string
   export let unit: string
   export let maxUnitAmount: number
-  export let forbidChange: boolean = true
   export let forbidAmountChange: boolean = true
   export let invalidPayeeName: boolean | undefined = undefined
   export let invalidUnitAmount: boolean | undefined = undefined
@@ -60,51 +59,64 @@
 
   <Cell spanDevices={{ desktop: 6, tablet: 4, phone: 4 }}>
     <Textfield
-      required
       variant="outlined"
       style="width: 100%"
-      input$maxlength="200"
-      input$spellcheck="false"
-      disabled={forbidChange}
-      bind:invalid={invalidPayeeName}
-      bind:value={payeeName}
       label="Payee name"
+      input$readonly
+      input$spellcheck="false"
+      bind:invalid={invalidPayeeName}
+      value={payeeName}
       >
-      <svelte:fragment slot="trailingIcon">
-        {#if invalidPayeeName}
-          <TextfieldIcon class="material-icons">error</TextfieldIcon>
-        {/if}
-      </svelte:fragment>
       <HelperText slot="helper" persistent>
         The name of the recipient of the payment.
       </HelperText>
     </Textfield>
   </Cell>
 
-  <Cell spanDevices={{ desktop: 6, tablet: 4, phone: 4 }}>
-    <Textfield
-      required
-      variant="outlined"
-      type="number"
-      disabled={forbidChange || forbidAmountChange}
-      input$min={Number.EPSILON}
-      input$max={maxUnitAmount}
-      input$step="any"
-      style="width: 100%"
-      withTrailingIcon={invalidUnitAmount}
-      bind:value={unitAmount}
-      bind:invalid={invalidUnitAmount}
-      label="Amount"
-      suffix={unit}
-      >
-      <svelte:fragment slot="trailingIcon">
-        {#if invalidUnitAmount}
-          <TextfieldIcon class="material-icons">error</TextfieldIcon>
-        {/if}
-      </svelte:fragment>
-      <HelperText slot="helper" persistent>
-        The amount that will be transferred to the payee.
-      </HelperText>
-    </Textfield>
-  </Cell>
+  {#if forbidAmountChange}
+    <Cell spanDevices={{ desktop: 6, tablet: 4, phone: 4 }}>
+      <Textfield
+        required
+        variant="outlined"
+        style="width: 100%"
+        type="number"
+        label="Amount"
+        input$readonly
+        input$step="any"
+        bind:invalid={invalidUnitAmount}
+        value={unitAmount}
+        suffix={unit}
+        >
+        <HelperText slot="helper" persistent>
+          The amount that will be transferred to the payee.
+        </HelperText>
+      </Textfield>
+    </Cell>
+  {:else}
+    <Cell spanDevices={{ desktop: 6, tablet: 4, phone: 4 }}>
+      <Textfield
+        required
+        variant="outlined"
+        type="number"
+        input$min={Number.EPSILON}
+        input$max={maxUnitAmount}
+        input$step="any"
+        style="width: 100%"
+        withTrailingIcon={invalidUnitAmount}
+        bind:value={unitAmount}
+        bind:invalid={invalidUnitAmount}
+        label="Amount"
+        suffix={unit}
+        >
+        <svelte:fragment slot="trailingIcon">
+          {#if invalidUnitAmount}
+            <TextfieldIcon class="material-icons">error</TextfieldIcon>
+          {/if}
+        </svelte:fragment>
+        <HelperText slot="helper" persistent>
+          The amount that will be transferred to the payee.
+        </HelperText>
+      </Textfield>
+    </Cell>
+  {/if}
 </LayoutGrid>
