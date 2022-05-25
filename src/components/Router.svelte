@@ -56,6 +56,7 @@
       hijackBackButton()
       $pageModel.goBack()
     } else {
+      sessionStorage.clear()
       history.back()
 
       // Shows a "Tap again to exit" overlay before exiting. This
