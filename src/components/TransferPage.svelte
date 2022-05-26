@@ -2,9 +2,10 @@
   import { onDestroy } from 'svelte'
   import { generatePr0Blob } from '../payment-requests'
   import type { TransferRecord } from '../operations'
+  import { fade } from 'svelte/transition'
   import { getTooltip } from '../utils'
   import type { AppState, TransferModel } from '../app-state'
-  import Fab, { Icon, Label } from '@smui/fab';
+  import Fab, { Icon } from '@smui/fab';
   import PaymentInfo from './PaymentInfo.svelte'
   import Page from './Page.svelte'
 
@@ -12,7 +13,6 @@
   export let model: TransferModel
   export const snackbarBottom: string = '84px'
 
-  const debtorName = app.getDebtorConfigData()?.debtorInfo?.debtorName
   let downloadLinkElement: HTMLAnchorElement
   let currentDataUrl: string
 
@@ -26,11 +26,13 @@
       return 'Initiated payment'
     }
   }
+
   function revokeCurrentDataUrl() {
     if (currentDataUrl) {
       URL.revokeObjectURL(currentDataUrl)
     }
   }
+
   function generateDataUrl(t: TransferRecord): string {
     const blob = generatePr0Blob({
       ...t.paymentInfo,
@@ -44,19 +46,24 @@
     return currentDataUrl = URL.createObjectURL(blob)
   }
 
+  function update(): void {
+    app.fetchDataFromServer(() => model.reload())
+  }
+
   onDestroy(revokeCurrentDataUrl)
 
   $: transfer = model.transfer
   $: payeeName = $transfer.paymentInfo.payeeName
   $: payeeReference = $transfer.paymentInfo.payeeReference
+  $: unit = app.unit
   $: unitAmount = app.amountToString($transfer.amount)
   $: description = $transfer.paymentInfo.description
   $: title = getTitle($transfer)
   $: tooltip = getTooltip($transfer)
   $: dataUrl = generateDataUrl($transfer)
-  $: downloadNameShort = `${payeeName} - ${debtorName}`
-  $: downloadName = payeeReference ? `${downloadNameShort}, ${payeeReference}` : downloadNameShort
-  $: fileName = downloadName.slice(0, 120) + '.pr0'
+  $: downloadNameShort = `Issue ${unitAmount} ${unit.slice(0, 10)} to ${payeeName}`
+  $: downloadName = payeeReference ? `${downloadNameShort} - ${payeeReference}` : downloadNameShort
+  $: fileName = downloadName.slice(0, 120).replace(/[<>:"/|?*\\]/g, ' ') + '.pr0'
 </script>
 
 <style>
@@ -81,25 +88,18 @@
   </svelte:fragment>
 
   <svelte:fragment slot="floating">
-    {#if $transfer.result}
-      <div class="fab-container">
-        <Fab on:click={() => app.retryTransfer($transfer)} extended>
-          <Label>
-            {#if $transfer.result.error}
-              Retry
-            {:else}
-              Pay again
-            {/if}
-          </Label>
+    <div class="fab-container">
+      <a class="download-link" href={dataUrl} download={fileName} bind:this={downloadLinkElement}>download</a>
+      <Fab on:click={() => downloadLinkElement.click()}>
+        <Icon class="material-icons">download</Icon>
+       </Fab>
+    </div>
+    {#if !$transfer.result}
+      <div out:fade|local="{{ duration: 1000 }}" class="fab-container">
+        <Fab on:click={update}>
+          <Icon class="material-icons">sync</Icon>
         </Fab>
       </div>
     {/if}
-    <div class="fab-container">
-      <a class="download-link" href={dataUrl} download={fileName} bind:this={downloadLinkElement}>download</a>
-      <Fab color="primary" on:click={() => downloadLinkElement.click()} extended>
-        <Icon class="material-icons">download</Icon>
-        <Label>Save</Label>
-      </Fab>
-    </div>
   </svelte:fragment>
 </Page>

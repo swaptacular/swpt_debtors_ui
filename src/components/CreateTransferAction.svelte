@@ -142,7 +142,7 @@
 </style>
 
 <div class="shaking-container">
-  <Page title="Payment">
+  <Page title="Make payment">
     <div bind:this={shakingElement} slot="content">
       {#if showDeadlineWarning && deadline !== undefined}
         <Banner bind:open={activeBanner} mobileStacked centered>
