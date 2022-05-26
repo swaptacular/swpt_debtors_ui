@@ -150,8 +150,7 @@
           <BannerLabel slot="label">
             The payment request specifies {deadline.toLocaleString()}
             as deadline for the payment. When issuing money in
-            circulation, payment deadlines are not supported, and will
-            be ignored.
+            circulation, payment deadlines will be ignored.
           </BannerLabel>
           <svelte:fragment slot="actions">
             <Button>OK</Button>

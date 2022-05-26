@@ -22,7 +22,9 @@
 
 <style>
   pre {
-    font-family: monospace;
+    color: #888;
+    font-size: 0.9em;
+    font-family: "Roboto Mono", monospace;
     white-space: pre-wrap;
     overflow-wrap: break-word;
     width: 100%;
@@ -40,7 +42,7 @@
         {title}
         <Wrapper>
           <Chip chip="help" on:click={() => undefined}>
-            <Text tabindex="0">info</Text>
+            <Text tabindex="0">status</Text>
           </Chip>
           <Tooltip>{tooltip}</Tooltip>
         </Wrapper>
