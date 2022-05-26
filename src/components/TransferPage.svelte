@@ -12,7 +12,6 @@
   export let model: TransferModel
   export const snackbarBottom: string = '84px'
 
-  const maxUnitAmount =  Number(app.amountToString(2n ** 63n - 1000000n))
   const debtorName = app.getDebtorConfigData()?.debtorInfo?.debtorName
   let downloadLinkElement: HTMLAnchorElement
   let currentDataUrl: string
@@ -77,7 +76,6 @@
       {description}
       {title}
       {tooltip}
-      {maxUnitAmount}
       unit={app.unit}
       />
   </svelte:fragment>

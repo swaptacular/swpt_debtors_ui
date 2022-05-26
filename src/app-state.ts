@@ -153,7 +153,12 @@ export class AppState {
     return this.getDebtorConfigData().debtorInfo?.unit ?? '\u00A4'
   }
 
-  amountToString(amount: bigint): string {
+  get smallestDisplayableNumber(): number {
+    const { amountDivisor = 1, decimalPlaces = 0n } = this.getDebtorConfigData().debtorInfo ?? {}
+    return Math.pow(10, -Number(decimalPlaces)) * amountDivisor
+  }
+
+  amountToString(amount: number | bigint): string {
     const { amountDivisor = 1, decimalPlaces = 0n } = this.getDebtorConfigData().debtorInfo ?? {}
     return amountToString(amount, amountDivisor, decimalPlaces)
   }

@@ -4,7 +4,7 @@ export function stringToAmount(s: string | number, amountDivisor: number): bigin
   return BigInt(Math.ceil(Number(s) * amountDivisor))
 }
 
-export function amountToString(value: bigint, amountDivisor: number, decimalPlaces: number | bigint): string {
+export function amountToString(value: number | bigint, amountDivisor: number, decimalPlaces: number | bigint): string {
   if (typeof decimalPlaces === 'bigint') {
     decimalPlaces = Number(decimalPlaces)
   }

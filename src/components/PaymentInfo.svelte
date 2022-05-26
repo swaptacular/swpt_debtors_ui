@@ -1,5 +1,8 @@
 <script lang="ts">
+  import type { AppState } from '../app-state'
   import type { PaymentDescription } from '../payment-requests'
+  import { MAX_INT64 } from '../app-state'
+  import { getContext } from 'svelte'
   import Paper, { Title, Content } from '@smui/paper'
   import LayoutGrid, { Cell } from '@smui/layout-grid'
   import Textfield from '@smui/textfield'
@@ -14,10 +17,13 @@
   export let title: string
   export let tooltip: string
   export let unit: string
-  export let maxUnitAmount: number
   export let forbidAmountChange: boolean = true
   export let invalidPayeeName: boolean | undefined = undefined
   export let invalidUnitAmount: boolean | undefined = undefined
+
+  const app: AppState = getContext('app')
+  const maxUnitAmount = app.amountToString(MAX_INT64 - 1000000n)
+  const unitAmountStep = app.amountToString(app.smallestDisplayableNumber)
 </script>
 
 <style>
@@ -100,9 +106,9 @@
         required
         variant="outlined"
         type="number"
-        input$min={Number.EPSILON}
+        input$min={unitAmountStep}
         input$max={maxUnitAmount}
-        input$step="any"
+        input$step={unitAmountStep}
         style="width: 100%"
         withTrailingIcon={invalidUnitAmount}
         bind:value={unitAmount}

@@ -13,7 +13,6 @@
   export let action: AbortTransferActionWithId
   export const snackbarBottom: string = "84px"
 
-  const maxUnitAmount =  Number(app.amountToString(2n ** 63n - 1000000n))
   let showFailedCancellationDialog = false
 
   function retry() {
@@ -54,7 +53,6 @@
       {description}
       {title}
       {tooltip}
-      {maxUnitAmount}
       unit={app.unit}
       />
 

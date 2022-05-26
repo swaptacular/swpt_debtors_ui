@@ -14,7 +14,6 @@
   export let action: CreateTransferActionWithId
   export const snackbarBottom: string = "84px"
 
-  const maxUnitAmount =  Number(app.amountToString(2n ** 63n - 1000000n))
   let shakingElement: HTMLElement
   let actionManager = app.createActionManager(action, createUpdatedAction)
   let payeeName: string = action.paymentInfo.payeeName
@@ -173,7 +172,6 @@
           {title}
           {tooltip}
           {forbidAmountChange}
-          {maxUnitAmount}
           unit={app.unit}
           />
       </form>
