@@ -186,11 +186,6 @@
 
   <svelte:fragment slot="floating">
     <div class="fab-container">
-      <Fab color={suggestQrCoinDownload ? "primary" : "secondary"} on:click={() => app.showConfig()}>
-        <Icon class="material-icons">qr_code_2</Icon>
-      </Fab>
-    </div>
-    <div class="fab-container">
       <Fab on:click={() => app.showTransfers()}>
         <Icon class="material-icons">history</Icon>
       </Fab>
@@ -201,6 +196,11 @@
         on:click={() => showMakePaymentDialog = true}
         >
         <Icon class="material-icons">local_atm</Icon>
+      </Fab>
+    </div>
+    <div class="fab-container">
+      <Fab color="primary" on:click={() => app.showConfig()}>
+        <Icon class="material-icons">qr_code_2</Icon>
       </Fab>
     </div>
   </svelte:fragment>
