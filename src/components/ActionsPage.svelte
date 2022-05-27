@@ -65,7 +65,7 @@
     margin: 16px 16px;
   }
   .no-actions {
-    --no-actions-color: #c4c4c4;
+    --no-actions-color: #888;
     font-size: 1.25em;
     margin: 36px 18px 26px 18px;
     text-align: center;
@@ -101,9 +101,9 @@
         {:else}
           {#if !isANewbie || hasLoadedPaymentRequest}
             <p class="no-actions">
-              Press
+              Press the
               <Icon class="material-icons" style="vertical-align: middle">local_atm</Icon>
-              to issue money in circulation.
+              button below, to issue money in circulation.
             </p>
           {:else}
             <LayoutGrid>
