@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { AppState, ConfigDataModel } from '../app-state'
   import { DOWNLOADED_QR_COIN_KEY } from '../app-state'
-  import { onMount } from 'svelte'
+  import { onDestroy } from 'svelte'
   import Fab, { Icon } from '@smui/fab';
   import Paper, { Title, Content } from '@smui/paper'
   import Page from './Page.svelte'
@@ -21,12 +21,10 @@
     app.editConfig(debtorConfigData)
   }
 
-  onMount(() => {
+  onDestroy(() => {
     // Set the "downloaded coin" flag to true when exiting the page.
-    return () => {
-      if (localStorage.getItem(DOWNLOADED_QR_COIN_KEY) !== 'true') {
-        localStorage.setItem(DOWNLOADED_QR_COIN_KEY, 'true')
-      }
+    if (localStorage.getItem(DOWNLOADED_QR_COIN_KEY) !== 'true') {
+      localStorage.setItem(DOWNLOADED_QR_COIN_KEY, 'true')
     }
   })
 

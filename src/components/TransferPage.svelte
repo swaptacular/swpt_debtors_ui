@@ -79,6 +79,7 @@
   <svelte:fragment slot="content">
     <PaymentInfo
       {payeeName}
+      {payeeReference}
       {unitAmount}
       {description}
       {title}

@@ -9,9 +9,11 @@
   import TextfieldIcon from '@smui/textfield/icon'
   import HelperText from '@smui/textfield/helper-text/index'
   import Chip, { Text } from '@smui/chips'
+  import Button, { Label } from '@smui/button'
   import Tooltip, { Wrapper } from '@smui/tooltip'
 
   export let payeeName: string
+  export let payeeReference: string
   export let unitAmount: string | number
   export let description: PaymentDescription
   export let title: string
@@ -20,10 +22,18 @@
   export let forbidAmountChange: boolean = true
   export let invalidPayeeName: boolean | undefined = undefined
   export let invalidUnitAmount: boolean | undefined = undefined
+  export let dataUrl: string | undefined = undefined
+
+  let downloadLinkElement: HTMLAnchorElement | undefined
 
   const app: AppState = getContext('app')
   const maxUnitAmount = app.amountToString(MAX_INT64 - 1000000n)
   const unitAmountStep = app.amountToString(app.smallestDisplayableNumber)
+
+  $: name = payeeName.slice(0, 40) ?? 'unknown payee'
+  $: downloadNameShort = unitAmount ? `Issue ${unitAmount} ${unit.slice(0, 10)} to ${name}` : `Issue to ${name}`
+  $: downloadName = payeeReference ? `${downloadNameShort} - ${payeeReference}` : downloadNameShort
+  $: fileName = downloadName.slice(0, 120).replace(/[<>:"/|?*\\]/g, ' ') + '.pr0'
 </script>
 
 <style>
@@ -38,6 +48,15 @@
   a {
     overflow-wrap: break-word;
     width: 100%;
+  }
+  .save-button-container {
+    margin-top: 0.5em;
+    margin-bottom: -0.5em;
+    width: 100%;
+    text-align: center;
+  }
+  .download-link {
+    display: none;
   }
 </style>
 
@@ -60,6 +79,14 @@
           <pre>{description.content}</pre>
         {:else}
           <span style="color: #c4c4c4">The payment request does not contain a description.</span>
+        {/if}
+        {#if dataUrl}
+          <div class="save-button-container">
+            <a class="download-link" href={dataUrl} download={fileName} bind:this={downloadLinkElement}>download</a>
+            <Button type="button" color="secondary" on:click={() => downloadLinkElement?.click()}>
+              <Label>Save this payment request</Label>
+            </Button>
+          </div>
         {/if}
       </Content>
     </Paper>

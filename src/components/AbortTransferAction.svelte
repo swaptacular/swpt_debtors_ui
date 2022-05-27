@@ -33,6 +33,7 @@
 
   $: transfer = action.transfer
   $: payeeName = transfer.paymentInfo.payeeName
+  $: payeeReference = transfer.paymentInfo.payeeReference
   $: unitAmount = app.amountToString(transfer.amount)
   $: description = transfer.paymentInfo.description
   $: title = transfer.result ? "Failed payment" : "Delayed payment"
@@ -49,6 +50,7 @@
   <svelte:fragment slot="content">
     <PaymentInfo
       {payeeName}
+      {payeeReference}
       {unitAmount}
       {description}
       {title}
