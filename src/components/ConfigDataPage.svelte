@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { DOWNLOADED_QR_COIN_KEY, IS_A_NEWBIE_KEY } from '../app-state'
   import type { AppState, ConfigDataModel } from '../app-state'
-  import Fab, { Icon, Label } from '@smui/fab';
+  import { DOWNLOADED_QR_COIN_KEY } from '../app-state'
+  import { onMount } from 'svelte'
+  import Fab, { Icon } from '@smui/fab';
   import Paper, { Title, Content } from '@smui/paper'
   import Page from './Page.svelte'
   import QrGenerator from './QrGenerator.svelte'
@@ -13,9 +14,6 @@
 
   let downloadLinkElement: HTMLAnchorElement
   let dataUrl: string
-  const isANewbie = localStorage.getItem(IS_A_NEWBIE_KEY) === 'true'
-  const downloadedQrCoin = localStorage.getItem(DOWNLOADED_QR_COIN_KEY) === 'true'
-  const hideConfigButton = isANewbie && !downloadedQrCoin
   const debtorConfigData = app.getDebtorConfigData()
   const info = debtorConfigData.debtorInfo
   const link = `${app.publicInfoDocumentUri}#${app.debtorIdentityUri}`
@@ -23,10 +21,14 @@
     app.editConfig(debtorConfigData)
   }
 
-  function save(): void {
-    localStorage.setItem(DOWNLOADED_QR_COIN_KEY, 'true')
-    downloadLinkElement.click()
-  }
+  onMount(() => {
+    // Set the "downloaded coin" flag to true when exiting the page.
+    return () => {
+      if (localStorage.getItem(DOWNLOADED_QR_COIN_KEY) !== 'true') {
+        localStorage.setItem(DOWNLOADED_QR_COIN_KEY, 'true')
+      }
+    }
+  })
 
   $: balance = model.debtorRecord.balance
   $: totalIssuedUnits = app.amountToString(-balance)
@@ -88,7 +90,7 @@
             his/hers mobile device. Therefore, you should:
             <ol>
               <li>
-                <a href="download" on:click|preventDefault={save}>
+                <a href="download" on:click|preventDefault={() => downloadLinkElement.click()}>
                   Download the image.
                 </a>
               </li>
@@ -113,26 +115,11 @@
     </svelte:fragment>
 
     <svelte:fragment slot="floating">
-      {#if hideConfigButton}
-        <div class="fab-container">
-          <Fab color="primary" on:click={save} extended>
-            <Icon class="material-icons">download</Icon>
-            <Label>Download</Label>
-          </Fab>
-        </div>
-      {:else}
-        <div class="fab-container">
-          <Fab on:click={() => app.editConfig(debtorConfigData)}>
-            <Icon class="material-icons">settings</Icon>
-          </Fab>
-        </div>
-
-        <div class="fab-container">
-          <Fab color="primary" on:click={save}>
-            <Icon class="material-icons">download</Icon>
-          </Fab>
-        </div>
-      {/if}
+      <div class="fab-container">
+        <Fab on:click={() => app.editConfig(debtorConfigData)}>
+          <Icon class="material-icons">settings</Icon>
+        </Fab>
+      </div>
     </svelte:fragment>
   </Page>
 {:else}
