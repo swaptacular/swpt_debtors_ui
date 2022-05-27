@@ -93,7 +93,7 @@
                 <Content>
                   You have successfully configured your digital currency. Press the
                   <Icon style="vertical-align: middle" class="material-icons">qr_code_2</Icon>
-                  button bellow, to download your digital coin.
+                  button below, to download your digital coin.
                 </Content>
               </Paper>
             </Cell>
@@ -124,7 +124,7 @@
                     <br>
                     Press the
                     <Icon class="material-icons" style="margin: 0 0.15em; vertical-align: middle">local_atm</Icon>
-                    button bellow, to load a payment request.
+                    button below, to load a payment request.
                   </Content>
                 </Paper>
               </Cell>
