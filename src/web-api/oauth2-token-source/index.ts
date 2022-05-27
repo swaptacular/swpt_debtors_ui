@@ -1,4 +1,5 @@
 import { OAuth2AuthCodePKCE, OAuth2Error } from './auth-code-pkce'
+export { LOCALSTORAGE_STATE } from './auth-code-pkce'
 
 export type LoginAttemptHandler = (login: () => Promise<boolean>) => Promise<boolean>
 

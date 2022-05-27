@@ -9,6 +9,7 @@ import {
   Oauth2TokenSource,
 } from './oauth2-token-source'
 
+export { LOCALSTORAGE_STATE } from './oauth2-token-source'
 
 export type {
   LoginAttemptHandler,
