@@ -91,3 +91,11 @@ export function getTooltip(t: TransferRecord): string {
   }
   return tooltip
 }
+
+export function getDebtorIdentityFromAccountIdentity(uri: string): string | undefined {
+  const parts = uri.split('/')
+  if (parts.length === 2) {
+    return parts[0]
+  }
+  return undefined
+}

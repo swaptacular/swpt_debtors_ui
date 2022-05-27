@@ -213,7 +213,7 @@ export class AppState {
     return this.attempt(async () => {
       const interactionId = this.interactionId
       const blob = await paymentRequestFile
-      const action = await this.uc.processPaymentRequest(blob)
+      const action = await this.uc.processPaymentRequest(blob, this.debtorIdentityUri)
       if (this.interactionId === interactionId) {
         this.showAction(action.actionId)
       }

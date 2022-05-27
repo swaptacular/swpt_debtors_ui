@@ -51,7 +51,7 @@ import {
   BaseDebtorData,
   calcSha256,
 } from '../debtor-info'
-
+import { getDebtorIdentityFromAccountIdentity } from '../utils'
 
 export {
   RecordDoesNotExist,
@@ -300,8 +300,12 @@ export class UserContext {
 
   /* Reads a payment request, and adds and returns a new
    * create transfer action. May throw `IvalidPaymentRequest`. */
-  async processPaymentRequest(blob: Blob): Promise<CreateTransferActionWithId> {
+  async processPaymentRequest(blob: Blob, debtorIdentityUri?: string): Promise<CreateTransferActionWithId> {
     const request = await parsePaymentRequest(blob)
+    const debtorUri = getDebtorIdentityFromAccountIdentity(request.accountUri)
+    if (debtorUri === undefined || debtorIdentityUri !== undefined && debtorUri !== debtorIdentityUri) {
+      throw new IvalidPaymentRequest('wrong debtor URI')
+    }
     const actionRecord = {
       userId: this.userId,
       actionType: 'CreateTransfer' as const,
