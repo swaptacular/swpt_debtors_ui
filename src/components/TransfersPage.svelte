@@ -56,6 +56,17 @@
     text-align: center;
     color: #c4c4c4;
   }
+  .transfer {
+    font-family: "Cutive Mono", monospace;
+    font-size: 1.1em;
+    line-height: 1.25;
+    word-break: break-word;
+    margin: 10px 0 0 1.5em;
+    text-indent: -1.5em;
+  }
+  .transfer span {
+    font-size: 1.2em;
+  }
 </style>
 
 <Page title="Payments" scrollTop={model.scrollTop} scrollLeft={model.scrollLeft}>
@@ -75,8 +86,12 @@
                     <Icon style="vertical-align: -20%" class="material-icons">{getIconName(transfer)}</Icon>
                     {getDate(transfer)}
                   </h5>
-                  <p>
-                    {`${app.amountToString(transfer.amount)} ${unit} to ${transfer.paymentInfo.payeeName}`}
+                  <p class="transfer">
+                    <span>
+                      {app.amountToString(transfer.amount)}
+                      {unit}
+                    </span>
+                    to {transfer.paymentInfo.payeeName}
                   </p>
                 </Content>
               </PrimaryAction>

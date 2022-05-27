@@ -15,6 +15,7 @@ const appFiles = [
   'fonts/Roboto_500.woff2',
   'fonts/Roboto_700.woff2',
   'fonts/Roboto_Mono.woff2',
+  'fonts/Cutive_Mono.woff2',
   'build/main.css',
   'build/main.js',
   'build/qr-scanner-worker.min.js',
