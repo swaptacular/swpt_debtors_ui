@@ -1,7 +1,7 @@
 <script lang="ts">
   import { login } from '../operations'
   import Paper, { Title, Content } from '@smui/paper'
-  import Fab, { Label } from '@smui/fab'
+  import Button, { Label } from "@smui/button"
   
   export const snackbarBottom: string = '84px'
 </script>
@@ -38,7 +38,7 @@
   .floating :global(*) {
     pointer-events: auto;
   }
-  .fab-container {
+  .button-container {
     margin: 16px 16px;
   }
 </style>
@@ -61,9 +61,9 @@
 </div>
   
 <div class="floating">
-  <div class="fab-container">
-    <Fab color="primary" on:click={() => login()} extended>
+  <div class="button-container">
+    <Button on:click={() => login()} variant="raised">
       <Label>Login</Label>
-    </Fab>
+    </Button>
   </div>
 </div>
