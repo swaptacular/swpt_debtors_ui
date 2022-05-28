@@ -49,8 +49,9 @@
         })
         url = URL.createObjectURL(blob)
       } catch (e: unknown) {
-        if (e instanceof IvalidPaymentData) { /* ignore */ }
-        else throw e
+        if (e instanceof IvalidPaymentData) {
+          console.warn('Can not generate money destruction payment request.')
+        } else throw e
       }
     }
     revokeDestroyUrl()
