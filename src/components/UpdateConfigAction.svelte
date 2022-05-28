@@ -16,6 +16,11 @@
   export const snackbarBottom: string = "84px"
 
   const homepagePattern = "(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_\\+.~#?&//=]*)"
+  const currencyChangeAlert = (
+    'Changing the currency name, the currency abbreviation, the amount divisor, ' +
+    'or the number of displayed decimal places on a currency that is already in ' +
+    'use, is likely to provoke distrust, and may aggravate the users of your currency.'
+  )
 
   let actionManager = app.createActionManager(action, createUpdatedAction)
   let shakingElement: HTMLElement
@@ -54,12 +59,20 @@
   }
 
   function submit(): void {
+    const original = action.originalDebtorInfo
     if (invalid) {
       if (shakingElement.className === '') {
         shakingElement.className = 'shaking-block'
         setTimeout(() => { shakingElement.className = '' }, 1000)
       }
-    } else {
+    } else if (
+      !original || (
+        original.debtorName === debtorName &&
+        original.unit === unit &&
+        original.amountDivisor === Number(amountDivisor) &&
+        original.decimalPlaces === BigInt(Math.round(Number(decimalPlaces)))
+      ) || confirm(currencyChangeAlert)
+    ) {
       actionManager.execute()
     }
   }

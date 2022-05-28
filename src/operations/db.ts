@@ -82,7 +82,10 @@ export type ActionRecordWithId =
 export type UpdateConfigAction =
   & ActionData
   & DebtorConfigData
-  & { actionType: 'UpdateConfig' }
+  & {
+    actionType: 'UpdateConfig',
+    originalDebtorInfo: BaseDebtorData | undefined,
+  }
 
 export type UpdateConfigActionWithId =
   & ActionRecordWithId
@@ -358,6 +361,7 @@ class DebtorsDb extends Dexie {
         action = {
           interestRate: data.interestRate,
           debtorInfo: data.debtorInfo,
+          originalDebtorInfo: data.debtorInfo,
           userId,
           actionType: 'UpdateConfig' as const,
           createdAt: new Date(),
