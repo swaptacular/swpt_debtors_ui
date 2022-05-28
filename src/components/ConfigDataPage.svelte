@@ -50,7 +50,7 @@
         url = URL.createObjectURL(blob)
       } catch (e: unknown) {
         if (e instanceof IvalidPaymentData) {
-          console.warn('Can not generate money destruction payment request.')
+          console.warn('Can not generate money destruction payment request:', e)
         } else throw e
       }
     }
