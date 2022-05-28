@@ -79,7 +79,7 @@
       <a class="download-link" href={dataUrl} download={`${info.debtorName}.png`} bind:this={downloadLinkElement}>download</a>
 
       <div class="text-container">
-        <Paper elevation={8} style="margin: 16px; max-width: 600px">
+        <Paper elevation={8} style="margin: 0 16px 16px 16px; max-width: 600px">
           <Title>Your digital coin</Title>
           <Content>
             The image above (an ordinary QR code, indeed) uniquely

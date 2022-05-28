@@ -62,7 +62,7 @@
 
 <LayoutGrid>
   <Cell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
-    <Paper style="margin-top: 16px; margin-bottom: 28px" elevation={4}>
+    <Paper style="margin-top: 16px; margin-bottom: 28px" elevation={6}>
       <Title style="display: flex; justify-content: space-between; align-items: center">
         {title}
         <Wrapper>
