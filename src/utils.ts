@@ -1,7 +1,7 @@
 import type { TransferRecord } from './operations'
 
 export function stringToAmount(s: string | number, amountDivisor: number): bigint {
-  return BigInt(Math.ceil(Number(s) * amountDivisor))
+  return BigInt(Math.round(Number(s) * amountDivisor))
 }
 
 export function amountToString(value: number | bigint, amountDivisor: number, decimalPlaces: number | bigint): string {
