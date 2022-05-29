@@ -37,6 +37,7 @@
   // user switches the peg off, it becomes `undefined`.
   let unchangedValue: Peg | undefined
 
+  let loadingError: boolean
   let hasFlash: boolean
   let flashlightOn: boolean
   let showQrScanDialog: boolean
@@ -45,6 +46,11 @@
   let debtorData: DebtorData | undefined
   let unitRate: unknown
   let invalidUnitRate: boolean | undefined
+
+  const LOADING_ERROR = (
+    "Can not load information about the currency to which your " +
+    "currency is pegged. Please check your network connection."
+  )
 
   function toggleFlashlight() {
     flashlightOn = !flashlightOn
@@ -107,6 +113,7 @@
   }
 
   async function fetchDebtorData(url: string): Promise<void> {
+    loadingError = false
     url = url.split('#', 1)[0]
     if (url) {
       const data = await fetchDocument(url)
@@ -127,14 +134,15 @@
         )
         unitRate = unchangedValue && unchangedParams
           ? (unchangedValue.exchangeRate * (amountDivisor || 1) / debtorData.amountDivisor)
-          : (!unchangedValue && unit === debtorData.unit ? 1 : NaN)
+          : (unchangedValue === undefined && unit === debtorData.unit ? 1 : NaN)
       } else {
         if (pegged) {
-          app.addAlert(new Alert(
-            "Can not load information about the currency to which your " +
-            "currency is pegged. Please check your network connection."
-          ))
-          unpeg()
+          app.addAlert(new Alert(LOADING_ERROR))
+          if (unchangedValue === undefined) {
+            unpeg()
+          } else {
+            loadingError = true
+          }
         }
       }
     }
@@ -159,6 +167,7 @@
     debtorData = undefined
     unitRate = NaN
     invalidUnitRate = undefined
+    loadingError = false
   } else {
     currentValue = value = calcPeg({
       amountDivisor,
@@ -182,6 +191,7 @@
     debtorData = undefined
     unchangedValue = undefined
     invalidUnitRate = undefined
+    loadingError = false
   }
 
   $: invalid = value !== undefined && Boolean(invalidUnitRate)
@@ -275,8 +285,12 @@
     </Textfield>
   {:else if coinUrl !== ''}
     <div style="display: flex; align-items: center">
-      <div style="margin-right: 1em; color: #c4c4c4">Loading...</div>
-      <CircularProgress style="height: 32px; width: 32px;" indeterminate />
+      {#if loadingError}
+        <div style="margin: 0 10px; color: #888">{LOADING_ERROR}</div>
+      {:else}
+        <div style="margin-right: 1em; color: #c4c4c4">Loading...</div>
+        <CircularProgress style="height: 32px; width: 32px;" indeterminate />
+      {/if}
     </div>
   {/if}
 </div>
