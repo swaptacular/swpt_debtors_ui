@@ -31,7 +31,7 @@
   let debtorName:string = action.debtorInfo?.debtorName ?? ''
   let debtorHomepageUri: string = removeHttpsPrefix(action.debtorInfo?.debtorHomepage?.uri)
   let amountDivisor: unknown = action.debtorInfo?.amountDivisor ?? 100
-  let decimalPlaces: unknown = Number(action.debtorInfo?.decimalPlaces ?? 2n)
+  let decimalPlaces: unknown = calcDecimalPlacesNumber(action.debtorInfo?.decimalPlaces ?? 2n)
   let unit: string = action.debtorInfo?.unit ?? ''
   let peg: Peg | undefined = action.debtorInfo?.peg
 
@@ -52,7 +52,7 @@
         debtorName,
         debtorHomepage: debtorHomepageUri ? { uri: `https://${debtorHomepageUri}` } : undefined,
         amountDivisor: Number(amountDivisor),
-        decimalPlaces: BigInt(roundToWholeNumber(decimalPlaces)),
+        decimalPlaces: calcDecimalPlacesBigint(decimalPlaces),
         unit,
         peg,
       }
@@ -66,7 +66,7 @@
         shakingElement.className = 'shaking-block'
         setTimeout(() => { shakingElement.className = '' }, 1000)
       }
-    } else if (!divisorIsAdequate()) {
+    } else if (!isDivisorAdequate) {
       app.addAlert(new Alert('The specified amount divisor conflicts with the '
         + 'specified number of decimal places. To solve this problem, you may '
         + 'increase the amount divisor, or decrease the number of decimal places.'
@@ -76,7 +76,7 @@
         original.debtorName === debtorName &&
         original.unit === unit &&
         original.amountDivisor === Number(amountDivisor) &&
-        original.decimalPlaces === BigInt(roundToWholeNumber(decimalPlaces))
+        original.decimalPlaces === calcDecimalPlacesBigint(decimalPlaces)
       ) || confirm(currencyChangeAlert)
     ) {
       actionManager.execute()
@@ -87,16 +87,24 @@
     return url.startsWith('https://') ? url.slice(8) : ''
   }
 
-  function roundToWholeNumber(x: unknown): number {
+  function calcDecimalPlacesNumber(x: unknown): number {
     const n = Number(x)
-    if (Number.isFinite(n)) {
+    if (Number.isFinite(n) && -20 <= n && n <= 20) {
       return Math.round(n)
     }
-    return 0
+    return NaN
   }
 
-  function divisorIsAdequate(): boolean {
-    const places = roundToWholeNumber(decimalPlaces)
+  function calcDecimalPlacesBigint(x: unknown) {
+    const n = calcDecimalPlacesNumber(x)
+    if (Number.isFinite(n)) {
+      return BigInt(n)
+    }
+    return 999999n  // This is a random invalid value.
+  }
+
+  function checkDivisor(amountDivisor: unknown, decimalPlaces: unknown): boolean {
+    const places = calcDecimalPlacesNumber(decimalPlaces)
     const divisor = Number(amountDivisor)
     const minDivisor = Math.pow(10, places)
     const isExactDivisor = places <= 9 && divisor === minDivisor
@@ -113,6 +121,7 @@
     invalidDecimalPlaces ||
     invalidPeg
   )
+  $: isDivisorAdequate = checkDivisor(amountDivisor, decimalPlaces)
 </script>
 
 <style>
@@ -280,7 +289,8 @@
               required
               variant="outlined"
               type="number"
-              input$min={Number.EPSILON}
+              input$min={1e-60}
+              input$max={1e60}
               input$step="any"
               style="width: 100%"
               withTrailingIcon={invalidAmountDivisor}
