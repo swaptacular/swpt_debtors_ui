@@ -2,6 +2,7 @@
   import type { AppState } from '../app-state'
   import type { UpdateConfigActionWithId } from '../operations'
   import type { Peg } from '../debtor-info'
+  import { Alert } from '../app-state'
   import Fab, { Icon, Label } from '@smui/fab'
   import Textfield from '@smui/textfield'
   import TextfieldIcon from '@smui/textfield/icon'
@@ -25,15 +26,15 @@
   let actionManager = app.createActionManager(action, createUpdatedAction)
   let shakingElement: HTMLElement
 
-  let interestRate: number = action.interestRate ?? 0
+  let interestRate: unknown = action.interestRate ?? 0
   let summary: string = action.debtorInfo?.summary ?? ''
   let debtorName:string = action.debtorInfo?.debtorName ?? ''
   let debtorHomepageUri: string = removeHttpsPrefix(action.debtorInfo?.debtorHomepage?.uri)
-  let amountDivisor: number = action.debtorInfo?.amountDivisor ?? 100
-  let decimalPlaces: number = Number(action.debtorInfo?.decimalPlaces ?? 2n)
+  let amountDivisor: unknown = action.debtorInfo?.amountDivisor ?? 100
+  let decimalPlaces: unknown = Number(action.debtorInfo?.decimalPlaces ?? 2n)
   let unit: string = action.debtorInfo?.unit ?? ''
   let peg: Peg | undefined = action.debtorInfo?.peg
-  
+
   let invalidCurrencyName: boolean
   let invalidCurrencyAbbreviation: boolean
   let invalidHomepage: boolean
@@ -51,7 +52,7 @@
         debtorName,
         debtorHomepage: debtorHomepageUri ? { uri: `https://${debtorHomepageUri}` } : undefined,
         amountDivisor: Number(amountDivisor),
-        decimalPlaces: BigInt(Math.round(Number(decimalPlaces))),
+        decimalPlaces: BigInt(roundToWholeNumber(decimalPlaces)),
         unit,
         peg,
       }
@@ -65,12 +66,17 @@
         shakingElement.className = 'shaking-block'
         setTimeout(() => { shakingElement.className = '' }, 1000)
       }
+    } else if (!divisorIsAdequate()) {
+      app.addAlert(new Alert('The specified amount divisor conflicts with the '
+        + 'specified number of decimal places. To solve this problem, you may '
+        + 'increase the amount divisor, or decrease the number of decimal places.'
+      ))
     } else if (
       !original || (
         original.debtorName === debtorName &&
         original.unit === unit &&
         original.amountDivisor === Number(amountDivisor) &&
-        original.decimalPlaces === BigInt(Math.round(Number(decimalPlaces)))
+        original.decimalPlaces === BigInt(roundToWholeNumber(decimalPlaces))
       ) || confirm(currencyChangeAlert)
     ) {
       actionManager.execute()
@@ -79,6 +85,23 @@
 
   function removeHttpsPrefix(url: string = ''): string {
     return url.startsWith('https://') ? url.slice(8) : ''
+  }
+
+  function roundToWholeNumber(x: unknown): number {
+    const n = Number(x)
+    if (Number.isFinite(n)) {
+      return Math.round(n)
+    }
+    return 0
+  }
+
+  function divisorIsAdequate(): boolean {
+    const places = roundToWholeNumber(decimalPlaces)
+    const divisor = Number(amountDivisor)
+    const minDivisor = Math.pow(10, places)
+    const isExactDivisor = places <= 9 && divisor === minDivisor
+    const isBigEnoughDivisor = divisor >= 2 * minDivisor
+    return isExactDivisor || isBigEnoughDivisor
   }
 
   $: invalid = (
@@ -306,7 +329,12 @@
           </Cell>
 
           <Cell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
-            <PegInput {amountDivisor} {unit} bind:value={peg} bind:invalid={invalidPeg} />
+            <PegInput
+              {unit}
+              amountDivisor={Number(amountDivisor)}
+              bind:value={peg}
+              bind:invalid={invalidPeg}
+              />
           </Cell>
         </LayoutGrid>
       </form>

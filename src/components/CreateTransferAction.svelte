@@ -18,7 +18,7 @@
   let shakingElement: HTMLElement
   let actionManager = app.createActionManager(action, createUpdatedAction)
   let payeeName: string = action.paymentInfo.payeeName
-  let unitAmount: string | number = action.creationRequest.amount ? app.amountToString(action.creationRequest.amount): ''
+  let unitAmount: unknown = action.creationRequest.amount ? app.amountToString(action.creationRequest.amount): ''
   let invalidPayeeName: boolean | undefined = undefined
   let invalidUnitAmount: boolean | undefined = undefined
   let activeBanner: boolean = true
@@ -46,7 +46,7 @@
     if (amount !== '') {
       let x = Number(amount)
       if (Number.isFinite(x)) {
-        result = app.stringToAmount(unitAmount)
+        result = app.stringToAmount(x)
         if (result < 0n) {
           result = 0n
         }

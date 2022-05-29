@@ -14,7 +14,7 @@
 
   export let payeeName: string
   export let payeeReference: string
-  export let unitAmount: string | number
+  export let unitAmount: unknown
   export let description: PaymentDescription
   export let title: string
   export let tooltip: string
@@ -31,7 +31,8 @@
   const unitAmountStep = app.amountToString(app.smallestDisplayableNumber)
 
   $: name = payeeName.slice(0, 40) ?? 'unknown payee'
-  $: downloadNameShort = unitAmount ? `Issue ${unitAmount} ${unit.slice(0, 10)} to ${name}` : `Issue to ${name}`
+  $: validUnitAmount = Number.isFinite(Number(unitAmount))
+  $: downloadNameShort = validUnitAmount ? `Issue ${unitAmount} ${unit.slice(0, 10)} to ${name}` : `Issue to ${name}`
   $: downloadName = payeeReference ? `${downloadNameShort} - ${payeeReference}` : downloadNameShort
   $: fileName = downloadName.slice(0, 120).replace(/[<>:"/|?*\\]/g, ' ') + '.pr0'
 </script>
