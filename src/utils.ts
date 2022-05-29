@@ -94,7 +94,7 @@ export function getTooltip(t: TransferRecord): string {
 
 export function getDebtorIdentityFromAccountIdentity(uri: string): string | undefined {
   const parts = uri.split('/')
-  if (parts.length === 2) {
+  if (uri.startsWith('swpt:') && parts.length === 2) {
     return parts[0]
   }
   return undefined
