@@ -344,6 +344,7 @@
               amountDivisor={Number(amountDivisor)}
               bind:value={peg}
               bind:invalid={invalidPeg}
+              on:changed={() => actionManager.save()}
               />
           </Cell>
         </LayoutGrid>

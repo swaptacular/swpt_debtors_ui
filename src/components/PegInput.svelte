@@ -4,6 +4,7 @@
   import type { AppState } from '../app-state'
   import type { Peg, DebtorData } from '../debtor-info'
   import { parseDebtorInfoDocument, InvalidDocument } from '../debtor-info'
+  import { tick, createEventDispatcher } from 'svelte'
   import Switch from '@smui/switch'
   import FormField from '@smui/form-field'
   import Textfield from '@smui/textfield'
@@ -18,7 +19,7 @@
   type PegStatus = {
     amountDivisor: number,
     coinUrl: string,
-    unitRate: number,
+    unitRate: unknown,
     debtorData?: DebtorData,
     unchangedValue?: Peg,
   }
@@ -28,6 +29,7 @@
   export let invalid: boolean = false
   export let value : Peg | undefined = undefined
 
+  const dispatch = createEventDispatcher()
   const app: AppState = getContext('app')
   let currentValue: Peg | undefined | null = null
 
@@ -35,13 +37,13 @@
   // user switches the peg off, it becomes `undefined`.
   let unchangedValue: Peg | undefined
 
-  let hasFlash: boolean = false
-  let flashlightOn: boolean = false
-  let showQrScanDialog: boolean = false
+  let hasFlash: boolean
+  let flashlightOn: boolean
+  let showQrScanDialog: boolean
   let pegged: boolean
   let coinUrl: string
   let debtorData: DebtorData | undefined
-  let unitRate: number
+  let unitRate: unknown
   let invalidUnitRate: boolean | undefined
 
   function toggleFlashlight() {
@@ -63,7 +65,7 @@
          ) {
         return {
           type: 'Peg',
-          exchangeRate: (Number(unitRate) * (debtorData.amountDivisor || 1) / (amountDivisor || 1)),
+          exchangeRate: (Number(unitRate) * debtorData.amountDivisor / (amountDivisor || 1)),
           debtorIdentity: {  type: 'DebtorIdentity', uri: debtorUri },
           latestDebtorInfo: { uri: debtorInfoUri },
           display: {
@@ -92,17 +94,15 @@
       const contentType = response.headers.get('Content-Type') ?? 'text/plain'
       const content = await response.arrayBuffer()
       try {
-        return await parseDebtorInfoDocument({content, contentType})
+        const debtorData = await parseDebtorInfoDocument({content, contentType})
+        const divisor = debtorData.amountDivisor
+        if (1e-99 <= divisor && divisor <= 1e99) {
+          return debtorData
+        }
       } catch (e: unknown) {
         if (!(e instanceof InvalidDocument)) throw e
       }
     }
-    app.addAlert(new Alert(
-      "Can not load information about the specified currency. "
-        + "Check your network connection, and make sure "
-        + "that you are scanning the correct QR code.",
-      { continue: unpeg },
-    ))
     return undefined
   }
 
@@ -111,18 +111,38 @@
     if (url) {
       const data = await fetchDocument(url)
       const [debtorInfoUri, debtorUri = ''] = coinUrl.split('#', 2)
-      if (data &&
-          data.latestDebtorInfo.uri === debtorInfoUri &&
-          data.debtorIdentity.uri === debtorUri
-         ) {
+      if (
+        data &&
+        data.latestDebtorInfo.uri === debtorInfoUri &&
+        data.debtorIdentity.uri === debtorUri
+      ) {
         debtorData = data
-        unitRate = (
-          unchangedValue && unchangedValue.latestDebtorInfo.uri === debtorInfoUri
-            ? unchangedValue.exchangeRate * (amountDivisor || 1) / (debtorData.amountDivisor || 1)
-            : (unit === debtorData.unit ? 1 : NaN)
+        const unchangedParams = (
+          unchangedValue &&
+          unchangedValue.latestDebtorInfo.uri === debtorData.latestDebtorInfo.uri &&
+          unchangedValue.debtorIdentity.uri === debtorData.debtorIdentity.uri &&
+          unchangedValue.display.amountDivisor === debtorData.amountDivisor &&
+          unchangedValue.display.decimalPlaces === debtorData.decimalPlaces &&
+          unchangedValue.display.unit === debtorData.unit
         )
+        unitRate = unchangedValue && unchangedParams
+          ? (unchangedValue.exchangeRate * (amountDivisor || 1) / debtorData.amountDivisor)
+          : (!unchangedValue && unit === debtorData.unit ? 1 : NaN)
+      } else {
+        if (pegged) {
+          app.addAlert(new Alert(
+            "Can not load information about the currency to which your " +
+            "currency is pegged. Please check your network connection."
+          ))
+          unpeg()
+        }
       }
     }
+  }
+
+  async function sendChanged(): Promise<void> {
+    await tick()
+    dispatch('changed');
   }
 
   function unpeg(): void {
@@ -147,6 +167,7 @@
       debtorData,
       unchangedValue,
     })
+    sendChanged()
   }
 
   $: if (pegged && coinUrl === '') {
@@ -250,7 +271,6 @@
       <HelperText slot="helper" persistent>
         The value of one unit of your digital currency{unit ? ` (1 ${unit})`: ''},
         represented in the units of the "{debtorData.debtorName}" currency ({debtorData.unit}).
-        {#if unit === debtorData.unit} If in doubt, leave it at 1.{/if}
       </HelperText>
     </Textfield>
   {:else if coinUrl !== ''}
