@@ -170,7 +170,7 @@ const MAX_PROCESSING_DELAY_MILLISECONDS = 2 * appConfig.serverApiTimeout + 3_600
 const TRANSFER_NORMAL_WAIT_SECONDS = 86400  // 24 hours before the transfer is considered delayed.
 const TRANSFER_DELETION_MIN_DELAY_SECONDS = 5 * 86400  // 5 days
 const TRANSFER_DELETION_DELAY_SECONDS = Math.max(
-  appConfig.TransferDeletionDelaySeconds, TRANSFER_DELETION_MIN_DELAY_SECONDS)
+  appConfig.transferDeletionDelaySeconds, TRANSFER_DELETION_MIN_DELAY_SECONDS)
 
 function hasTimedOut(startedAt: Date, currentTime: number = Date.now()): boolean {
   const deadline = startedAt.getTime() + 1000 * TRANSFER_DELETION_MIN_DELAY_SECONDS

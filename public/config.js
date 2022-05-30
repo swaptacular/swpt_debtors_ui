@@ -8,7 +8,9 @@ window.appConfig = {
     redirectUrl: 'http://localhost:5000/',
     useLocalStorage: false,
   },
-  TransferDeletionDelaySeconds: 15 * 86400,
+  transferDeletionDelaySeconds: 15 * 86400,
+  defaultPegAbbr: '',
+  defaultPegCoin: '',
 }
 
 window.assert = function assert(condition, msg) {

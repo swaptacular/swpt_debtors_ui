@@ -3,6 +3,7 @@
   import { Alert } from '../app-state'
   import type { AppState } from '../app-state'
   import type { Peg, DebtorData } from '../debtor-info'
+  import { DEFAULT_PEG_COIN, DEFAULT_PEG_ABBR } from '../app-state'
   import { parseDebtorInfoDocument, InvalidDocument } from '../debtor-info'
   import { tick, createEventDispatcher } from 'svelte'
   import Switch from '@smui/switch'
@@ -10,7 +11,7 @@
   import Textfield from '@smui/textfield'
   import TextfieldIcon from '@smui/textfield/icon'
   import HelperText from '@smui/textfield/helper-text/index'
-  import { Title, Content, Actions } from '@smui/dialog'
+  import { Title, Content, Actions, InitialFocus } from '@smui/dialog'
   import Dialog from './Dialog.svelte'
   import QrScanner from './QrScanner.svelte'
   import Button, { Label } from '@smui/button'
@@ -241,8 +242,13 @@
           {/if}
         </div>
         <div>
+          {#if DEFAULT_PEG_ABBR && DEFAULT_PEG_COIN }
+            <Button on:click={() => coinUrl = DEFAULT_PEG_COIN}>
+              <Label>{DEFAULT_PEG_ABBR}</Label>
+            </Button>
+          {/if}
           <!-- The type="button" is necessary to prevent form submitting.-->
-          <Button type="button">
+          <Button type="button" default use={[InitialFocus]}>
             <Label>Close</Label>
           </Button>
         </div>

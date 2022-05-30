@@ -9,7 +9,9 @@ declare var appConfig: {
     redirectUrl: string,
     useLocalStorage: boolean,
   },
-  TransferDeletionDelaySeconds: number,
+  transferDeletionDelaySeconds: number,
+  defaultPegAbbr: string,
+  defaultPegCoin: string,
 }
 
 declare function assert(condition: any, msg?: string): asserts condition
