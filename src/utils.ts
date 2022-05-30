@@ -78,7 +78,7 @@ function getFailureReason(errorCode: string): string {
 }
 
 export function getTooltip(t: TransferRecord): string {
-  let tooltip = `The payment was initiated at ${new Date(t.initiatedAt).toLocaleString()}`
+  let tooltip = `The payment has been initiated at ${new Date(t.initiatedAt).toLocaleString()}`
   if (t.result) {
     const finalizedAt = new Date(t.result.finalizedAt).toLocaleString()
     if (t.result.error) {
