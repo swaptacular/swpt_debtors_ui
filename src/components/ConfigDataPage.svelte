@@ -186,7 +186,7 @@
 
     <svelte:fragment slot="floating">
       <div class="fab-container">
-        <Fab on:click={editConfig}>
+        <Fab on:click={editConfig} color="primary">
           <Icon class="material-icons">settings</Icon>
         </Fab>
       </div>
