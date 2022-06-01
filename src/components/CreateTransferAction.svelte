@@ -98,7 +98,13 @@
     return currentDataUrl = URL.createObjectURL(blob)
   }
 
+  function dismiss(): void {
+    app.startInteraction()
+    actionManager.remove()
+  }
+
   function execute(): void {
+    app.startInteraction()
     if (invalid) {
       if (shakingElement.className === '') {
         shakingElement.className = 'shaking-block'
@@ -205,7 +211,7 @@
     <svelte:fragment slot="floating">
       {#if !dismissButtonIsHidden}
         <div class="fab-container">
-          <Fab color={executeButtonIsHidden ? "primary" : "secondary"} on:click={() => actionManager.remove()} extended>
+          <Fab color={executeButtonIsHidden ? "primary" : "secondary"} on:click={dismiss} extended>
             <Label>Dismiss</Label>
           </Fab>
         </div>

@@ -16,14 +16,17 @@
   let showFailedCancellationDialog = false
 
   function retry() {
+    app.startInteraction()
     app.retryTransfer(action)
   }
 
   function dismiss() {
+    app.startInteraction()
     app.dismissTransfer(action)
   }
 
   function cancel() {
+    app.startInteraction()
     app.cancelTransfer(action, () => { showFailedCancellationDialog = true })
   }
 

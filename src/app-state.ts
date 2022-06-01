@@ -161,6 +161,10 @@ export class AppState {
     return Math.pow(10, -Number(decimalPlaces)) * amountDivisor
   }
 
+  startInteraction(): void {
+    this.interactionId++
+  }
+
   amountToString(amount: number | bigint): string {
     const { amountDivisor = 1, decimalPlaces = 0n } = this.getDebtorConfigData().debtorInfo ?? {}
     return amountToString(amount, amountDivisor, decimalPlaces)

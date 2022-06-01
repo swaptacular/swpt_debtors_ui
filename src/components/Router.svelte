@@ -20,6 +20,7 @@
   function enusreOriginalAppState(appState: AppState): void {
     if (appState !== originalAppState) throw new Error('unoriginal app state')
   }
+
   function getPageComponent(pageModelType: string) {
     switch (pageModelType) {
     case 'ActionModel':
@@ -36,6 +37,7 @@
       throw new Error('unknown page model type')
     }
   }
+
   function getUniquePageComponent(pageModelType: string) {
     const PageComponent = getPageComponent(pageModelType)
 
@@ -45,11 +47,14 @@
     // passed (to the `this` property).
     return class extends PageComponent {}
   }
+
   function hijackBackButton() {
     history.scrollRestoration = 'manual'
     history.pushState(++seqnum, '')
   }
+
   function goBack() {
+    app.startInteraction()
     if (app.goBack) {
       hijackBackButton()
       app.goBack()

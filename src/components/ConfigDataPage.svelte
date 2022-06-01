@@ -58,6 +58,16 @@
     destroyUrl = url
   }
 
+  function showActions(): void {
+    app.startInteraction()
+    app.showActions()
+  }
+
+  function editConfig(): void {
+    app.startInteraction()
+    app.editConfig(debtorConfigData)
+  }
+
   onDestroy(() => {
     revokeDestroyUrl()
 
@@ -148,7 +158,7 @@
                   you</em> &ndash; the issuer of the currency.
               </li>
               <li>
-                <a href="issue" on:click|preventDefault={model.goBack}>
+                <a href="issue" on:click|preventDefault={showActions}>
                   Issue money in circulation.
                 </a>
               </li>
@@ -176,7 +186,7 @@
 
     <svelte:fragment slot="floating">
       <div class="fab-container">
-        <Fab on:click={() => app.editConfig(debtorConfigData)}>
+        <Fab on:click={editConfig}>
           <Icon class="material-icons">settings</Icon>
         </Fab>
       </div>

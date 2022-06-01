@@ -47,6 +47,26 @@
     })
   }
 
+  function showTransfers(): void {
+    app.startInteraction()
+    app.showTransfers()
+  }
+
+  function showConfig(): void {
+    app.startInteraction()
+    app.showConfig()
+  }
+
+  function editConfig(): void {
+    app.startInteraction()
+    app.editConfig(debtorConfigData)
+  }
+
+  function scanPaymentRequest(): void {
+    app.startInteraction()
+    showMakePaymentDialog = true
+  }
+
   $: actions = model.actions
   $: [regularActions, foreignActions] = separateForeignActions($actions)
   $: hasRegularActions = regularActions.length > 0
@@ -154,7 +174,7 @@
                 things.
               </CardContent>
               <Actions fullBleed>
-                <Button on:click={() => app.editConfig(debtorConfigData)}>
+                <Button on:click={editConfig}>
                   <Label>Configure currency</Label>
                   <i class="material-icons" aria-hidden="true">arrow_forward</i>
                 </Button>
@@ -187,20 +207,20 @@
 
   <svelte:fragment slot="floating">
     <div class="fab-container">
-      <Fab on:click={() => app.showTransfers()}>
+      <Fab on:click={showTransfers}>
         <Icon class="material-icons">history</Icon>
       </Fab>
     </div>
     <div class="fab-container">
       <Fab
         color={!suggestQrCoinDownload && hasConfiguredCurrency ? "primary" : "secondary"}
-        on:click={() => showMakePaymentDialog = true}
+        on:click={scanPaymentRequest}
         >
         <Icon class="material-icons">local_atm</Icon>
       </Fab>
     </div>
     <div class="fab-container">
-      <Fab color="primary" on:click={() => app.showConfig()}>
+      <Fab color="primary" on:click={showConfig}>
         <Icon class="material-icons">qr_code_2</Icon>
       </Fab>
     </div>

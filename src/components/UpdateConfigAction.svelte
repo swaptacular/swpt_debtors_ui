@@ -60,6 +60,7 @@
   }
 
   function submit(): void {
+    app.startInteraction()
     const original = action.originalDebtorInfo
     if (invalid) {
       if (shakingElement.className === '') {
@@ -81,6 +82,11 @@
     ) {
       actionManager.execute()
     }
+  }
+
+  function dismiss(): void {
+    app.startInteraction()
+    actionManager.remove()
   }
 
   function removeHttpsPrefix(url: string = ''): string {
@@ -353,7 +359,7 @@
 
     <svelte:fragment slot="floating">
       <div class="fab-container">
-        <Fab on:click={() => actionManager.remove()} extended>
+        <Fab on:click={dismiss} extended>
           <Label>Dismiss</Label>
         </Fab>
       </div>

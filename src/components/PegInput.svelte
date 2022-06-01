@@ -182,7 +182,10 @@
 
   $: if (pegged && coinUrl === '') {
     flashlightOn = false
-    showQrScanDialog = true
+    if (!showQrScanDialog) {
+      showQrScanDialog = true
+      app.startInteraction()
+    }
   } else {
     showQrScanDialog = false
   }

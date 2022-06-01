@@ -47,6 +47,7 @@
   }
 
   function update(): void {
+    app.startInteraction()
     app.fetchDataFromServer(() => model.reload())
   }
 
