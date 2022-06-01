@@ -131,9 +131,10 @@
           <Content>
             <p>
               The image above (an ordinary QR code, indeed) uniquely
-              identifies your digital currency. Whoever wants to use
-              your currency, will have to scan this image with
-              his/hers mobile device. Therefore, you should:
+              identifies your digital currency. Anybody who wants to
+              use your currency (including yourself) will have to scan
+              this image with his/hers mobile device. Therefore, you
+              should:
             </p>
             <ol>
               <li>
