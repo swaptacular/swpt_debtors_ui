@@ -91,7 +91,7 @@
                       {app.amountToString(transfer.amount)}
                       {unit}
                     </span>
-                    to {transfer.paymentInfo.payeeName}
+                    to {transfer.paymentInfo.payeeName || 'unknown payee'}
                   </p>
                 </Content>
               </PrimaryAction>
