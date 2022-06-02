@@ -2,7 +2,6 @@
   import { onDestroy } from 'svelte'
   import { generatePr0Blob } from '../payment-requests'
   import type { TransferRecord } from '../operations'
-  import { fade } from 'svelte/transition'
   import { getTooltip } from '../utils'
   import type { AppState, TransferModel } from '../app-state'
   import Fab, { Icon } from '@smui/fab';
@@ -44,11 +43,6 @@
     })
     revokeCurrentDataUrl()
     return currentDataUrl = URL.createObjectURL(blob)
-  }
-
-  function update(): void {
-    app.startInteraction()
-    app.fetchDataFromServer(() => model.reload())
   }
 
   function goBack(): void {
@@ -101,13 +95,6 @@
         <Icon class="material-icons">download</Icon>
        </Fab>
     </div>
-    {#if !$transfer.result}
-      <div out:fade|local="{{ duration: 1000 }}" class="fab-container">
-        <Fab on:click={update}>
-          <Icon class="material-icons">sync</Icon>
-        </Fab>
-      </div>
-    {/if}
     <div class="fab-container">
       <Fab on:click={goBack} color="primary">
         <Icon class="material-icons">arrow_back</Icon>
