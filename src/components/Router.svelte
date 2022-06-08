@@ -14,7 +14,6 @@
 
   const { pageModel } = app
   const originalAppState = app
-  let seqnum = typeof history.state === 'number' ? history.state : 0
   let exiting = false
 
   function enusreOriginalAppState(appState: AppState): void {
@@ -48,38 +47,35 @@
     return class extends PageComponent {}
   }
 
-  function hijackBackButton() {
-    history.scrollRestoration = 'manual'
-    history.pushState(++seqnum, '')
-  }
-
-  function goBack() {
-    app.startInteraction()
-    if (app.goBack) {
-      hijackBackButton()
-      app.goBack()
-    } else if ($pageModel.goBack) {
-      hijackBackButton()
-      $pageModel.goBack()
-    } else {
-      if (history.length <= 2) {
-        // Shows a "Tap again to exit" overlay before exiting. This
-        // should be visible only on Android devices, which for some
-        // bizarre reason require additional back button tap before
-        // `history.back()` takes effect.
-        exiting = true
+  function onPopstate() {
+    if (history.state !== app.hijackedState) {
+      if (app.goBack) {
+        app.startInteraction()
+        app.goBack()
+      } else if ($pageModel.goBack) {
+        app.startInteraction()
+        $pageModel.goBack()
+      } else {
+        if (history.length <= 2) {
+          // Shows a "Tap again to exit" overlay before exiting. This
+          // should be visible only on Android devices, which for some
+          // bizarre reason require additional back button tap before
+          // `history.back()` takes effect.
+          exiting = true
+        }
+        sessionStorage.removeItem(LOCALSTORAGE_STATE)
+        history.back()
       }
-      sessionStorage.removeItem(LOCALSTORAGE_STATE)
-      history.back()
     }
   }
 
   setContext('app', app)
-  hijackBackButton()
+
   onMount(() => {
-    addEventListener('popstate', goBack)
+    history.scrollRestoration = 'manual'
+    addEventListener('popstate', onPopstate)
     return () => {
-      removeEventListener("popstate", goBack)
+      removeEventListener("popstate", onPopstate)
     }
   })
 
