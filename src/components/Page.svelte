@@ -24,6 +24,7 @@
   let topAppBar: any
 
   function confirmLogout() {
+    app.startInteraction()
     if (confirm('You will be logged out. To use the application again, you will have to log in.')) {
       logout()
     }
