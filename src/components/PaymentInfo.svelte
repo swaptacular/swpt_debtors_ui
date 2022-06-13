@@ -92,22 +92,6 @@
     </Paper>
   </Cell>
 
-  <Cell spanDevices={{ desktop: 6, tablet: 4, phone: 4 }}>
-    <Textfield
-      variant="outlined"
-      style="width: 100%"
-      label="Payee name"
-      input$readonly
-      input$spellcheck="false"
-      bind:invalid={invalidPayeeName}
-      value={payeeName}
-      >
-      <HelperText slot="helper" persistent>
-        The name of the recipient of the payment.
-      </HelperText>
-    </Textfield>
-  </Cell>
-
   {#if forbidAmountChange}
     <Cell spanDevices={{ desktop: 6, tablet: 4, phone: 4 }}>
       <Textfield
@@ -154,4 +138,20 @@
       </Textfield>
     </Cell>
   {/if}
+
+  <Cell spanDevices={{ desktop: 6, tablet: 4, phone: 4 }}>
+    <Textfield
+      variant="outlined"
+      style="width: 100%"
+      label="Payee name"
+      input$readonly
+      input$spellcheck="false"
+      bind:invalid={invalidPayeeName}
+      value={payeeName}
+      >
+      <HelperText slot="helper" persistent>
+        The name of the recipient of the payment.
+      </HelperText>
+    </Textfield>
+  </Cell>
 </LayoutGrid>
