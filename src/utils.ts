@@ -87,6 +87,14 @@ export function getTooltip(t: TransferRecord): string {
       tooltip += `The reason for the failure is: "${reason}"`
     } else {
       tooltip += `, and succeeded at ${finalizedAt}.`
+      const paymentRefernece = t.paymentInfo.payeeReference
+      if (paymentRefernece) {
+        const maxLength = 64
+        const shortRef = paymentRefernece.length <= maxLength
+          ? paymentRefernece
+          : `${paymentRefernece.slice(0, maxLength)}...`
+        tooltip += ` The payment reference is: "${shortRef}".`
+      }
     }
   } else {
     tooltip += '.'
