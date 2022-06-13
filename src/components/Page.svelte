@@ -105,7 +105,7 @@
     {/if}
     <slot name="content"></slot>
 
-    <div class="floating" in:fade="{{ duration: 300, delay: 210 }}">
+    <div class="floating" in:fade="{{ duration: 300, delay: 280 }}">
       <slot name="floating"></slot>
     </div>
   </AutoAdjust>
