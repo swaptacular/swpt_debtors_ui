@@ -1,13 +1,12 @@
 # UI for the Swaptacular service that manages debtors
 
 This service implements a [Simple Issuing Web
-API](https://epandurski.github.io/swaptacular/swpt_debtors/redoc.html)
+API](https://swaptacular.github.io/public/docs/swpt_debtors/redoc.html)
 client. The main deliverable is a docker image, generated from the
-project's
-[Dockerfile](https://github.com/epandurski/swpt_debtors_ui/blob/master/Dockerfile).
-The generated image is a simple static web server (using nginx), which
-uses the following environment variables for configuration (along with
-some example values):
+project's [Dockerfile](../master/Dockerfile).  The generated image is
+a simple static web server (using nginx), which uses the following
+environment variables for configuration (along with some example
+values):
 
 ```
 SERVER_API_ENTRYPOINT=https://demo.swaptacular.org/debtors/.debtor
