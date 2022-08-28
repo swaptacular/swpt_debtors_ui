@@ -36,6 +36,11 @@ CLIENT_ID=debtors-webapp
 # with the given CLIENT_ID.
 REDIRECT_URL=https://demo.swaptacular.org/debtors-webapp/
 
+# If the following variables are set, when the issuer wants to peg its
+# currency to another currency, a default peg currency will be
+# suggested. Its abbreviation will be "$DEFAULT_PEG_ABBR", and the its
+# digital coin will be "$DEFAULT_PEG_COIN" (that is, the textual
+# content of the digital coin's QR code).
 DEFAULT_PEG_ABBR=USD
 DEFAULT_PEG_COIN=https://demo.swaptacular.org/debtors/4640381880/public#swpt:4640381880
 ```
