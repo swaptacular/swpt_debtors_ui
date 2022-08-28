@@ -7,9 +7,22 @@ generated from the project's [Dockerfile](../master/Dockerfile). The
 generated image is a simple static web server, running on port 80,
 which serves a [Progressive Web App] at its root path ("/").
 
+To obtain permissions to act on behalf of the user, the Web App
+performs the [OAuth 2.0 Authorization Code Flow] with Proof Key for
+Code Exchange (PKCE), which is specifically designed for clients that
+cannot securely store a client secret, because their entire source is
+available to the browser.
+
+
+## Configuration
+
+The behavior of the running container can be tuned with environment
+variables. Here are the most important settings with some random
+example values:
+
 ```shell
-# An URL pointing to the "Redirect to the creditor's wallet"
-# entrypoint on the server. (See the "Payments Web API"
+# An URL pointing to the "Redirect to the debtor's record"
+# entrypoint on the server. (See the "Simple Issuing Web API"
 # specification.)
 SERVER_API_ENTRYPOINT=https://demo.swaptacular.org/debtors/.debtor
 
