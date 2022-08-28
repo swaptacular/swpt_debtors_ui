@@ -1,24 +1,34 @@
-# UI for the Swaptacular service that manages debtors
+# Swaptacular "Currency Issuer UI" reference implementation
 
-This service implements a [Simple Issuing Web
+This project implements a [Simple Issuing Web
 API](https://swaptacular.github.io/public/docs/swpt_debtors/redoc.html)
-client. The main deliverable is a docker image, generated from the
-project's [Dockerfile](../master/Dockerfile).  The generated image is
-a simple static web server (using nginx), which uses the following
-environment variables for configuration (along with some example
-values):
+client for [Swaptacular]. The main deliverable is a [docker image],
+generated from the project's [Dockerfile](../master/Dockerfile). The
+generated image is a simple static web server, running on port 80,
+which serves a [Progressive Web App] at its root path ("/").
 
-```
+```shell
+# An URL pointing to the "Redirect to the creditor's wallet"
+# entrypoint on the server. (See the "Payments Web API"
+# specification.)
 SERVER_API_ENTRYPOINT=https://demo.swaptacular.org/debtors/.debtor
-SERVER_API_TIMEOUT=8000  # milliseconds
+
+# OAuth 2.0 Authorization Code Flow parameters.
 AUTHORIZATION_URL=https://demo.swaptacular.org/debtors-hydra/oauth2/auth
 TOKEN_URL=https://demo.swaptacular.org/debtors-hydra/oauth2/token
 CLIENT_ID=debtors-webapp
+
+# This must be the starting URL for the Web App, and it must exactly
+# match the "redirect URL" that has been configured for the client
+# with the given CLIENT_ID.
 REDIRECT_URL=https://demo.swaptacular.org/debtors-webapp/
-TRANSFER_DELETION_DELAY_SECONDS=1296000
+
 DEFAULT_PEG_ABBR=USD
 DEFAULT_PEG_COIN=https://demo.swaptacular.org/debtors/4640381880/public#swpt:4640381880
 ```
+
+For more configuration options, check the
+[app-config.env](../master/app-config.env) file.
 
 
 ## How to setup a development environment
@@ -41,7 +51,9 @@ npm run dev
 
 Navigate to [localhost:5000](http://localhost:5000). You should see
 your app running. Edit a component file in `src`, save it, and reload
-the page to see your changes.
+the page to see your changes. You can edit the
+[config.js](../master/public/config.js) file if you want to change the
+active configuration options during development.
 
 By default, the server will only respond to requests from
 localhost. To allow connections from other computers, edit the `sirv`
@@ -62,7 +74,16 @@ To create an optimised version of the app:
 npm run build
 ```
 
-You can run the newly built app with `npm run start`. This uses
-[sirv](https://github.com/lukeed/sirv), which is included in your
-package.json's `dependencies` so that the app will work when you
-deploy to platforms like [Heroku](https://heroku.com).
+You can run the newly built app with `npm run start`.
+
+**IMPORTANT NOTE: Each new version released in production, must have a
+new value of the `cacheName` constant in the
+[sw.js](../master/public/sw.js) file. This is necessary in order to
+ensure that clients' service workers will be updated.**
+
+
+
+[Swaptacular]: https://swaptacular.github.io/overview
+[docker image]: https://www.geeksforgeeks.org/what-is-docker-images/
+[Progressive Web App]: https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps
+[OAuth 2.0 Authorization Code Flow]: https://developer.okta.com/blog/2018/04/10/oauth-authorization-code-grant-type
