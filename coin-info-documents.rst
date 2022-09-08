@@ -36,7 +36,7 @@ Over HTTP connections, ``CoinInfo`` documents MUST be transferred with
 JSON Schema
 ===========
 
-``CoinInfo`` documents are `JSON`_ documents, whose structure and
+``CoinInfo`` documents are `JSON`_ documents whose structure and
 content can be correctly validated by the `JSON Schema`_ specified
 here:
 
