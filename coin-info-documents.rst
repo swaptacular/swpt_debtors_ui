@@ -106,7 +106,7 @@ Properties
 
   The name of the debtor. SHOULD be unambiguous, easy to remember,
   and unlikely to be duplicated accidentally. Different currencies
-  SHOULD have different ``debtorName``s, even when they are issued by
+  SHOULD have different ``debtorName``\s, even when they are issued by
   the same person or organization.
 
   - Type: ``string``
