@@ -1,5 +1,5 @@
 ++++++++++++++++++++++++++++
-Digital Coins in Swaptacular 
+Digital Coins in Swaptacular
 ++++++++++++++++++++++++++++
 :Description: Specifies the way digital coins work in Swaptacular
 :Author: Evgeni Pandurksi
@@ -34,7 +34,7 @@ The general form of a digital coin is::
   <debtor-info-locator>#<swpt-debtor-uri>
 
 For example::
-  
+
   https://example.com/debtor-info-locator/#swpt:6787514562
 
 Here ``https://example.com/debtor-info-locator`` is the "Debtor Info
