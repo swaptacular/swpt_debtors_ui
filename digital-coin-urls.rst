@@ -97,16 +97,16 @@ independently verified before the user is allowed to receive payments
 in the corresponding currency. Here is how the independent
 verification SHOULD be done:
 
-1. I an acccount with the debtor specified by ``<swpt-debtor-uri>``
-   does not exist already, a request should be made, via the
+1. If an acccount with the debtor specified by ``<swpt-debtor-uri>``
+   does not exist already, a request should be made via the
    `Swaptacular Messaging Protocol`_, to create new account with the
    debtor.
 
 2. If a new account with the debtor can not be created, the
    verification has failed.
 
-3. If an account with the debtor has been successfully be created (or
-   already exists), ...
+3. If an account with the debtor already exists, or has been
+   successfully be created ...
 
 
 .. _Swaptacular: https://swaptacular.github.io/overview
