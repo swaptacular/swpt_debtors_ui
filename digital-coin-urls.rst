@@ -89,15 +89,27 @@ debtor info documents, which will not be discussed here.
 Validation of Digital Coins
 ---------------------------
 
-Debtor info documents SHOULD be transferred via TLS-secured
-connections. Although this gives some level of security, the
-information contained in a debtor info document is so critical, that
-its authenticity SHOULD be independently verified before the user is
-allowed to receive payments in the corresponding currency. Here is how
-the independent verification SHOULD be done:
+Debtor info documents MUST be transferred via cryptographically
+secured connections. Although HTTPS (which is used for Debtor Info
+Locators) gives some level of security, the information contained in a
+debtor info document is so critical, that its authenticity SHOULD be
+independently verified before the user is allowed to receive payments
+in the corresponding currency. Here is how the independent
+verification SHOULD be done:
+
+1. A request is made, via the `Swaptacular Messaging Protocol`_, to
+   create new account with the debtor specified by
+   ``<swpt-debtor-uri>``.
+
+2. If a new account with the debtor can not be created, the
+   verification has failed.
+
+3. If an account with the debtor has been successfully be created (or
+   already exists), ...
 
 
 .. _Swaptacular: https://swaptacular.github.io/overview
+.. _Swaptacular Messaging Protocol: https://swaptacular.org/public/docs/protocol.pdf
 .. _URI: https://en.wikipedia.org/wiki/Uniform_Resource_Identifier
 .. _HTTPS: https://en.wikipedia.org/wiki/HTTPS
 .. _URL: https://en.wikipedia.org/wiki/URL
