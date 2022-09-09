@@ -12,11 +12,11 @@ Digital Coins in Swaptacular
 Overview
 ========
 
-This document specifies the way "digital coins" work in Swaptacular.
+This document specifies the way *digital coins* work in Swaptacular.
 
 In `Swaptacular`_\'s terminology, the word "debtor" means a
-Swaptacular currency, with its respective issuer. "Digital coin" is a
-specifically formatted URL, which uniquely identifies a debtor (a
+Swaptacular currency, with its respective issuer. A "digital coin" is
+a specially formatted URL, which uniquely identifies a debtor (a
 currency) in Swaptacular, and contains a link to a document that
 describes the currency.
 
@@ -29,35 +29,42 @@ RFC 2119.
 Digital Coin
 ------------
 
-The general form of a digital coin is::
+The general form of a *digital coin* is::
 
   <debtor-info-locator>#<swpt-debtor-uri>
 
-For example::
+* ``<debtor-info-locator>`` is the `Debtor Info Locator`_ (see below).
 
-  https://example.com/debtor-info-locator/#swpt:6787514562
+* ``<swpt-debtor-uri>`` is an `URI`_ in the ``swpt`` URI
+  scheme[#swpt-scheme]_, which uniquely identifies the debtor.
 
-Here ``https://example.com/debtor-info-locator`` is the "Debtor Info
-Locator", and ``swpt:6787514562`` uniquely identifies the debtor.
+Example: ``https://example.com/foo/bar#swpt:6787514562``
 
+Here the `URL`_ ``https://example.com/foo/bar`` is the `Debtor Info
+Locator`_, and ``swpt:6787514562`` is the URI that uniquely identifies
+the debtor.
+  
+
+.. [#swpt-scheme] The ``swpt`` URI scheme is defined in a separate
+  document.
+
+   
 
 Debtor Info Locator
 -------------------
 
-"Debtor Info Locator" is an `HTTPS`_ `URL`_, which MUST either
-directly return [#HTTP-OK]_ an immutable document that describes the
-currency, or `redirects`_ [#redirection]_ to an immutable document
-that describes the currency. 
+"Debtor Info Locator" is an `HTTPS`_ URL, making a network request to
+which, MUST either directly return[#HTTP-OK]_ an *immutable document*
+that describes the currency, or `redirects`_[#redirection]_ to a
+different URL, from which an *immutable document* that describes the
+currency can be retrieved. The retrieved document is REQUIRED to be
+immutable[#immutable]_.
 
-Note that the returned document is REQUIRED to be
-immutable[#immutable]_, in order to guarantee that exactly the same
-document, that describes the currency, could be obtained at any future
-moment, from the same URL.
-
-When the description of the currency changes, a new document MUST be
-created, containing the new description, and the "Debtor Info Locator"
-MUST be updated to redirect to the newly created (the latest) version
-of the document that describes the currency.
+**Important note:** When the description of the currency changes, a
+new document (with a new URL) MUST be created, containing the new
+description, and the "Debtor Info Locator" MUST be updated to redirect
+to the newly created (the latest) version of the currency description
+document.
 
 
 .. [#HTTP-OK] That is: Directly return an HTTP response, with response
@@ -71,13 +78,28 @@ of the document that describes the currency.
   ``302``.
 
 
-Debtor Info Document
---------------------
+Debtor Info Documents
+---------------------
 
-In Swaptacular, the document that describes the currency is called
-"Debtor Info Document".
+In Swaptacular, a document that describes a currency is called a
+"Debtor Info Document". Different standard formats can be used for
+debtor info documents, which will not be discussed here.
+
+
+Validation of Digital Coins
+---------------------------
+
+Debtor info documents SHOULD be transferred via TLS-secured
+connections. Although this gives some level of security, the
+information contained in a debtor info document is so critical, that
+its authenticity SHOULD be independently verified before the user is
+allowed to receive payments in the corresponding currency. Here is how
+the independent verification SHOULD be done:
+
 
 .. _Swaptacular: https://swaptacular.github.io/overview
+.. _URI: https://en.wikipedia.org/wiki/Uniform_Resource_Identifier
 .. _HTTPS: https://en.wikipedia.org/wiki/HTTPS
 .. _URL: https://en.wikipedia.org/wiki/URL
 .. _redirects: https://developer.mozilla.org/en-US/docs/Web/HTTP/Redirections
+.. _TLS: https://en.wikipedia.org/wiki/Transport_Layer_Security
