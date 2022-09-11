@@ -35,8 +35,6 @@ The general form of a *digital coin* is::
 
 * ``<debtor-info-locator>`` is the `Debtor Info Locator`_ (see below).
 
-.. _`URI which uniquely identifies the debtor`:
-
 * ``<swpt-debtor-uri>`` is an `URI`_ in the ``swpt`` URI
   scheme [#swpt-scheme]_, which uniquely identifies the debtor.
 
@@ -97,8 +95,8 @@ As an absolute minimum, every debtor info document MUST contain:
 
 * the currency's `Debtor Info Locator`_,
 
-* the ``swpt`` [#swpt-scheme]_ `URI which uniquely identifies the
-  debtor`_,
+* the ``swpt`` [#swpt-scheme]_ URI which uniquely identifies the
+  debtor`,
 
 * the currency name.
 
