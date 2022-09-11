@@ -86,10 +86,10 @@ currency description document.
 Debtor Info Documents
 ---------------------
 
-In Swaptacular, a document that describes a currency is called a
-"Debtor Info Document". A multitude of standard formats can be used
-for debtor info documents, which shall be defined in their respective
-format specifications.
+In Swaptacular, a `machine-readable document`_ that describes a
+currency is called a "Debtor Info Document". A multitude of standard
+formats can be used for debtor info documents, which shall be defined
+in their respective format specifications.
 
 As an absolute minimum, every debtor info document MUST contain:
 
@@ -164,4 +164,5 @@ followed:
 .. _HTTPS: https://en.wikipedia.org/wiki/HTTPS
 .. _URL: https://en.wikipedia.org/wiki/URL
 .. _redirects: https://developer.mozilla.org/en-US/docs/Web/HTTP/Redirections
+.. _machine-readable document: https://en.wikipedia.org/wiki/Machine-readable_document
 .. _a peg: https://en.wikipedia.org/wiki/Fixed_exchange_rate_system
