@@ -35,8 +35,8 @@ The general form of a *digital coin* is::
 
 * ``<debtor-info-locator>`` is the `Debtor Info Locator`_ (see below).
 
-* ``<swpt-debtor-uri>`` is an `URI`_ in the ``swpt`` URI scheme
-  [#swpt-scheme]_, which uniquely identifies the debtor.
+* ``<swpt-debtor-uri>`` is an `URI`_ in the ``swpt`` URI
+  scheme [#swpt-scheme]_, which uniquely identifies the debtor.
 
 Example: ``https://example.com/foo/bar#swpt:6787514562``
 
@@ -91,14 +91,19 @@ In Swaptacular, a document that describes a currency is called a
 for debtor info documents, which shall be defined in their respective
 format specifications.
 
-Generally, debtor info documents SHOULD contain only essential
-information about the respective currency: the currency name, the
-currency's `Debtor Info Locator`_, the currency's display parameters
-(like currency abbreviation), the currency description, optional fixed
-exchange rate with another currency, etc.
+As an absolute minimum, every debtor info document MUST contain:
 
-As an absolute minimum, every debtor info document MUST contain the
-currency name, and the currency's `Debtor Info Locator`_.
+* the currency's `Debtor Info Locator`_,
+
+* the ``swpt`` [#swpt-scheme]_ `URI`_ which uniquely identifies the
+  debtor,
+
+* the currency name.
+
+Furthermore, debtor info documents SHOULD contain additional essential
+information about the respective currency: the currency's display
+parameters (like the currency unit abbreviation), the currency
+description, optional fixed exchange rate with another currency, etc.
 
 
 Verification of Digital Coins
