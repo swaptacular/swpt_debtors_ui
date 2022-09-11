@@ -130,8 +130,8 @@ followed:
 4. If the values received in the previous step (that is:
    ``debtor_info_iri``, ``debtor_info_content_type``, and
    ``debtor_info_sha256``) confirm the information obtained directly
-   from the digital coin, then the coin verification attempt has
-   succeeded, and the user could be allowed to receive payments in the
+   from the digital coin, then the digital coin has been successfully
+   verified, and the user could be allowed to receive payments in the
    corresponding currency.
 
 
