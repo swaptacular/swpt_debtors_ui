@@ -57,14 +57,14 @@ Debtor Info Locator
 which, MUST either directly return[#HTTP-OK]_ an *immutable document*
 that describes the currency, or `redirects`_[#redirection]_ to a
 different URL, from which an *immutable document* that describes the
-currency can be retrieved. The retrieved document is REQUIRED to be
+currency can be retrieved. The retrieved document MUST be
 immutable[#immutable]_.
 
 **Important note:** When the description of the currency changes, a
-new document (with a new URL) MUST be created, containing the new
-description, and the "Debtor Info Locator" MUST be updated to redirect
-to the newly created (the latest) version of the currency description
-document.
+new immutable document (with a new URL) MUST be created, containing
+the new description, and the currency's "Debtor Info Locator" MUST be
+updated to redirect to the newly created version of the currency
+description document.
 
 
 .. [#HTTP-OK] That is: Directly return an HTTP response, with response
@@ -83,30 +83,63 @@ Debtor Info Documents
 
 In Swaptacular, a document that describes a currency is called a
 "Debtor Info Document". Different standard formats can be used for
-debtor info documents, which will not be discussed here.
+debtor info documents, which shall be defined in their respective
+format specifications.
+
+Generally, debtor info documents contain important information like:
+currency name, currency display parameters (like abbreviation),
+currency description, optional fixed exchange rate with other
+currencies, etc.
 
 
-Validation of Digital Coins
----------------------------
+Verification of Digital Coins
+-----------------------------
 
-Debtor info documents MUST be transferred via cryptographically
-secured connections. Although HTTPS (which is used for Debtor Info
-Locators) gives some level of security, the information contained in a
-debtor info document is so critical, that its authenticity SHOULD be
-independently verified before the user is allowed to receive payments
-in the corresponding currency. Here is how the independent
-verification SHOULD be done:
+Debtor info documents SHOULD always be retrieved via cryptographically
+secured connections, HTTPS for example. Although HTTPS (which is
+REQUIRED for `Debtor Info Locator`_\s) gives a good level of security,
+the information contained in a debtor info document is of such
+critical importance, that its authenticity needs to be independently
+verified before the user is allowed to receive payments in the
+corresponding currency. Here is how this independent verification
+SHOULD be done:
 
-1. If an acccount with the debtor specified by ``<swpt-debtor-uri>``
-   does not exist already, a request should be made via the
-   `Swaptacular Messaging Protocol`_, to create new account with the
-   debtor.
+1. If the user does not have an account with the debtor specified by
+   ``<swpt-debtor-uri>`` already, the user's *creditors agent* should
+   send a ``ConfigureAccount`` `Swaptacular Messaging Protocol`_
+   message to the *accounting authority* responsible for the given
+   debtor. This message instructs the accounting authority to create a
+   new account with the given debtor.
 
-2. If a new account with the debtor can not be created, the
-   verification has failed.
+2. If a new account with the given debtor **can not** be created, the
+   verification attempt has failed, and the user will not be able to
+   receive payments in the corresponding currency. [#no-connection]_
 
-3. If an account with the debtor already exists, or has been
-   successfully be created ...
+   Note however, that in this case, a "dummy" account with the given
+   debtor can still be created for the user. Such a dummy account can
+   only be used as `a peg`_ for currencies that have declared a fixed
+   exchange rate with the given currency.
+
+3. If an account with the given debtor has been successfully created,
+   an ``AccountUpdate`` `Swaptacular Messaging Protocol`_ message will
+   be received from the *accounting authority* responsible for the
+   debtor. The received message will contain the following fields:
+   ``debtor_info_iri``, ``debtor_info_content_type``,
+   ``debtor_info_sha256``.
+
+4. If the values received in the previous step (that is:
+   ``debtor_info_iri``, ``debtor_info_content_type``, and
+   ``debtor_info_sha256``) confirm the information obtained directly
+   from the digital coin, then the coin verification attempt has
+   succeeded, and the user could be allowed to receive payments in the
+   corresponding currency.
+
+
+.. [#no-connection] When a permanent network connection is not
+   configured between the user's *creditors agent* and *accounting
+   authority* responsible for the given debtor, the attempt to create
+   a new account will fail. Note that this scenario is not an
+   exceptional in any way, and should be expected.
 
 
 .. _Swaptacular: https://swaptacular.github.io/overview
@@ -115,4 +148,4 @@ verification SHOULD be done:
 .. _HTTPS: https://en.wikipedia.org/wiki/HTTPS
 .. _URL: https://en.wikipedia.org/wiki/URL
 .. _redirects: https://developer.mozilla.org/en-US/docs/Web/HTTP/Redirections
-.. _TLS: https://en.wikipedia.org/wiki/Transport_Layer_Security
+.. _a peg: https://en.wikipedia.org/wiki/Fixed_exchange_rate_system
