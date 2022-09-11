@@ -71,11 +71,11 @@ description document.
   code ``200``, that contains an immutable document which describes
   the currency.
 
-.. [#immutable] In this context, "immutable" means that later requests
-  to the same URL, MUST return exactly the same document.
-
 .. [#redirection] The redirection SHOULD use HTTP response code
   ``302``.
+
+.. [#immutable] In this context, "immutable" means that later requests
+  to the same URL, MUST return exactly the same document.
 
 
 Debtor Info Documents
