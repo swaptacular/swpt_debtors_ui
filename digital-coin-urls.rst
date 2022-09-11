@@ -96,13 +96,13 @@ Verification of Digital Coins
 -----------------------------
 
 Debtor info documents SHOULD always be retrieved via cryptographically
-secured connections, HTTPS for example. Although HTTPS (which is
+secured connections, `HTTPS`_ for example. Although HTTPS (which is
 REQUIRED for `Debtor Info Locator`_\s) gives a good level of security,
 the information contained in a debtor info document is of such
-critical importance, that its authenticity needs to be independently
+critical importance, that its authenticity SHOULD be independently
 verified before the user is allowed to receive payments in the
-corresponding currency. Here is how this independent verification
-SHOULD be done:
+corresponding currency. The following verification procedure SHOULD
+followed:
 
 1. If the user does not have an account with the debtor specified by
    ``<swpt-debtor-uri>`` already, the user's *creditors agent* should
