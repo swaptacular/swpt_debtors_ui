@@ -44,10 +44,10 @@ Here the `URL`_ ``https://example.com/foo/bar`` is the `Debtor Info
 Locator`_, and ``swpt:6787514562`` is the URI that uniquely identifies
 the debtor.
   
-**Note:** The preferred way to make digital coins available to users
-is to present them as `QR Codes`_, whose textual content consists of
-the respective digital coin. For the example given above, the textual
-context of the QR Code will be:
+**Note:** The preferred way to make digital coins available to
+currency users is to present them as `QR Codes`_, whose textual
+content consists of the respective digital coin. For the example given
+above, the textual context of the corresponding QR Code will be:
 ``https://example.com/foo/bar#swpt:6787514562``.
 
 .. [#swpt-scheme] The ``swpt`` URI scheme is defined in a separate
@@ -68,8 +68,8 @@ currency can be retrieved. The retrieved document MUST be immutable.
 **Important note:** When the description of the currency changes, a
 new immutable document (with a new URL) MUST be created, containing
 the new description, and the currency's "Debtor Info Locator" MUST be
-updated to redirect to the newly created version of the currency
-description document.
+updated to redirect to the newly created (the latest) version of the
+currency description document.
 
 
 .. [#HTTP-OK] That is: Directly return an HTTP response, with response
@@ -87,14 +87,14 @@ Debtor Info Documents
 ---------------------
 
 In Swaptacular, a document that describes a currency is called a
-"Debtor Info Document". Different standard formats can be used for
-debtor info documents, which shall be defined in their respective
+"Debtor Info Document". A multitude of standard formats can be used
+for debtor info documents, which shall be defined in their respective
 format specifications.
 
-Generally, debtor info documents contain important information like:
-currency name, currency display parameters (like abbreviation),
-currency description, optional fixed exchange rate with other
-currencies, etc.
+Generally, debtor info documents SHOULD contain only essential
+information about the respective currency: the currency name, the
+currency display parameters (like currency abbreviation), the currency
+description, optional fixed exchange rate with other currency, etc.
 
 
 Verification of Digital Coins
