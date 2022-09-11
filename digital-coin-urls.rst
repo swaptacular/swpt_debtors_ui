@@ -95,8 +95,8 @@ As an absolute minimum, every debtor info document MUST contain:
 
 * the currency's `Debtor Info Locator`_,
 
-* the ``swpt`` [#swpt-scheme]_ URI which uniquely identifies the
-  debtor`,
+* the ``swpt`` [#swpt-scheme]_ `URI`_ which uniquely identifies the
+  debtor,
 
 * the currency name.
 
