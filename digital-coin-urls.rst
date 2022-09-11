@@ -93,8 +93,12 @@ format specifications.
 
 Generally, debtor info documents SHOULD contain only essential
 information about the respective currency: the currency name, the
-currency display parameters (like currency abbreviation), the currency
-description, optional fixed exchange rate with other currency, etc.
+currency's `Debtor Info Locator`_, the currency's display parameters
+(like currency abbreviation), the currency description, optional fixed
+exchange rate with another currency, etc.
+
+As an absolute minimum, every debtor info document MUST contain the
+currency name, and the currency's `Debtor Info Locator`_.
 
 
 Verification of Digital Coins
