@@ -44,6 +44,11 @@ Here the `URL`_ ``https://example.com/foo/bar`` is the `Debtor Info
 Locator`_, and ``swpt:6787514562`` is the URI that uniquely identifies
 the debtor.
   
+**Note:** The preferred way to make digital coins available to users
+is to present them as `QR Codes`_, whose textual content consists of
+the respective digital coin. For the example given above, the textual
+context of the QR Code will be:
+``https://example.com/foo/bar#swpt:6787514562``.
 
 .. [#swpt-scheme] The ``swpt`` URI scheme is defined in a separate
   document.
@@ -131,7 +136,7 @@ followed:
    ``debtor_info_iri``, ``debtor_info_content_type``, and
    ``debtor_info_sha256``) confirm the information obtained directly
    from the digital coin, then the digital coin has been successfully
-   verified, and the user could be allowed to receive payments in the
+   verified, and the user may be allowed to receive payments in the
    corresponding currency.
 
 
@@ -142,7 +147,9 @@ followed:
    and should be expected.
 
 
+
 .. _Swaptacular: https://swaptacular.github.io/overview
+.. _QR codes: https://en.wikipedia.org/wiki/QR_code
 .. _Swaptacular Messaging Protocol: https://swaptacular.org/public/docs/protocol.pdf
 .. _URI: https://en.wikipedia.org/wiki/Uniform_Resource_Identifier
 .. _HTTPS: https://en.wikipedia.org/wiki/HTTPS
