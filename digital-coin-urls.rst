@@ -17,7 +17,7 @@ This document specifies the way *digital coins* work in Swaptacular.
 In `Swaptacular`_\'s terminology, the word "debtor" means a
 Swaptacular currency, with its respective issuer. A "digital coin" is
 a specially formatted URL, which uniquely identifies a debtor (a
-currency) in Swaptacular, and contains a link to a document that
+currency) in Swaptacular, and contains a reference to a document that
 describes the currency.
 
 **Note:** The key words "MUST", "MUST NOT", "REQUIRED", "SHALL",
@@ -35,8 +35,8 @@ The general form of a *digital coin* is::
 
 * ``<debtor-info-locator>`` is the `Debtor Info Locator`_ (see below).
 
-* ``<swpt-debtor-uri>`` is an `URI`_ in the ``swpt`` URI
-  scheme[#swpt-scheme]_, which uniquely identifies the debtor.
+* ``<swpt-debtor-uri>`` is an `URI`_ in the ``swpt`` URI scheme
+  [#swpt-scheme]_, which uniquely identifies the debtor.
 
 Example: ``https://example.com/foo/bar#swpt:6787514562``
 
@@ -54,11 +54,11 @@ Debtor Info Locator
 -------------------
 
 "Debtor Info Locator" is an `HTTPS`_ URL, making a network request to
-which, MUST either directly return[#HTTP-OK]_ an *immutable document*
-that describes the currency, or `redirects`_[#redirection]_ to a
+which, MUST either directly return [#HTTP-OK]_ an *immutable document*
+that describes the currency, or `redirects`_ [#redirection]_ to a
 different URL, from which an *immutable document* that describes the
-currency can be retrieved. The retrieved document MUST be
-immutable[#immutable]_.
+currency can be retrieved. The retrieved document MUST be immutable.
+[#immutable]_
 
 **Important note:** When the description of the currency changes, a
 new immutable document (with a new URL) MUST be created, containing
