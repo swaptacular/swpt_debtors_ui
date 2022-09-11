@@ -101,7 +101,7 @@ REQUIRED for `Debtor Info Locator`_\s) gives a good level of security,
 the information contained in a debtor info document is of such
 critical importance, that its authenticity SHOULD be independently
 verified before the user is allowed to receive payments in the
-corresponding currency. The following verification procedure SHOULD
+corresponding currency. The following verification procedure SHOULD be
 followed:
 
 1. If the user does not have an account with the debtor specified by
@@ -121,11 +121,11 @@ followed:
    exchange rate with the given currency.
 
 3. If an account with the given debtor has been successfully created,
-   an ``AccountUpdate`` `Swaptacular Messaging Protocol`_ message will
-   be received from the *accounting authority* responsible for the
-   debtor. The received message will contain the following fields:
-   ``debtor_info_iri``, ``debtor_info_content_type``,
-   ``debtor_info_sha256``.
+   the user's *creditors agent* will receive an ``AccountUpdate``
+   `Swaptacular Messaging Protocol`_ message from the *accounting
+   authority* responsible for the debtor. The received message will
+   contain the following fields: ``debtor_info_iri``,
+   ``debtor_info_content_type``, and ``debtor_info_sha256``.
 
 4. If the values received in the previous step (that is:
    ``debtor_info_iri``, ``debtor_info_content_type``, and
@@ -138,8 +138,8 @@ followed:
 .. [#no-connection] When a permanent network connection is not
    configured between the user's *creditors agent* and *accounting
    authority* responsible for the given debtor, the attempt to create
-   a new account will fail. Note that this scenario is not an
-   exceptional in any way, and should be expected.
+   a new account will fail. Note that this scenario is not uncommon,
+   and should be expected.
 
 
 .. _Swaptacular: https://swaptacular.github.io/overview
