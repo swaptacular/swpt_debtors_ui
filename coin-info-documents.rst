@@ -26,6 +26,16 @@ means a Swaptacular currency, with its respective issuer.
 RFC 2119.
 
 
+``CoinInfo`` Documents Structure
+================================
+
+``CoinInfo`` documents are `JSON`_ documents whose structure and
+content can be correctly validated by the `JSON Schema`_ specified
+below.
+
+`UTF-8`_ encoding MUST always be used for ``CoinInfo`` documents.
+
+
 MIME Type
 =========
 
@@ -35,10 +45,6 @@ Over HTTP connections, ``CoinInfo`` documents MUST be transferred with
 
 JSON Schema
 ===========
-
-``CoinInfo`` documents are `JSON`_ documents whose structure and
-content can be correctly validated by the `JSON Schema`_ specified
-here:
 
 Type: ``object``
 
@@ -501,5 +507,6 @@ This is the JSON Schema file, for validating ``CoinInfo`` documents::
 
 .. _Swaptacular: https://swaptacular.github.io/overview
 .. _MIME Type: https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types
+.. _UTF-8: https://en.wikipedia.org/wiki/UTF-8
 .. _JSON: https://www.json.org/json-en.html
 .. _JSON Schema: http://json-schema.org/
