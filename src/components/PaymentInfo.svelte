@@ -73,7 +73,7 @@
         </Wrapper>
       </Title>
       <Content>
-        {#if description.contentFormat === '.'}
+        {#if description.contentFormat === '.' || description.contentFormat === '-'}
           <a href="{description.content}" target="_blank">{description.content}</a>
         {:else if description.content}
           <pre>{description.content}</pre>
