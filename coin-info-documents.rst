@@ -82,9 +82,9 @@ Properties
 
 - **latestDebtorInfo** ``required``
 
-  A link to the newest revision of this currency's debtor info
-  document. (Most probably, a link to the newest revision of this
-  document.)
+  MUST contain an `URL`_ referring to the newest revision of this
+  currency's debtor info document. This is the currency's "Debtor Info
+  Locator".
 
   - path: #/properties/latestDebtorInfo
   - &ref: `#/definitions/ShortLink`_
@@ -121,7 +121,9 @@ Properties
 
 - **debtorHomepage**
 
-  Optional link to the debtor's homepage.
+  Optional link to the debtor's homepage. Note that the enclosed
+  property (``debtorHomepage.uri``), despite its name, MAY contain an
+  Internationalized Resource Identifier (`IRI`_).
 
   - path: #/properties/debtorHomepage
   - &ref: `#/definitions/ShortLink`_
@@ -190,7 +192,7 @@ Properties
 
 - **uri** ``required``
 
-  The IRI (Internationalized Resource Identifier) of the referenced
+  The `IRI`_ (Internationalized Resource Identifier) of the referenced
   resource. MUST be an absolute IRI.
 
   - Type: ``string``
@@ -330,8 +332,9 @@ Properties
 
 - **latestDebtorInfo** ``required``
 
-  A link to the newest revision of the peg currency's debtor info
-  document (a ``CoinInfo`` document, for example).
+  MUST contain an `URL`_ referring to the newest revision of the peg
+  currency's debtor info document. This is the peg currency's "Debtor
+  Info Locator".
 
   - path: #/definitions/Peg/properties/latestDebtorInfo
   - &ref: `#/definitions/ShortLink`_
@@ -510,3 +513,5 @@ This is the JSON Schema file, for validating ``CoinInfo`` documents::
 .. _UTF-8: https://en.wikipedia.org/wiki/UTF-8
 .. _JSON: https://www.json.org/json-en.html
 .. _JSON Schema: http://json-schema.org/
+.. _URL: https://en.wikipedia.org/wiki/URL
+.. _IRI: https://en.wikipedia.org/wiki/Internationalized_Resource_Identifier
