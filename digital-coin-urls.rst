@@ -159,7 +159,7 @@ followed:
 
 .. _Swaptacular: https://swaptacular.github.io/overview
 .. _QR codes: https://en.wikipedia.org/wiki/QR_code
-.. _Swaptacular Messaging Protocol: https://swaptacular.org/public/docs/protocol.pdf
+.. _Swaptacular Messaging Protocol: https://swaptacular.github.io/public/docs/protocol.pdf
 .. _URI: https://en.wikipedia.org/wiki/Uniform_Resource_Identifier
 .. _HTTPS: https://en.wikipedia.org/wiki/HTTPS
 .. _URL: https://en.wikipedia.org/wiki/URL
