@@ -203,6 +203,10 @@ export type Debtor = {
    * theoretically possible, should be very rare. */
   balance: bigint;
 
+  /** The maximum amount that the debtor is allowed to issue, with a
+   * negative sign. This will be a negative number or zero. */
+  minBalance: bigint;
+
   /** The moment at which the debtor was created. */
   createdAt: string;
 
