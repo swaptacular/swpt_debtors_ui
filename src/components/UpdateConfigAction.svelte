@@ -16,7 +16,7 @@
   export let action: UpdateConfigActionWithId
   export const snackbarBottom: string = "84px"
 
-  const homepagePattern = "(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_\\+.~#?&//=]*)"
+  const homepagePattern = "^[^\\/?#:]+([\\/?#]\\S*)?$"
   const currencyChangeAlert = (
     'Changing the currency name, the currency abbreviation, the amount divisor, ' +
     'or the number of displayed decimal places on a currency that is already in ' +
