@@ -10,7 +10,7 @@
   import ConfigDataPage from './ConfigDataPage.svelte'
 
   export let app: AppState
-  export let snackbarBottom: string = '0px'
+  export let snackbarBottom: string
 
   const { pageModel } = app
   const originalAppState = app

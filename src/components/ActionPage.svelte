@@ -6,7 +6,7 @@
 
   export let app: AppState
   export let model: ActionModel
-  export let snackbarBottom: string = '0px'
+  export let snackbarBottom: string
 
   $: action = model.action
 </script>
