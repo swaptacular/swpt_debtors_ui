@@ -48,24 +48,14 @@
   }
 
   function onPopstate() {
-    if (history.state !== app.hijackedState) {
-      if (app.goBack) {
-        app.startInteraction()
-        app.goBack()
-      } else if ($pageModel.goBack) {
-        app.startInteraction()
-        $pageModel.goBack()
-      } else {
-        if (history.length <= 2) {
-          // Shows a "Tap again to exit" overlay before exiting. This
-          // should be visible only on Android devices, which for some
-          // bizarre reason require additional back button tap before
-          // `history.back()` takes effect.
-          exiting = true
-        }
-        sessionStorage.removeItem(LOCALSTORAGE_STATE)
-        history.back()
-      }
+    if (app.goBack) {
+      app.goBack()
+    } else if ($pageModel.goBack) {
+      $pageModel.goBack()
+    } else {
+      exiting = true  // Shows the "Tap again to exit" overlay.
+      sessionStorage.removeItem(LOCALSTORAGE_STATE)
+      history.back()
     }
   }
 
