@@ -136,7 +136,6 @@ export class AppState {
   readonly getDebtorConfigData: () => DebtorConfigData
   readonly debtorIdentityUri: string
   readonly publicInfoDocumentUri: string
-  readonly hijackedState = 'hijacked'
 
   goBack?: () => void
 
@@ -164,8 +163,7 @@ export class AppState {
   }
 
   startInteraction(): void {
-    this.hijackBackButton()
-    this.interactionId++
+    history.pushState(++this.interactionId, '')
   }
 
   amountToString(amount: number | bigint): string {
@@ -568,14 +566,6 @@ export class AppState {
     }
 
     return { markDirty, save, remove, execute }
-  }
-
-  /* Make sure the back button triggers a 'popstate' event, instead of
-   * exiting the app right away. */
-  private hijackBackButton() {
-    if (history.state !== this.hijackedState) {
-      history.pushState(this.hijackedState, '')
-    }
   }
 
   /* Awaits `func()`, catching and logging thrown
