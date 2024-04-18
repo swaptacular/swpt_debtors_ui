@@ -169,7 +169,7 @@
               <CardContent>
                 A new digital currency have been created for
                 you. Before everybody can use it, you need to specify
-                some basic information about your currency &ndash the
+                some basic information about your currency &ndash; the
                 currency name, the interest rate, and few other
                 things.
               </CardContent>
