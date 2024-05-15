@@ -288,11 +288,12 @@ export type TransferError = {
    * has been rejected due to insufficient amount available on the
    * sender's account.
    *
-   * `"TERMINATED"` signifies that the transfer has been terminated
-   * due to expired deadline, unapproved interest rate change, or some
-   * other *temporary or correctable condition*. If the client
-   * verifies the transer options and retries the transfer, chances
-   * are that it will be committed successfully.
+   * `"TIMEOUT"` signifies that the transfer has been terminated due
+   * to expired deadline.
+   *
+   * `"NEWER_INTEREST_RATE"` signifies that the transfer has been
+   * terminated because the current interest rate on the account is
+   * more recent than the specified final interest rate timestamp.
    */
   errorCode: string;
 
