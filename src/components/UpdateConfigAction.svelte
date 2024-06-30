@@ -2,7 +2,7 @@
   import type { AppState } from '../app-state'
   import type { UpdateConfigActionWithId } from '../operations'
   import type { Peg } from '../debtor-info'
-  import { Alert } from '../app-state'
+  import { Alert, DEFAULT_PEG_ABBR } from '../app-state'
   import Fab, { Icon, Label } from '@smui/fab'
   import Textfield from '@smui/textfield'
   import TextfieldIcon from '@smui/textfield/icon'
@@ -32,7 +32,7 @@
   let debtorHomepageUri: string = removeHttpsPrefix(action.debtorInfo?.debtorHomepage?.uri)
   let amountDivisor: unknown = action.debtorInfo?.amountDivisor ?? 100
   let decimalPlaces: unknown = calcDecimalPlacesNumber(action.debtorInfo?.decimalPlaces ?? 2n)
-  let unit: string = action.debtorInfo?.unit ?? ''
+  let unit: string = action.debtorInfo?.unit ?? DEFAULT_PEG_ABBR
   let peg: Peg | undefined = action.debtorInfo?.peg
 
   let invalidCurrencyName: boolean
@@ -127,12 +127,23 @@
     invalidDecimalPlaces ||
     invalidPeg
   )
+  $: exampleAbbr = DEFAULT_PEG_ABBR || 'USD'
   $: isDivisorAdequate = checkDivisor(amountDivisor, decimalPlaces)
 </script>
 
 <style>
   .fab-container {
     margin: 16px 16px;
+  }
+
+  .recommendation-container {
+    margin-top: 0.8em;
+    margin-bottom: 0.8em;
+    line-height: 1.25;
+    color: #666;
+  }
+  .recommendation-container strong {
+    font-weight: bold;
   }
 
   .shaking-container {
@@ -188,7 +199,8 @@
               </svelte:fragment>
               <HelperText slot="helper" persistent>
                 Must be unambiguous, and unlikely to be duplicated
-                accidentally.
+                accidentally. If in doubt, enter your name, or the
+                name of your business.
               </HelperText>
             </Textfield>
           </Cell>
@@ -211,11 +223,11 @@
               </svelte:fragment>
               <HelperText slot="helper" persistent>
                 This will be shown shown right after the displayed
-                amount: "500.00 USD", for example. If your currency
+                amount: "500.00 {exampleAbbr}", for example. If your currency
                 has a recognized name &ndash; enter its abbreviation
                 here. More likely, your currency will be a proxy for a
                 well known currency. In that case, use the well know
-                abbreviation ("USD" for example).
+                abbreviation ("{exampleAbbr}" for example).
               </HelperText>
             </Textfield>
           </Cell>
@@ -345,6 +357,11 @@
           </Cell>
 
           <Cell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+            <div class="recommendation-container">
+              <strong>Important note:</strong> It is very strongly
+              recommended to set a fixed exchange rate between your
+              currency and some well known currency.
+            </div>
             <PegInput
               {unit}
               amountDivisor={Number(amountDivisor)}
