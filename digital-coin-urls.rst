@@ -4,8 +4,8 @@ Digital Coins in Swaptacular
 :Description: Specifies the way digital coins work in Swaptacular
 :Author: Evgeni Pandurksi
 :Contact: epandurski@gmail.com
-:Date: 2022-09-10
-:Version: 1.0
+:Date: 2024-07-01
+:Version: 1.1
 :Copyright: This document has been placed in the public domain.
 
 
@@ -64,6 +64,10 @@ that describes the currency, or `redirects`_ [#redirection]_ to a
 different URL, from which an *immutable document* that describes the
 currency can be retrieved. The retrieved document MUST be immutable.
 [#immutable]_
+
+All responses related to the "Debtor Info Locator" MUST be
+`CORS`_-enabled and SHOULD include the ``Access-Control-Allow-Origin:
+*`` HTTP header.
 
 **Important note:** When the description of the currency changes, a
 new immutable document (with a new URL) MUST be created, containing
@@ -164,5 +168,6 @@ followed:
 .. _HTTPS: https://en.wikipedia.org/wiki/HTTPS
 .. _URL: https://en.wikipedia.org/wiki/URL
 .. _redirects: https://developer.mozilla.org/en-US/docs/Web/HTTP/Redirections
+.. _CORS: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
 .. _machine-readable document: https://en.wikipedia.org/wiki/Machine-readable_document
 .. _a peg: https://en.wikipedia.org/wiki/Fixed_exchange_rate_system
