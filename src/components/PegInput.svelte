@@ -247,7 +247,7 @@
         <div>
           {#if DEFAULT_PEG_ABBR && DEFAULT_PEG_COIN }
             <Button on:click={() => coinUrl = DEFAULT_PEG_COIN}>
-              <Label>{DEFAULT_PEG_ABBR}</Label>
+              <Label>Use {DEFAULT_PEG_ABBR}</Label>
             </Button>
           {/if}
           <!-- The type="button" is necessary to prevent form submitting.-->

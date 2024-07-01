@@ -360,7 +360,12 @@
             <div class="recommendation-container">
               <strong>Important note:</strong> It is very strongly
               recommended to set a fixed exchange rate between your
-              currency and some well known currency.
+              currency and some well known
+              {#if DEFAULT_PEG_ABBR}
+                currency, like {DEFAULT_PEG_ABBR}.
+              {:else}
+                currency.
+              {/if}
             </div>
             <PegInput
               {unit}
