@@ -171,6 +171,15 @@ Properties
   - path: #/properties/peg
   - &ref: `#/definitions/Peg`_
 
+- **localization**
+
+  Optional localization object. The keys in this object SHOULD be ISO
+  639 language codes, and for each key which is an ISO 639 language
+  code (that is: for each language), the value MUST be a localization
+  dictionary (&ref: `#/definitions/LocalizationDict`_).
+
+  - path: #/properties/localization
+
 
 Definitions
 ===========
@@ -340,6 +349,51 @@ Properties
   - &ref: `#/definitions/ShortLink`_
 
 
+.. _`#/definitions/LocalizationDict`:
+
+``LocalizationDict``
+--------------------
+
+Type: ``object``
+
+path: #/definitions/LocalizationDict
+
+This schema accepts additional properties.
+
+Properties
+``````````
+
+- **type** ``required``
+
+  - Type: ``string``
+  - path: #/definitions/LocalizationDict/properties/type
+  - The value MUST match this pattern: ``^LocalizationDict(-v[1-9][0-9]{0,5})?$``
+
+- **debtorName**
+
+  The localized name of the debtor.
+
+  - Type: ``string``
+  - path: #/definitions/LocalizationDict/properties/debtorName
+  - Length: between 1 and 40
+
+- **summary**
+
+  A localized short description of the currency.
+
+  - Type: ``string``
+  - path: #/definitions/LocalizationDict/properties/summary
+  - Length:  <= 500
+
+- **unit**
+
+  The localized value measurement unit.
+
+  - Type: ``string``
+  - path: #/definitions/LocalizationDict/properties/unit
+  - Length: between 1 and 40
+
+
 JSON Schema File
 ================
 
@@ -437,6 +491,31 @@ This is the JSON Schema file, for validating ``CoinInfo`` documents::
          "latestDebtorInfo",
        ],
        "additionalProperties": true
+     },
+     "LocalizationDict": {
+       "type": "object",
+       "properties": {
+         "type":  {
+           "type": "string",
+           "pattern": "^LocalizationDict(-v[1-9][0-9]{0,5})?$"
+         },
+         "debtorName": {
+           "type": "string",
+           "minLength": 1,
+           "maxLength": 40
+         },
+         "summary": {
+           "type": "string",
+           "maxLength": 500
+         },
+         "unit": {
+           "type": "string",
+           "minLength": 1,
+           "maxLength": 40
+         }
+       },
+       "required": [ "type" ],
+       "additionalProperties": true
      }
    },  
    "type": "object",
@@ -492,6 +571,15 @@ This is the JSON Schema file, for validating ``CoinInfo`` documents::
      },
      "peg":  {
        "$ref": "#/definitions/Peg"
+     },
+     "localization": {
+       "type": "object",
+       "patternProperties": {
+         "^[a-z][a-z][a-z]?$": {
+           "$ref": "#/definitions/LocalizationDict"
+         }
+       },
+       "additionalProperties": true
      }
    },
    "required": [

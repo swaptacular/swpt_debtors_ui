@@ -82,6 +82,7 @@ export type DebtorData = BaseDebtorData & {
   revision: bigint,
   latestDebtorInfo: ResourceReference,
   willNotChangeUntil?: Date,
+  localization?: object,
 }
 
 export type Document = {
