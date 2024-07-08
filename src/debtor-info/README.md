@@ -74,8 +74,8 @@ This schema accepts additional properties.
 	 - Type: `object`
 	 - <i id="/properties/localization">path: #/properties/localization</i>
 	 - The keys in this object SHOULD be ISO 639 language codes, and
-       for each key (language), the value MUST be a *localization
-       object*. This schema accepts additional properties.
+       for each key (language), the value MUST be a localization
+       object (ref: [#/definitions/PegDisplay](#/definitions/PegDisplay)).
 
 # definitions
 
