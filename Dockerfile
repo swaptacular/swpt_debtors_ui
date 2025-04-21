@@ -16,5 +16,7 @@ ENV TRANSFER_DELETION_DELAY_SECONDS=1296000
 ENV DEFAULT_PEG_ABBR=
 ENV DEFAULT_PEG_COIN=
 
+ENV BASE_URL=/
+
 COPY --from=build-image /usr/src/app/public /usr/share/nginx/html
-COPY nginx-add-headers.conf /etc/nginx/conf.d/nginx-add-headers.conf
+COPY nginx.conf /etc/nginx/nginx.conf
