@@ -18,12 +18,12 @@ server {
         # Redirect paths with multiple adjacent slashes to the same
         # path with de-duplicated slashes.
         rewrite ^(.*)//(.*)$ $1/$2;
-        rewrite ^ $scheme://$http_host$uri permanent;
+        rewrite ^ $x_forwarded_proto://$http_host$uri permanent;
     }
 
     location ~* "^${BASE_URL}$" {
         # Ensure that the requests to base URL has a slash at the end.
-        rewrite ^/.+$ $scheme://$http_host$uri/ permanent;
+        rewrite ^/.+$ $x_forwarded_proto://$http_host$uri/ permanent;
 
         # When BASE_URL is "/", simply serve the "/index.html" file.
         try_files /index.html =500;
