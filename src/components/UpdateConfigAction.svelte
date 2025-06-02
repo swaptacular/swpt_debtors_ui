@@ -17,6 +17,11 @@
   export const snackbarBottom: string = "84px"
 
   const homepagePattern = "^[^\\/?#:]+([\\/?#]\\S*)?$"
+  const currencyNoPegAlert = (
+    'You did not set a fixed exchange rate between your currency and a well ' +
+    'known currency. This is likely to confuse the users of your currency, and ' +
+    'will make automatic exchanges with your currency impossible.'
+  )
   const currencyChangeAlert = (
     'Changing the currency name, the currency abbreviation, the amount divisor, ' +
     'or the number of displayed decimal places on a currency that is already in ' +
@@ -73,12 +78,15 @@
         + 'increase the amount divisor, or decrease the number of decimal places.'
       ))
     } else if (
-      !original || (
-        original.debtorName === debtorName &&
-        original.unit === unit &&
-        original.amountDivisor === Number(amountDivisor) &&
-        original.decimalPlaces === calcDecimalPlacesBigint(decimalPlaces)
-      ) || confirm(currencyChangeAlert)
+      (peg || confirm(currencyNoPegAlert)) &&
+      (
+        !original || (
+          original.debtorName === debtorName &&
+          original.unit === unit &&
+          original.amountDivisor === Number(amountDivisor) &&
+          original.decimalPlaces === calcDecimalPlacesBigint(decimalPlaces)
+        ) || confirm(currencyChangeAlert)
+      )
     ) {
       actionManager.execute()
     }
@@ -358,7 +366,7 @@
 
           <Cell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
             <div class="recommendation-container">
-              <strong>Important note:</strong> It is very strongly
+              <strong>Important note:</strong> It is strongly
               recommended to set a fixed exchange rate between your
               currency and some well known
               {#if DEFAULT_PEG_ABBR}
