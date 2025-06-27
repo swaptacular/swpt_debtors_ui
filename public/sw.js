@@ -1,5 +1,5 @@
 const appName = 'swpt-debtors-ui'
-const cacheName = `${appName}-v1.2.6`
+const cacheName = `${appName}-v1.2.7`
 const appFiles = [
   './',
   'index.html',
