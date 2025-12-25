@@ -4,8 +4,8 @@ Digital Coins in Swaptacular
 :Description: Specifies the way digital coins work in Swaptacular
 :Author: Evgeni Pandurksi
 :Contact: epandurski@gmail.com
-:Date: 2024-07-01
-:Version: 1.1
+:Date: 2025-12-25
+:Version: 1.2
 :Copyright: This document has been placed in the public domain.
 
 
@@ -73,7 +73,9 @@ All responses related to the "Debtor Info Locator" MUST be
 new immutable document (with a new URL) MUST be created, containing
 the new description, and the currency's "Debtor Info Locator" MUST be
 updated to redirect to the newly created (the latest) version of the
-currency description document.
+currency description document. Once the currency has become
+nonoperational, the currency's "Debtor Info Locator" SHOULD always
+return HTTP response code ``410`` (gone).
 
 
 .. [#HTTP-OK] That is: Directly return an HTTP response, with response
