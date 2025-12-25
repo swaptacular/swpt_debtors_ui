@@ -59,7 +59,10 @@ Properties
 
   - Type: ``string``
   - path: #/properties/type
-  - The value MUST match this pattern: ``^CoinInfo(-v[1-9][0-9]{0,5})?$``
+  - The value MUST match this pattern:
+    ``^CoinInfo(-v[1-9][0-9]{0,5})?$``. For documents adhering to
+    version 1.0 of this specification, the value of this field SHOULD
+    be ``CoinInfo``.
 
 - **revision** ``required``
 
@@ -229,7 +232,10 @@ Properties
 
   - Type: ``string``
   - path: #/definitions/DebtorIdentity/properties/type
-  - The value MUST match this pattern: ``^DebtorIdentity(-v[1-9][0-9]{0,5})?$``
+  - The value MUST match this pattern:
+    ``^DebtorIdentity(-v[1-9][0-9]{0,5})?$``. For documents adhering
+    to version 1.0 of this specification, the value of this field
+    SHOULD be ``DebtorIdentity``.
 
 - **uri** ``required``
 
@@ -268,7 +274,10 @@ Properties
 
   - Type: ``string``
   - path: #/definitions/PegDisplay/properties/type
-  - The value MUST match this pattern: ``^PegDisplay(-v[1-9][0-9]{0,5})?$``
+  - The value MUST match this pattern:
+    ``^PegDisplay(-v[1-9][0-9]{0,5})?$``. For documents adhering to
+    version 1.0 of this specification, the value of this field SHOULD
+    be ``PegDisplay``.
 
 - **amountDivisor** ``required``
 
@@ -313,7 +322,9 @@ Properties
 
   - Type: ``string``
   - path: #/definitions/Peg/properties/type
-  - The value MUST match this pattern: ``^Peg(-v[1-9][0-9]{0,5})?$``
+  - The value MUST match this pattern: ``^Peg(-v[1-9][0-9]{0,5})?$``.
+    For documents adhering to version 1.0 of this specification, the
+    value of this field SHOULD be ``Peg``.
 
 - **exchangeRate** ``required``
 
@@ -367,7 +378,10 @@ Properties
 
   - Type: ``string``
   - path: #/definitions/LocalizationDict/properties/type
-  - The value MUST match this pattern: ``^LocalizationDict(-v[1-9][0-9]{0,5})?$``
+  - The value MUST match this pattern:
+    ``^LocalizationDict(-v[1-9][0-9]{0,5})?$``. For documents adhering
+    to version 1.0 of this specification, the value of this field
+    SHOULD be ``LocalizationDict``.
 
 - **debtorName**
 
