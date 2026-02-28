@@ -18,8 +18,8 @@
 
   const homepagePattern = "^[^\\/?#:]+([\\/?#]\\S*)?$"
   const currencyNoPegAlert = (
-    'You did not set a fixed exchange rate between your currency and a well ' +
-    'known currency. This is likely to confuse the users of your currency, and ' +
+    'You did not set a fixed exchange rate between your currency and a well-known ' +
+    'currency. This is likely to confuse the users of your currency, and ' +
     'will make automatic exchanges with your currency impossible.'
   )
   const currencyChangeAlert = (
@@ -206,9 +206,9 @@
                 {/if}
               </svelte:fragment>
               <HelperText slot="helper" persistent>
-                Must be unambiguous, and unlikely to be duplicated
-                accidentally. If in doubt, enter your name, or the
-                name of your business.
+                Must be clear and unique, with little chance of
+                accidental duplication. If you are unsure, enter your
+                name, or the name of your business.
               </HelperText>
             </Textfield>
           </Cell>
@@ -230,12 +230,11 @@
                 {/if}
               </svelte:fragment>
               <HelperText slot="helper" persistent>
-                This will be shown shown right after the displayed
-                amount: "500.00 {exampleAbbr}", for example. If your currency
-                has a recognized name &ndash; enter its abbreviation
-                here. More likely, your currency will be a proxy for a
-                well known currency. In that case, use the well know
-                abbreviation ("{exampleAbbr}" for example).
+                This will appear right after the displayed amount
+                (e.g., "500.00 {exampleAbbr}"). If your currency has a
+                recognized name, enter its abbreviation here. If your
+                currency is a proxy for a well-known currency, use
+                that currency's abbreviation ("{exampleAbbr}" for example).
               </HelperText>
             </Textfield>
           </Cell>
@@ -258,8 +257,8 @@
                 {/if}
               </svelte:fragment>
               <HelperText slot="helper" persistent>
-                A secure web page, where the users of your currency
-                can learn more about it (optional).
+                A secure web page where users of your currency can
+                learn more about it (optional).
               </HelperText>
             </Textfield>
           </Cell>
@@ -275,9 +274,9 @@
               >
               <CharacterCounter slot="internalCounter">0 / 500</CharacterCounter>
               <HelperText slot="helper" persistent>
-                A short description of your digital currency
-                (optional). Currency holders will see this, when they
-                are about to create an account.
+                A brief description of your digital currency
+                (optional). Currency holders will see this when they
+                create an account.
               </HelperText>
             </Textfield>
           </Cell>
@@ -303,9 +302,9 @@
                 {/if}
               </svelte:fragment>
               <HelperText slot="helper" persistent>
-                The annual rate at which interest accumulates on
-                currency holders' accounts. Must be a number between
-                -50 and 100. If in doubt, leave it at 0.
+                The annual interest rate applied to currency holders'
+                accounts. It must be a number between -50 and 100. If
+                you are unsure, leave it at 0.
               </HelperText>
             </Textfield>
           </Cell>
@@ -330,9 +329,9 @@
                 {/if}
               </svelte:fragment>
               <HelperText slot="helper" persistent>
-                To avoid rounding errors, internally, amounts are stored
-                as whole numbers. Before being displayed, the whole
-                numbers will be divided by this number.
+                To avoid rounding errors, amounts are stored as whole
+                numbers. Before being displayed, the whole numbers
+                will be divided by this value.
               </HelperText>
             </Textfield>
           </Cell>
@@ -357,20 +356,19 @@
                 {/if}
               </svelte:fragment>
               <HelperText slot="helper" persistent>
-                The number of digits to show after the decimal point,
-                when displaying the amount. Must be a number between -20
-                and 20.
+                The number of digits to display after the decimal
+                point. Must be a value between -20 and 20.
               </HelperText>
             </Textfield>
           </Cell>
 
           <Cell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
             <div class="recommendation-container">
-              <strong>Important note:</strong> It is strongly
-              recommended to set a fixed exchange rate between your
-              currency and some well known
+              <strong>Important:</strong> It is highly recommended to
+              set a fixed exchange rate between your currency and a
+              well-known
               {#if DEFAULT_PEG_ABBR}
-                currency, like {DEFAULT_PEG_ABBR}.
+                currency, such as {DEFAULT_PEG_ABBR}.
               {:else}
                 currency.
               {/if}

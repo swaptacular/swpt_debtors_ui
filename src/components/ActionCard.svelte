@@ -49,7 +49,7 @@
       unit = debtorConfigData.debtorInfo?.unit ?? '\u00a4'
       return `${title}: ${unitAmount} ${unit} to ${payeeName}.`
     case 'UpdateConfig':
-      return 'Specify information about your currency.'
+      return 'Provide information about your currency.'
     default:
       return 'Unknown action type'
     }

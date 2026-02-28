@@ -263,7 +263,7 @@
 <FormField>
   <Switch color="primary" bind:checked={pegged} />
   <span slot="label">
-    Set a fixed exchange rate between your currency and another currency.
+    Set a fixed exchange rate between your currency and a well-known currency.
   </span>
 </FormField>
 
