@@ -140,10 +140,10 @@
           <Title>Your digital coin</Title>
           <Content>
             <p>
-              The image above (an ordinary QR code, indeed) uniquely
-              identifies your digital currency. Anybody who wants to
-              use your currency (including yourself) will have to scan
-              this image with his/hers mobile device. Therefore, you
+              The image above (a standard QR code) uniquely identifies
+              your digital currency. Anyone who wants to use your
+              currency, including yourself, will simply need to scan
+              this QR code with their mobile device. Therefore, you
               should:
             </p>
             <ol>
@@ -164,19 +164,21 @@
               </li>
             </ol>
             <p>
-              Currently, you have a total of
+              You currently have a total of
               <span class="amount">{`${totalIssuedUnits} ${unit}`}</span>
-              of your digital currency in circulation. (This figure
-              may lag behind.)
+              of your digital currency in circulation (this figure may lag behind).
             </p>
             {#if destroyUrl}
               <p>
                 You can use
-                <a href="destroy" on:click|preventDefault={() => destroyLinkElement.click()}>
-                  this
+                <a
+                  href="destroy" on:click|preventDefault={() => destroyLinkElement.click()}
+                  style="white-space: nowrap"
+                  >
+                  this payment request
                 </a>
-                payment request, if you want to destroy money which is
-                already in circulation.
+                if you want to destroy money which is already in
+                circulation.
               </p>
             {/if}
           </Content>

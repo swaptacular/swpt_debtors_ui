@@ -16,6 +16,7 @@ ENV TRANSFER_DELETION_DELAY_SECONDS=1296000
 ENV DEFAULT_PEG_ABBR=
 ENV DEFAULT_PEG_COIN=
 
+ENV SITE_TITLE=Swaptacular
 ENV BASE_URL=/
 
 COPY --from=build-image /usr/src/app/public /usr/share/nginx/html

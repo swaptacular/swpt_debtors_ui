@@ -7,6 +7,9 @@
 </script>
 
 <style>
+  em {
+    font-style: italic;
+  }
   .floating, .logo-container {
     display: flex;
     position: fixed;
@@ -45,13 +48,14 @@
 
 <div class="paper-container">
   <Paper style="margin: 36px 18px; max-width: 600px" elevation={8}>
-    <Title>Welcome to Swaptacular!</Title>
+    <Title>Welcome to {appConfig.siteTitle}!</Title>
     <Content>
-      Swaptacular tries to make creating and issuing new digital
+      {appConfig.siteTitle} makes issuing and holding digital
       currencies possible for everyone. Currency issuers are also
-      called "debtors". This app connects you to a Swaptacular Debtors
-      Agent, which will create and manage your digital currency for
-      you.
+      called <em>debtors</em>, and currency
+      holders <em>creditors</em>. This app connects you to our
+      debtors’ agent server, which will create and manage your digital
+      currency for you.
     </Content>
   </Paper>
 </div>

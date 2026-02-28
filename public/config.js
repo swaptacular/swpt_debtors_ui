@@ -1,4 +1,5 @@
 window.appConfig = {
+  siteTitle: 'Swaptacular',
   serverApiEntrypoint: 'https://demo.swaptacular.org/debtors/.debtor',
   serverApiTimeout: 8000,
   oauth2: {
