@@ -47,6 +47,7 @@ export const PAYMENT_DOES_NOT_EXIST_MESSAGE = 'The requested payment record does
 
 export const DEFAULT_PEG_COIN = appConfig.defaultPegCoin
 export const DEFAULT_PEG_ABBR = appConfig.defaultPegAbbr
+export const REGISTER_ISSUER_URL = appConfig.registerIssuerUrl
 
 export type {
   TransferRecord,

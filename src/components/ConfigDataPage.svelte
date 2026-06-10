@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { AppState, ConfigDataModel } from '../app-state'
-  import { DOWNLOADED_QR_COIN_KEY } from '../app-state'
+  import { DOWNLOADED_QR_COIN_KEY, REGISTER_ISSUER_URL } from '../app-state'
   import { generatePr0Blob, IvalidPaymentData } from '../payment-requests'
   import { onDestroy } from 'svelte'
   import Fab, { Icon } from '@smui/fab';
@@ -151,12 +151,20 @@
                 <a href="download" on:click|preventDefault={() => downloadLinkElement.click()}>
                   Download the image.
                 </a>
+                Then make sure it is publicly accessible and
+                unmistakably associated with you &mdash; for example,
+                by printing it on your business cards, displaying it
+                in your office, or publishing it on your website.
               </li>
-              <li>
-                Make sure that the image is publicly available, and
-                people are able <em>to undoubtedly associate it with
-                  you</em> &ndash; the issuer of the currency.
-              </li>
+              {#if REGISTER_ISSUER_URL}
+                <li>
+                  <a href="{REGISTER_ISSUER_URL}" target="_blank">
+                    Add your currency
+                  </a>
+                  to the public registry, making it easy for others to
+                  find it and create an account with you.
+                </li>
+              {/if}
               <li>
                 <a href="issue" on:click|preventDefault={showActions}>
                   Issue money in circulation.

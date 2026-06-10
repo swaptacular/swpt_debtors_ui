@@ -12,6 +12,7 @@ window.appConfig = {
   transferDeletionDelaySeconds: ${TRANSFER_DELETION_DELAY_SECONDS},
   defaultPegAbbr: '${DEFAULT_PEG_ABBR}',
   defaultPegCoin: '${DEFAULT_PEG_COIN}',
+  registerIssuerUrl: '${REGISTER_ISSUER_URL}',
 }
 
 window.assert = function assert(condition, msg) {
