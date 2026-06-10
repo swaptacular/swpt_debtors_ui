@@ -13,6 +13,7 @@ declare var appConfig: {
   transferDeletionDelaySeconds: number,
   defaultPegAbbr: string,
   defaultPegCoin: string,
+  registerIssuerUrl: string,
 }
 
 declare function assert(condition: any, msg?: string): asserts condition

@@ -54,6 +54,11 @@ REDIRECT_URL=https://demo.swaptacular.org/debtors-webapp/
 # content of the digital coin's QR code).
 DEFAULT_PEG_ABBR=USD
 DEFAULT_PEG_COIN=https://demo.swaptacular.org/debtors/4640381880/public#swpt:4640381880
+
+# If you want to recommend a website where your users can register
+# themselves as currency issuers, set this to the URL of the website.
+# The default is an empty string.
+REGISTER_ISSUER_URL=https://google.com/maps
 ```
 
 For more configuration options, check the
