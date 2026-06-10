@@ -139,7 +139,7 @@
             </p>
           {:else}
             <LayoutGrid>
-              <Cell>
+              <Cell span={12}>
                 <Paper elevation={8} style="margin-bottom: 16px">
                   <Title>How to issue money in circulation?</Title>
                   <Content>
