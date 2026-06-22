@@ -1,3 +1,4 @@
+import * as msg from "./messages";
 import type { TransferRecord } from './operations'
 
 export function stringToAmount(s: string | number, amountDivisor: number): bigint {
@@ -56,24 +57,23 @@ function removeLeadingZeroes(s: string): string {
 function getFailureReason(errorCode: string): string {
   switch (errorCode) {
     case 'CANCELED_BY_THE_SENDER':
-      return 'The payment has been canceled the sender.'
+      return msg.CANCELED_BY_THE_SENDER
     case 'SENDER_IS_UNREACHABLE':
-      return "The sender's account does not exist, or can not make outgoing transfers."
+      return msg.SENDER_IS_UNREACHABLE
     case 'RECIPIENT_IS_UNREACHABLE':
-      return "The recipient's account does not exist, or does not accept incoming payments."
+      return msg.RECIPIENT_IS_UNREACHABLE
     case 'RECIPIENT_SAME_AS_SENDER':
-      return "The recipient's account is the same as the sender's account."
+      return msg.RECIPIENT_SAME_AS_SENDER
     case 'NO_RECIPIENT_CONFIRMATION':
-      return "A confirmation from the recipient is required, but has not been obtained."
+      return msg.NO_RECIPIENT_CONFIRMATION
     case 'TRANSFER_NOTE_IS_TOO_LONG':
-      return "The byte-length of the payment note is too big."
+      return msg.TRANSFER_NOTE_IS_TOO_LONG
     case 'INSUFFICIENT_AVAILABLE_AMOUNT':
-      return "The requested amount is not available on the sender's account."
+      return msg.INSUFFICIENT_AVAILABLE_AMOUNT
     case 'TIMEOUT':
-      return "The payment has been terminated due to expired deadline."
+      return msg.TIMEOUT
     case 'NEWER_INTEREST_RATE':
-      return "The payment has been terminated because the current interest rate on the"
-        + " account is more recent than the specified final interest rate timestamp."
+      return msg.NEWER_INTEREST_RATE
     default:
       return errorCode
   }
