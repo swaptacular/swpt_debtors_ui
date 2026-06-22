@@ -1,3 +1,4 @@
+import * as msg from "../messages";
 import equal from 'fast-deep-equal'
 import { v4 as uuidv4 } from 'uuid';
 import {
@@ -117,12 +118,12 @@ export async function obtainUserContext(
       case e instanceof AuthenticationError:
       case e instanceof HttpError:
         console.error(e)
-        alert('There seems to be a problem on the server. Please try again later.')
+        alert(msg.PROBLEM_ON_THE_SERVER)
         await server.logout()
         break
       case e instanceof ServerSessionError:
         console.error(e)
-        alert('A network problem has occured. Please check your Internet connection.')
+        alert(msg.NETWORK_PROBLEM)
         await server.logout()
         break
     }

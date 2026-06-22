@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { INVALID_REQUEST_MESSAGE, MAX_INT64 } from '../app-state'
+  import * as msg from '../messages'
+  import { MAX_INT64 } from '../app-state'
   import type { AppState } from '../app-state'
   import type { CreateTransferActionWithId, CreateTransferActionStatus } from '../operations'
   import { getCreateTransferActionStatus } from '../operations'
@@ -73,7 +74,7 @@
     case 'Initiated':
       return 'The payment has been initiated successfully.'
     case 'Failed':
-      return INVALID_REQUEST_MESSAGE
+      return msg.INVALID_PAYMENT_REQUEST
     case 'Timed out':
       return 'An attempt has been made to transfer the amount, '
         + 'but it is unknown whether the amount has been successfully transferred or not. '

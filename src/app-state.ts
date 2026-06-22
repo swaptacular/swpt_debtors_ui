@@ -1,3 +1,4 @@
+import * as msg from "./messages";
 import equal from 'fast-deep-equal'
 import { Dexie, Observable, liveQuery } from 'dexie'
 import { Writable, writable } from 'svelte/store'
@@ -29,21 +30,6 @@ type AttemptOptions = {
 
 export const MAX_INT64 = (1n << 63n) - 1n
 export const MIN_INT64 = -MAX_INT64 - 1n
-
-export const INVALID_REQUEST_MESSAGE = 'Invalid payment request. '
-  + 'Make sure that you are scanning the correct QR code, '
-  + 'for the correct payment request.'
-
-export const CAN_NOT_PERFORM_ACTOIN_MESSAGE = 'The requested action can not be performed.'
-
-export const NETWORK_ERROR_MESSAGE = 'A network problem has occured. '
-  + 'Please check your Internet connection.'
-
-export const UNEXPECTED_ERROR_MESSAGE = 'Oops, something went wrong.'
-
-export const ACTION_DOES_NOT_EXIST_MESSAGE = 'The requested action record does not exist.'
-
-export const PAYMENT_DOES_NOT_EXIST_MESSAGE = 'The requested payment record does not exist.'
 
 export const DEFAULT_AMOUNT_DIVISOR = appConfig.defaultAmountDivisor
 export const DEFAULT_DECIMAL_PLACES = BigInt(appConfig.defaultDecimalPlaces)
@@ -198,7 +184,7 @@ export class AppState {
     }, {
       alerts: [
         [AuthenticationError, null],
-        [ServerSessionError, new Alert(NETWORK_ERROR_MESSAGE)],
+        [ServerSessionError, new Alert(msg.NETWORK_PROBLEM)],
       ],
     })
   }
@@ -230,8 +216,8 @@ export class AppState {
       }
     }, {
       alerts: [
-        [IvalidPaymentRequest, new Alert(INVALID_REQUEST_MESSAGE)],
-        [IvalidPaymentData, new Alert(INVALID_REQUEST_MESSAGE)],
+        [IvalidPaymentRequest, new Alert(msg.INVALID_PAYMENT_REQUEST)],
+        [IvalidPaymentData, new Alert(msg.INVALID_PAYMENT_REQUEST)],
       ],
     })
   }
@@ -263,7 +249,7 @@ export class AppState {
             action,
           })
         } else {
-          this.addAlert(new Alert(ACTION_DOES_NOT_EXIST_MESSAGE, { continue: () => this.showActions() }))
+          this.addAlert(new Alert(msg.ACTION_DOES_NOT_EXIST, { continue: () => this.showActions() }))
         }
       }
     })
@@ -307,7 +293,7 @@ export class AppState {
             transfer: transfer as Store<TransferRecord>,
           })
         } else {
-          this.addAlert(new Alert(PAYMENT_DOES_NOT_EXIST_MESSAGE, { continue: goBack }))
+          this.addAlert(new Alert(msg.PAYMENT_DOES_NOT_EXIST, { continue: goBack }))
         }
       }
     })
@@ -339,7 +325,7 @@ export class AppState {
       }
     }, {
       alerts: [
-        [ServerSessionError, new Alert(NETWORK_ERROR_MESSAGE)],
+        [ServerSessionError, new Alert(msg.NETWORK_PROBLEM)],
       ],
     })
   }
@@ -381,11 +367,11 @@ export class AppState {
       showTransfer(transferRecord.uri)
     }, {
       alerts: [
-        [ServerSessionError, new Alert(NETWORK_ERROR_MESSAGE, { continue: reloadAction })],
-        [ForbiddenOperation, new Alert(CAN_NOT_PERFORM_ACTOIN_MESSAGE, { continue: reloadAction })],
-        [WrongTransferData, new Alert(INVALID_REQUEST_MESSAGE, { continue: reloadAction })],
-        [TransferCreationTimeout, new Alert(CAN_NOT_PERFORM_ACTOIN_MESSAGE, { continue: reloadAction })],
-        [RecordDoesNotExist, new Alert(CAN_NOT_PERFORM_ACTOIN_MESSAGE, { continue: showActions })],
+        [ServerSessionError, new Alert(msg.NETWORK_PROBLEM, { continue: reloadAction })],
+        [ForbiddenOperation, new Alert(msg.CAN_NOT_PERFORM_ACTOIN, { continue: reloadAction })],
+        [WrongTransferData, new Alert(msg.INVALID_PAYMENT_REQUEST, { continue: reloadAction })],
+        [TransferCreationTimeout, new Alert(msg.CAN_NOT_PERFORM_ACTOIN, { continue: reloadAction })],
+        [RecordDoesNotExist, new Alert(msg.CAN_NOT_PERFORM_ACTOIN, { continue: showActions })],
       ],
     })
   }
@@ -402,7 +388,7 @@ export class AppState {
       showActions()
     }, {
       alerts: [
-        [RecordDoesNotExist, new Alert(ACTION_DOES_NOT_EXIST_MESSAGE, { continue: showActions })],
+        [RecordDoesNotExist, new Alert(msg.ACTION_DOES_NOT_EXIST, { continue: showActions })],
       ],
     })
   }
@@ -472,8 +458,8 @@ export class AppState {
       showActions()
     }, {
       alerts: [
-        [ServerSessionError, new Alert(NETWORK_ERROR_MESSAGE)],
-        [RecordDoesNotExist, new Alert(CAN_NOT_PERFORM_ACTOIN_MESSAGE, { continue: reloadAction })],
+        [ServerSessionError, new Alert(msg.NETWORK_PROBLEM)],
+        [RecordDoesNotExist, new Alert(msg.CAN_NOT_PERFORM_ACTOIN, { continue: reloadAction })],
       ],
     })
   }
@@ -490,7 +476,7 @@ export class AppState {
       showActions()
     }, {
       alerts: [
-        [RecordDoesNotExist, new Alert('The action can not be dismissed.', { continue: showActions })],
+        [RecordDoesNotExist, new Alert(msg.CAN_NOT_DISMISS_ACTION, { continue: showActions })],
       ],
     })
   }
@@ -549,7 +535,7 @@ export class AppState {
         showActions()
       }, {
         alerts: [
-          [RecordDoesNotExist, new Alert(CAN_NOT_PERFORM_ACTOIN_MESSAGE, { continue: reloadAction })],
+          [RecordDoesNotExist, new Alert(msg.CAN_NOT_PERFORM_ACTOIN, { continue: reloadAction })],
         ],
       })
     }
@@ -563,7 +549,7 @@ export class AppState {
         default:
           const e = new Error('unknown action type')
           console.error(e)
-          this.addAlert(new Alert(UNEXPECTED_ERROR_MESSAGE))
+          this.addAlert(new Alert(msg.UNEXPECTED_ERROR))
           throw e
       }
     }
@@ -625,7 +611,7 @@ export class AppState {
       switch (alert) {
         case undefined:
           console.error(e)
-          this.addAlert(new Alert(UNEXPECTED_ERROR_MESSAGE))
+          this.addAlert(new Alert(msg.UNEXPECTED_ERROR))
           throw e
         case null:
           // ignore the error
