@@ -11,6 +11,8 @@ declare var appConfig: {
     useLocalStorage: boolean,
   },
   transferDeletionDelaySeconds: number,
+  defaultAmountDivisor: number,
+  defaultDecimalPlaces: number,
   defaultPegAbbr: string,
   defaultPegCoin: string,
   registerIssuerUrl: string,

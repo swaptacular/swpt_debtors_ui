@@ -45,6 +45,8 @@ export const ACTION_DOES_NOT_EXIST_MESSAGE = 'The requested action record does n
 
 export const PAYMENT_DOES_NOT_EXIST_MESSAGE = 'The requested payment record does not exist.'
 
+export const DEFAULT_AMOUNT_DIVISOR = appConfig.defaultAmountDivisor
+export const DEFAULT_DECIMAL_PLACES = BigInt(appConfig.defaultDecimalPlaces)
 export const DEFAULT_PEG_COIN = appConfig.defaultPegCoin
 export const DEFAULT_PEG_ABBR = appConfig.defaultPegAbbr
 export const REGISTER_ISSUER_URL = appConfig.registerIssuerUrl

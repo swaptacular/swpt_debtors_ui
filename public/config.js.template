@@ -10,6 +10,8 @@ window.appConfig = {
     useLocalStorage: false,
   },
   transferDeletionDelaySeconds: ${TRANSFER_DELETION_DELAY_SECONDS},
+  defaultAmountDivisor: ${DEFAULT_AMOUNT_DIVISOR},
+  defaultDecimalPlaces: ${DEFAULT_DECIMAL_PLACES},
   defaultPegAbbr: '${DEFAULT_PEG_ABBR}',
   defaultPegCoin: '${DEFAULT_PEG_COIN}',
   registerIssuerUrl: '${REGISTER_ISSUER_URL}',

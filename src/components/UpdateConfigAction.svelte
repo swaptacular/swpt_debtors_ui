@@ -2,7 +2,13 @@
   import type { AppState } from '../app-state'
   import type { UpdateConfigActionWithId } from '../operations'
   import type { Peg } from '../debtor-info'
-  import { Alert, DEFAULT_PEG_ABBR } from '../app-state'
+  import {
+    Alert,
+    DEFAULT_PEG_ABBR,
+    DEFAULT_PEG_COIN,
+    DEFAULT_AMOUNT_DIVISOR,
+    DEFAULT_DECIMAL_PLACES,
+  } from '../app-state'
   import Fab, { Icon, Label } from '@smui/fab'
   import Textfield from '@smui/textfield'
   import TextfieldIcon from '@smui/textfield/icon'
@@ -35,8 +41,8 @@
   let summary: string = action.debtorInfo?.summary ?? ''
   let debtorName:string = action.debtorInfo?.debtorName ?? ''
   let debtorHomepageUri: string = removeHttpsPrefix(action.debtorInfo?.debtorHomepage?.uri)
-  let amountDivisor: unknown = action.debtorInfo?.amountDivisor ?? 100
-  let decimalPlaces: unknown = calcDecimalPlacesNumber(action.debtorInfo?.decimalPlaces ?? 2n)
+  let amountDivisor: unknown = action.debtorInfo?.amountDivisor ?? DEFAULT_AMOUNT_DIVISOR
+  let decimalPlaces: unknown = calcDecimalPlacesNumber(action.debtorInfo?.decimalPlaces ?? DEFAULT_DECIMAL_PLACES)
   let unit: string = action.debtorInfo?.unit ?? DEFAULT_PEG_ABBR
   let peg: Peg | undefined = action.debtorInfo?.peg
 
@@ -77,6 +83,13 @@
         + 'specified number of decimal places. To solve this problem, you may '
         + 'increase the amount divisor, or decrease the number of decimal places.'
       ))
+    } else if (mustConfigurePeg && !peg) {
+      // When there are a default peg, make sure that the user has
+      // configured a peg during the initial currency setup. If users
+      // really want to configure no peg (very unlikely), they may
+      // choose the default peg during the initial currency setup, and
+      // remove the peg afterwards.
+      app.addAlert(new Alert(currencyNoPegAlert))
     } else if (
       (peg || confirm(currencyNoPegAlert)) &&
       (
@@ -137,6 +150,7 @@
   )
   $: exampleAbbr = DEFAULT_PEG_ABBR || 'USD'
   $: isDivisorAdequate = checkDivisor(amountDivisor, decimalPlaces)
+  $: mustConfigurePeg = DEFAULT_PEG_ABBR && DEFAULT_PEG_COIN && !action.originalDebtorInfo
 </script>
 
 <style>
@@ -364,13 +378,19 @@
 
           <Cell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
             <div class="recommendation-container">
-              <strong>Important:</strong> It is highly recommended to
-              set a fixed exchange rate between your currency and a
-              well-known
-              {#if DEFAULT_PEG_ABBR}
-                currency, such as {DEFAULT_PEG_ABBR}.
+              <strong>Important:</strong>
+              {#if mustConfigurePeg}
+                You must set a fixed exchange rate between your
+                currency and a well-known currency, such as
+                {DEFAULT_PEG_ABBR}.
               {:else}
-                currency.
+                It is highly recommended to set a fixed exchange rate
+                between your currency and a well-known
+                {#if DEFAULT_PEG_ABBR}
+                  currency, such as {DEFAULT_PEG_ABBR}.
+                {:else}
+                  currency.
+                {/if}
               {/if}
             </div>
             <PegInput
