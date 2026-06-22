@@ -47,6 +47,14 @@ CLIENT_ID=debtors-webapp
 # with the given CLIENT_ID.
 REDIRECT_URL=https://demo.swaptacular.org/debtors-webapp/
 
+# When crating a new currency, the "Amount divisor" input field will
+# be pre-filled with this number. The default is 100.
+DEFAULT_AMOUNT_DIVISOR=100
+
+# When crating a new currency, the "Decimal places" input field will
+# be pre-filled with this number. The default is 2.
+DEFAULT_DECIMAL_PLACES=2
+
 # If the following variables are set, when the issuer wants to peg its
 # currency to another currency, a default peg currency will be
 # suggested. Its abbreviation will be "$DEFAULT_PEG_ABBR", and the its
