@@ -159,10 +159,11 @@
               {#if REGISTER_ISSUER_URL}
                 <li>
                   <a href="{REGISTER_ISSUER_URL}" target="_blank">
-                    Add your currency
+                    Add your business
                   </a>
                   to the public registry, making it easy for others to
-                  find it and create an account with you.
+                  find you, purchase your currency, and later redeem
+                  it when paying for your goods and services.
                 </li>
               {/if}
               <li>
