@@ -1,7 +1,7 @@
 {
   "short_name": "My Currency",
   "name": "Currency Issuing Client",
-  "description": "Allows you to connect to a debtors agent and create and manage your own digital currency.",
+  "description": "Allows you to connect to a specialized server and create and manage your own digital currency.",
   "lang": "en",
   "dir": "ltr",
   "start_url": "./",

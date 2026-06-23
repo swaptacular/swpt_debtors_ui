@@ -2,7 +2,7 @@
   import { onDestroy } from 'svelte'
   import { generatePr0Blob } from '../payment-requests'
   import type { TransferRecord } from '../operations'
-  import { getTooltip } from '../utils'
+  import { getTooltip } from '../messages'
   import type { AppState, TransferModel } from '../app-state'
   import Fab, { Icon } from '@smui/fab';
   import PaymentInfo from './PaymentInfo.svelte'

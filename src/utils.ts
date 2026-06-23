@@ -1,4 +1,3 @@
-import * as msg from "./messages";
 import type { TransferRecord } from './operations'
 
 export function stringToAmount(s: string | number, amountDivisor: number): bigint {
@@ -52,56 +51,6 @@ function scientificToRegular(scientific: string): string {
 
 function removeLeadingZeroes(s: string): string {
   return s.match(/^0*([\s\S]*)$/)?.[1] as string
-}
-
-function getFailureReason(errorCode: string): string {
-  switch (errorCode) {
-    case 'CANCELED_BY_THE_SENDER':
-      return msg.CANCELED_BY_THE_SENDER
-    case 'SENDER_IS_UNREACHABLE':
-      return msg.SENDER_IS_UNREACHABLE
-    case 'RECIPIENT_IS_UNREACHABLE':
-      return msg.RECIPIENT_IS_UNREACHABLE
-    case 'RECIPIENT_SAME_AS_SENDER':
-      return msg.RECIPIENT_SAME_AS_SENDER
-    case 'NO_RECIPIENT_CONFIRMATION':
-      return msg.NO_RECIPIENT_CONFIRMATION
-    case 'TRANSFER_NOTE_IS_TOO_LONG':
-      return msg.TRANSFER_NOTE_IS_TOO_LONG
-    case 'INSUFFICIENT_AVAILABLE_AMOUNT':
-      return msg.INSUFFICIENT_AVAILABLE_AMOUNT
-    case 'TIMEOUT':
-      return msg.TIMEOUT
-    case 'NEWER_INTEREST_RATE':
-      return msg.NEWER_INTEREST_RATE
-    default:
-      return errorCode
-  }
-}
-
-export function getTooltip(t: TransferRecord): string {
-  let tooltip = `The payment has been initiated at ${new Date(t.initiatedAt).toLocaleString()}`
-  if (t.result) {
-    const finalizedAt = new Date(t.result.finalizedAt).toLocaleString()
-    if (t.result.error) {
-      const reason = getFailureReason(t.result.error.errorCode)
-      tooltip += `, and failed at ${finalizedAt}.`
-      tooltip += `The reason for the failure is: "${reason}"`
-    } else {
-      tooltip += `, and succeeded at ${finalizedAt}.`
-      const paymentRefernece = t.paymentInfo.payeeReference
-      if (paymentRefernece) {
-        const maxLength = 64
-        const shortRef = paymentRefernece.length <= maxLength
-          ? paymentRefernece
-          : `${paymentRefernece.slice(0, maxLength)}...`
-        tooltip += ` The payment reference is: "${shortRef}".`
-      }
-    }
-  } else {
-    tooltip += '.'
-  }
-  return tooltip
 }
 
 export function getDebtorIdentityFromAccountIdentity(uri: string): string | undefined {
