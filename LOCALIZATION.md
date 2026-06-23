@@ -5,7 +5,7 @@
    properties.
 
 2. Translate the strings in the `src/messages.ts` file. The comments
-   can be helpful.
+   in this file can be helpful.
 
 3. In the `public/index.html` file, change the `<html lang="en">` tag
    to represent the language you are translating to. For right-to-left
