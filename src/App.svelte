@@ -26,7 +26,7 @@
 
   function logError(e: unknown): string {
     console.error(e)
-    return 'Oops, an unexpected error has occurred which prevents the applcication from running.'
+    return 'Oops, an unexpected error has occurred which prevents the application from running.'
   }
 
   async function handleClosedAuthenticationErrorSnackbar(event: any) {

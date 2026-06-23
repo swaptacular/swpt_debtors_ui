@@ -1,7 +1,7 @@
 // Messages for payment error codes:
-export const CANCELED_BY_THE_SENDER = "The payment has been canceled the sender."
-export const SENDER_IS_UNREACHABLE = "The sender's account does not exist, or can not make outgoing transfers."
-export const RECIPIENT_IS_UNREACHABLE = "The recipient's account does not exist, or does not accept incoming payments."
+export const CANCELED_BY_THE_SENDER = "The payment has been canceled by the sender."
+export const SENDER_IS_UNREACHABLE = "The sender's account does not exist or can not make outgoing transfers."
+export const RECIPIENT_IS_UNREACHABLE = "The recipient's account does not exist or does not accept incoming payments."
 export const RECIPIENT_SAME_AS_SENDER = "The recipient's account is the same as the sender's account."
 export const NO_RECIPIENT_CONFIRMATION = "A confirmation from the recipient is required, but has not been obtained."
 export const TRANSFER_NOTE_IS_TOO_LONG = "The byte-length of the payment note is too big."

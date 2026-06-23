@@ -82,6 +82,23 @@
     }
   }
 
+  function getTitle(status: CreateTransferActionStatus): string {
+    switch (status) {
+    case 'Draft':
+      return 'Payment request'
+    case 'Not sent':
+      return 'Not sent payment'
+    case 'Not confirmed':
+      return 'Not confirmed payment'
+    case 'Initiated':
+      return 'Initiated payment'
+    case 'Failed':
+      return 'Failed payment'
+    case 'Timed out':
+      return 'Timed out payment'
+    }
+  }
+
   function revokeCurrentDataUrl() {
     if (currentDataUrl) {
       URL.revokeObjectURL(currentDataUrl)
@@ -132,7 +149,7 @@
   $: executeButtonIsHidden = (status === 'Failed')
   $: dismissButtonIsHidden = (status === 'Not confirmed' || status === 'Initiated' || status === 'Timed out')
   $: showDeadlineWarning = activeBanner && deadline !== undefined && status === "Draft"
-  $: title = status === 'Draft' ? 'Payment request' : `${status} payment`
+  $: title = getTitle(status)
   $: tooltip = getInfoTooltip(status)
   $: dataUrl = generateDataUrl(action)
   $: invalid = (
