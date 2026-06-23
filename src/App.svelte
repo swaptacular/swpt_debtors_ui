@@ -96,7 +96,7 @@
   {/await}
 
   <Snackbar bind:this={authenticationErrorSnackbar} on:MDCSnackbar:closed={handleClosedAuthenticationErrorSnackbar}>
-    <Label>An authentication error has occured.</Label>
+    <Label>You need to log in again to perform actions in your user account.</Label>
     <Actions>
       <Button>Login</Button>
       <IconButton class="material-icons" title="Dismiss">close</IconButton>
