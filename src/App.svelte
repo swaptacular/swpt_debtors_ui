@@ -104,14 +104,14 @@
   </Snackbar>
 
   <Snackbar bind:this={networkErrorSnackbar}>
-    <Label>A network error has occured.</Label>
+    <Label>A network error has occurred.</Label>
     <Actions>
       <IconButton class="material-icons" title="Dismiss">close</IconButton>
     </Actions>
   </Snackbar>
 
   <Snackbar bind:this={httpErrorSnackbar}>
-    <Label>A server error has occured.</Label>
+    <Label>A server error has occurred.</Label>
     <Actions>
       <IconButton class="material-icons" title="Dismiss">close</IconButton>
     </Actions>
