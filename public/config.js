@@ -15,6 +15,7 @@ window.appConfig = {
   defaultPegAbbr: '',
   defaultPegCoin: '',
   registerIssuerUrl: '',
+  installWalletUrl: '',
 }
 
 window.assert = function assert(condition, msg) {

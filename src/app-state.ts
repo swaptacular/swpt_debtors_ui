@@ -36,6 +36,7 @@ export const DEFAULT_DECIMAL_PLACES = BigInt(appConfig.defaultDecimalPlaces)
 export const DEFAULT_PEG_COIN = appConfig.defaultPegCoin
 export const DEFAULT_PEG_ABBR = appConfig.defaultPegAbbr
 export const REGISTER_ISSUER_URL = appConfig.registerIssuerUrl
+export const INSTALL_WALLET_URL = appConfig.installWalletUrl
 
 export type {
   TransferRecord,
