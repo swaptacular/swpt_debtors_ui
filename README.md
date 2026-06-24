@@ -67,6 +67,11 @@ DEFAULT_PEG_COIN=https://demo.swaptacular.org/debtors/4640381880/public#swpt:464
 # themselves as currency issuers, set this to the URL of the website.
 # The default is an empty string.
 REGISTER_ISSUER_URL=https://google.com/maps
+
+# If you want to recommend a website from which your users can install
+# a digital wallet, set this to the URL of the website.
+# The default is an empty string.
+INSTALL_WALLET_URL=https://demo.swaptacular.org/creditors-webapp/
 ```
 
 For more configuration options, check the

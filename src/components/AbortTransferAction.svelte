@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getTooltip } from '../utils'
+  import { getTooltip } from '../messages'
   import type { AppState } from '../app-state'
   import type { AbortTransferActionWithId } from '../operations'
   import Fab, { Label } from '@smui/fab';

@@ -226,7 +226,7 @@
     aria-describedby="qrscan-content"
     on:MDCDialog:closed={unpeg}
     >
-    <Title id="qrscan-title">Scan another currency's digital coin (a QR code)</Title>
+    <Title id="qrscan-title">Scan the digital coin of the well-known currency (QR code)</Title>
     <Content id="qrscan-content">
       <QrScanner bind:hasFlash bind:result={coinUrl} {flashlightOn} />
     </Content>

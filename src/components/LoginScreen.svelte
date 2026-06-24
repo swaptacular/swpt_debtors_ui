@@ -50,12 +50,11 @@
   <Paper style="margin: 36px 18px; max-width: 600px" elevation={8}>
     <Title>Welcome to {appConfig.siteTitle}!</Title>
     <Content>
-      {appConfig.siteTitle} makes issuing and holding digital
-      currencies possible for everyone. Currency issuers are also
+      {appConfig.siteTitle} enables any business to create its own
+      digital currency (digital vouchers). Currency issuers are also
       called <em>debtors</em>, and currency
-      holders <em>creditors</em>. This app connects you to our
-      debtors’ agent server, which will create and manage your digital
-      currency for you.
+      holders <em>creditors</em>. This app connects you to our server,
+      which will create and manage your digital currency for you.
     </Content>
   </Paper>
 </div>

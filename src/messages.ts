@@ -1,7 +1,7 @@
 // Messages for payment error codes:
-export const CANCELED_BY_THE_SENDER = "The payment has been canceled the sender."
-export const SENDER_IS_UNREACHABLE = "The sender's account does not exist, or can not make outgoing transfers."
-export const RECIPIENT_IS_UNREACHABLE = "The recipient's account does not exist, or does not accept incoming payments."
+export const CANCELED_BY_THE_SENDER = "The payment has been canceled by the sender."
+export const SENDER_IS_UNREACHABLE = "The sender's account does not exist or can not make outgoing transfers."
+export const RECIPIENT_IS_UNREACHABLE = "The recipient's account does not exist or does not accept incoming payments."
 export const RECIPIENT_SAME_AS_SENDER = "The recipient's account is the same as the sender's account."
 export const NO_RECIPIENT_CONFIRMATION = "A confirmation from the recipient is required, but has not been obtained."
 export const TRANSFER_NOTE_IS_TOO_LONG = "The byte-length of the payment note is too big."
@@ -31,3 +31,60 @@ export const PAYMENT_DOES_NOT_EXIST = "The requested payment record does not exi
 export const CAN_NOT_PERFORM_ACTOIN = "The requested action can not be performed."
 export const CAN_NOT_DISMISS_ACTION = "The action can not be dismissed."
 export const ACTION_DOES_NOT_EXIST = "The requested action record does not exist."
+
+// Generates a message to be shown in a tooltip. Change this function
+// to return a translated string. Also, make sure to pass your locale
+// as a parameter in the calls to `toLocaleString()` that this
+// function makes (`.toLocaleString('bg-BG')` for example).
+export function getTooltip(t: any): string {
+  const initiatedAt = new Date(t.initiatedAt).toLocaleString()
+  if (t.result) {
+    const finalizedAt = new Date(t.result.finalizedAt).toLocaleString()
+    if (t.result.error) {
+      const reason = getFailureReason(t.result.error.errorCode)
+      return `The payment has been initiated at ${initiatedAt},`
+        + ` and failed at ${finalizedAt}.`
+        + ` The reason for the failure is: "${reason}".`
+    } else {
+      const paymentRefernece = t.paymentInfo.payeeReference
+      if (paymentRefernece) {
+        const maxLength = 64
+        const shortRef = paymentRefernece.length <= maxLength
+          ? paymentRefernece
+          : `${paymentRefernece.slice(0, maxLength)}...`
+        return `The payment has been initiated at ${initiatedAt},`
+          + ` and succeeded at ${finalizedAt}.`
+          + ` The payment reference is: "${shortRef}".`
+      } else {
+        return `The payment has been initiated at ${initiatedAt},`
+          + ` and succeeded at ${finalizedAt}.`
+      }
+    }
+  }
+  return `The payment has been initiated at ${initiatedAt}.`
+}
+
+function getFailureReason(errorCode: string): string {
+  switch (errorCode) {
+    case 'CANCELED_BY_THE_SENDER':
+      return CANCELED_BY_THE_SENDER
+    case 'SENDER_IS_UNREACHABLE':
+      return SENDER_IS_UNREACHABLE
+    case 'RECIPIENT_IS_UNREACHABLE':
+      return RECIPIENT_IS_UNREACHABLE
+    case 'RECIPIENT_SAME_AS_SENDER':
+      return RECIPIENT_SAME_AS_SENDER
+    case 'NO_RECIPIENT_CONFIRMATION':
+      return NO_RECIPIENT_CONFIRMATION
+    case 'TRANSFER_NOTE_IS_TOO_LONG':
+      return TRANSFER_NOTE_IS_TOO_LONG
+    case 'INSUFFICIENT_AVAILABLE_AMOUNT':
+      return INSUFFICIENT_AVAILABLE_AMOUNT
+    case 'TIMEOUT':
+      return TIMEOUT
+    case 'NEWER_INTEREST_RATE':
+      return NEWER_INTEREST_RATE
+    default:
+      return errorCode
+  }
+}

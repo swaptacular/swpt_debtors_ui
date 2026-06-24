@@ -16,6 +16,7 @@ declare var appConfig: {
   defaultPegAbbr: string,
   defaultPegCoin: string,
   registerIssuerUrl: string,
+  installWalletUrl: string,
 }
 
 declare function assert(condition: any, msg?: string): asserts condition
