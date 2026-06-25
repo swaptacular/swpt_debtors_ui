@@ -144,8 +144,9 @@
                   <Title>How to issue money in circulation?</Title>
                   <Content>
                     <p>
-                      Every time someone accepts a payment in your
-                      currency, new money is issued at that moment.
+                      Every time someone accepts a payment from you in
+                      your currency, new money is issued at that
+                      moment.
                     </p>
                     <p class="to-make-payment">To make a payment:</p>
                     <ol>
