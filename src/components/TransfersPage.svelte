@@ -99,7 +99,7 @@
                   </h5>
                   <p class="transfer">
                     <span>
-                      {app.amountToString(transfer.amount)}
+                      {app.amountToLocaleString(transfer.amount)}
                       {unit}
                     </span>
                     to {transfer.paymentInfo.payeeName || 'unknown payee'}
