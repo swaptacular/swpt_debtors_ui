@@ -2,7 +2,7 @@ import * as msg from "./messages";
 import equal from 'fast-deep-equal'
 import { Dexie, Observable, liveQuery } from 'dexie'
 import { Writable, writable } from 'svelte/store'
-import { amountToString, stringToAmount } from './utils'
+import { amountToString, amountToLocaleString, stringToAmount } from './utils'
 import {
   obtainUserContext,
   UserContext,
@@ -159,6 +159,11 @@ export class AppState {
   amountToString(amount: number | bigint): string {
     const { amountDivisor = 1, decimalPlaces = 0n } = this.getDebtorConfigData().debtorInfo ?? {}
     return amountToString(amount, amountDivisor, decimalPlaces)
+  }
+
+  amountToLocaleString(amount: number | bigint): string {
+    const { amountDivisor = 1, decimalPlaces = 0n } = this.getDebtorConfigData().debtorInfo ?? {}
+    return amountToLocaleString(amount, amountDivisor, decimalPlaces)
   }
 
   stringToAmount(s: string | number): bigint {

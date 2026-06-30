@@ -78,7 +78,7 @@
   })
 
   $: balance = model.debtorRecord.balance
-  $: totalIssuedUnits = app.amountToString(-balance)
+  $: totalIssuedUnits = app.amountToLocaleString(-balance)
   $: unit = app.unit
   $: currencyName = info?.debtorName ?? 'Unknown currency'
   $: downloadName = currencyName.slice(0, 120).replace(/[<>:"/|?*\\]/g, ' ')
