@@ -31,7 +31,7 @@ export function amountToLocaleString(
   amountDivisor: number,
   decimalPlaces: number | bigint,
 ): string {
-  return amountToString(value, amountDivisor, decimalPlaces, localeDecimalSeparator, '\u202F')
+  return amountToString(value, amountDivisor, decimalPlaces, localeDecimalSeparator, ' ')
 }
 
 function scientificToRegular(
