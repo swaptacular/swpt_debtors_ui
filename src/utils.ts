@@ -7,6 +7,8 @@ export function amountToString(
   amountDivisor: number,
   decimalPlaces: number | bigint,
   decimalSeparator: string = '.',
+  thousandsSerparator: string = '',
+
 ): string {
   if (typeof decimalPlaces === 'bigint') {
     decimalPlaces = Number(decimalPlaces)
@@ -21,7 +23,7 @@ export function amountToString(
     const precision = Math.min(numDigits + n, 100)
     s = precision >= 1 ? v.toPrecision(precision) : '0'
   }
-  return scientificToRegular(s, decimalSeparator)
+  return scientificToRegular(s, decimalSeparator, thousandsSerparator)
 }
 
 export function amountToLocaleString(
@@ -29,10 +31,15 @@ export function amountToLocaleString(
   amountDivisor: number,
   decimalPlaces: number | bigint,
 ): string {
-  return amountToString(value, amountDivisor, decimalPlaces, localeDecimalSeparator)
+  return amountToString(value, amountDivisor, decimalPlaces, localeDecimalSeparator, '\u202F')
 }
 
-function scientificToRegular(scientific: string, decimalSeparator: string): string {
+function scientificToRegular(
+  scientific: string,
+  decimalSeparator: string,
+  thousandsSerparator: string,
+): string {
+  const sep1000s = (s: string): string => s.replace(/\B(?=(\d{3})+(?!\d))/g, thousandsSerparator)
   let [mantissa, exponent = '0'] = scientific.toLowerCase().split('e')
   let e = Number(exponent)
   let sign = ''
@@ -52,9 +59,9 @@ function scientificToRegular(scientific: string, decimalSeparator: string): stri
   }
   switch (true) {
     case e >= 0:
-      return sign + mantissa + '0'.repeat(e)
+      return sign + sep1000s(mantissa + '0'.repeat(e))
     case e > -mantissa.length:
-      return sign + mantissa.slice(0, e) + decimalSeparator + mantissa.slice(e)
+      return sign + sep1000s(mantissa.slice(0, e)) + decimalSeparator + mantissa.slice(e)
     default:
       return sign + '0' + decimalSeparator + '0'.repeat(-mantissa.length - e) + mantissa
   }
