@@ -74,7 +74,7 @@
       </Title>
       <Content>
         {#if description.contentFormat === '.' || description.contentFormat === '-'}
-          <a href="{description.content}" target="_blank">{description.content}</a>
+          <a href="{description.content}" target="_blank" rel="noreferrer">{description.content}</a>
         {:else if description.content}
           <pre>{description.content}</pre>
         {:else}
