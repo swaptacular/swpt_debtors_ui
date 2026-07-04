@@ -158,7 +158,7 @@
               </li>
               {#if REGISTER_ISSUER_URL}
                 <li>
-                  <a href="{REGISTER_ISSUER_URL}" target="_blank">
+                  <a href="{REGISTER_ISSUER_URL}" target="_blank" rel="noreferrer">
                     Add your business
                   </a>
                   to the public registry, making it easy for others to
@@ -168,7 +168,7 @@
               {/if}
               {#if INSTALL_WALLET_URL}
                 <li>
-                  <a href="{INSTALL_WALLET_URL}" target="_blank">
+                  <a href="{INSTALL_WALLET_URL}" target="_blank" rel="noreferrer">
                     Install a wallet app
                   </a>
                   which allows you to hold and use digital currencies

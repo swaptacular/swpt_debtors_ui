@@ -1,5 +1,10 @@
 <script lang="ts">
-  import { DOWNLOADED_QR_COIN_KEY, IS_A_NEWBIE_KEY, HAS_LOADED_PAYMENT_REQUEST_KEY } from '../app-state'
+  import {
+    DOWNLOADED_QR_COIN_KEY,
+    IS_A_NEWBIE_KEY,
+    HAS_LOADED_PAYMENT_REQUEST_KEY,
+    INSTALL_WALLET_URL,
+  } from '../app-state'
   import type { AppState, ActionsModel } from '../app-state'
   import type { ActionRecordWithId } from '../operations'
   import Fab, { Icon } from '@smui/fab';
@@ -103,6 +108,10 @@
   li {
     margin: 0.25em 0;
   }
+  .to-install-wallet {
+    margin-top: 0.75em;
+    font-weight: bold;
+  }
 </style>
 
 <Page title="Actions" scrollTop={model.scrollTop} scrollLeft={model.scrollLeft}>
@@ -161,6 +170,14 @@
                       To view your digital coin, press
                       <Icon class="material-icons" style="margin: 0 0.15em; vertical-align: middle">settings_applications</Icon>.
                     </p>
+                    {#if INSTALL_WALLET_URL}
+                      <p class="to-install-wallet">
+                        To hold any amount in your own currency, you
+                        first need to
+                        <a href="{INSTALL_WALLET_URL}" target="_blank" rel="noreferrer">
+                          install a wallet app</a>.
+                      </p>
+                    {/if}
                   </Content>
                 </Paper>
               </Cell>
