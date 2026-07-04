@@ -175,7 +175,7 @@
                         To hold any amount in your own currency, you
                         first need to
                         <a href="{INSTALL_WALLET_URL}" target="_blank" rel="noreferrer">
-                          install a wallet app</a>.
+                          install a wallet app!</a>
                       </p>
                     {/if}
                   </Content>
