@@ -150,34 +150,37 @@
             <LayoutGrid>
               <Cell span={12}>
                 <Paper elevation={8} style="margin-bottom: 16px">
-                  <Title>How to issue money in circulation?</Title>
+                  <Title>How do I put my currency into circulation?</Title>
                   <Content>
                     <p>
-                      Every time someone accepts a payment from you in
-                      your currency, new money is issued at that
-                      moment.
-                    </p>
-                    <p class="to-make-payment">To make a payment:</p>
-                    <ol>
-                      <li>The person you are paying creates a payment request.</li>
-                      <li>You load the payment request file, or scan the QR code they provide.</li>
-                      <li>You confirm the payment.</li>
-                    </ol>
-                    <p>
-                      Press the
-                      <Icon class="material-icons" style="margin: 0 0.15em; vertical-align: middle">local_atm</Icon>
-                      button below to load a payment request.
-                      To view your digital coin, press
-                      <Icon class="material-icons" style="margin: 0 0.15em; vertical-align: middle">settings_applications</Icon>.
-                    </p>
-                    {#if INSTALL_WALLET_URL}
-                      <p class="to-install-wallet">
-                        To hold any amount in your own currency, you
-                        first need to
+                      To create and hold any amount in your own
+                      currency, and automatically exchange it for
+                      other businesses' currencies, you first need to
+                      {#if INSTALL_WALLET_URL}
                         <a href="{INSTALL_WALLET_URL}" target="_blank" rel="noreferrer">
-                          install a wallet app!</a>
-                      </p>
-                    {/if}
+                          install a digital wallet app.
+                        </a>
+                      {:else}
+                        install a digital wallet app.
+                      {/if}
+                    </p>
+                    <p class="to-make-payment">To fund your wallet:</p>
+                    <ol>
+                      <li>
+                        In the wallet app, create an account for your
+                        own currency. To view the QR code for your
+                        currency, you can use the
+                        <Icon class="material-icons" style="margin: 0 0.15em; vertical-align: middle">settings_applications</Icon>
+                        button below.
+                      </li>
+                      <li>In the wallet app, create a payment request addressed to yourself.</li>
+                      <li>
+                        Click the
+                        <Icon class="material-icons" style="margin: 0 0.15em; vertical-align: middle">local_atm</Icon>
+                        button below and load your payment request.
+                      </li>
+                      <li>Confirm the payment.</li>
+                    </ol>
                   </Content>
                 </Paper>
               </Cell>
