@@ -154,8 +154,7 @@
                   <Content>
                     <p>
                       To create and hold any amount in your own
-                      currency, and automatically exchange it for
-                      other businesses' currencies, you first need to
+                      currency, you first need to
                       {#if INSTALL_WALLET_URL}
                         <a href="{INSTALL_WALLET_URL}" target="_blank" rel="noreferrer">
                           install a digital wallet app.
@@ -166,14 +165,8 @@
                     </p>
                     <p class="to-make-payment">To fund your wallet:</p>
                     <ol>
-                      <li>
-                        In the wallet app, create an account for your
-                        own currency. To view the QR code for your
-                        currency, you can use the
-                        <Icon class="material-icons" style="margin: 0 0.15em; vertical-align: middle">settings_applications</Icon>
-                        button below.
-                      </li>
-                      <li>In the wallet app, create a payment request addressed to yourself.</li>
+                      <li>In the wallet app, create an account for your own currency.</li>
+                      <li>In the wallet app, create a payment request to yourself.</li>
                       <li>
                         Click the
                         <Icon class="material-icons" style="margin: 0 0.15em; vertical-align: middle">local_atm</Icon>
@@ -181,6 +174,11 @@
                       </li>
                       <li>Confirm the payment.</li>
                     </ol>
+                    <p>
+                       To view the QR code for your currency, you can use the
+                       <Icon class="material-icons" style="margin: 0 0.15em; vertical-align: middle">settings_applications</Icon>
+                       button below.
+                    </p>
                   </Content>
                 </Paper>
               </Cell>
