@@ -157,10 +157,10 @@
                       currency, you first need to
                       {#if INSTALL_WALLET_URL}
                         <a href="{INSTALL_WALLET_URL}" target="_blank" rel="noreferrer">
-                          install a digital wallet app.
+                          install a digital wallet app!
                         </a>
                       {:else}
-                        install a digital wallet app.
+                        install a digital wallet app!
                       {/if}
                     </p>
                     <p class="to-make-payment">To fund your wallet:</p>
@@ -175,9 +175,11 @@
                       <li>Confirm the payment.</li>
                     </ol>
                     <p>
-                       To view the QR code for your currency, you can use the
-                       <Icon class="material-icons" style="margin: 0 0.15em; vertical-align: middle">settings_applications</Icon>
-                       button below.
+                      <strong>Important:</strong>
+                      To view the QR code for your currency, use the
+                      <Icon class="material-icons" style="margin: 0 0.15em; vertical-align: middle">settings_applications</Icon>
+                      button below. To scan the QR code, you'll need
+                      to either print it or open it on another device.
                     </p>
                   </Content>
                 </Paper>
