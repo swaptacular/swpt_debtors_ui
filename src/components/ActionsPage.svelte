@@ -112,6 +112,9 @@
     margin-top: 0.75em;
     font-weight: bold;
   }
+  strong {
+    font-weight: bold;
+  }
 </style>
 
 <Page title="Actions" scrollTop={model.scrollTop} scrollLeft={model.scrollLeft}>
