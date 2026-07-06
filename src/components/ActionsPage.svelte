@@ -72,6 +72,10 @@
     showMakePaymentDialog = true
   }
 
+  function installWallet() {
+    window.open(INSTALL_WALLET_URL, '_blank');
+  }
+
   $: actions = model.actions
   $: [regularActions, foreignActions] = separateForeignActions($actions)
   $: hasRegularActions = regularActions.length > 0
@@ -159,7 +163,7 @@
                       To create and hold any amount in your own
                       currency, you first need to
                       {#if INSTALL_WALLET_URL}
-                        <a href="{INSTALL_WALLET_URL}" target="_blank" rel="noreferrer">
+                        <a href="install-wallet" on:click|preventDefault={installWallet} >
                           install a digital wallet app!
                         </a>
                       {:else}
