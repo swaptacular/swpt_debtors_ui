@@ -72,10 +72,6 @@
     showMakePaymentDialog = true
   }
 
-  function installWallet() {
-    window.open(INSTALL_WALLET_URL, '_blank');
-  }
-
   $: actions = model.actions
   $: [regularActions, foreignActions] = separateForeignActions($actions)
   $: hasRegularActions = regularActions.length > 0
@@ -114,7 +110,7 @@
   }
   .to-install-wallet {
     margin-top: 0.75em;
-    font-weight: bold;
+    color: #888;
   }
   strong {
     font-weight: bold;
@@ -159,17 +155,27 @@
                 <Paper elevation={8} style="margin-bottom: 16px">
                   <Title>How do I put my currency into circulation?</Title>
                   <Content>
-                    <p>
-                      To create and hold any amount in your own
-                      currency, you first need to
-                      {#if INSTALL_WALLET_URL}
-                        <a href="install-wallet" on:click|preventDefault={installWallet} >
+                    {#if INSTALL_WALLET_URL}
+                      <p>
+                        To issue and hold any amount of your own
+                        currency, you first need to
+                        <a style="color: #00e" href="{INSTALL_WALLET_URL}" target="_blank" rel="noreferrer">
                           install a digital wallet app!
                         </a>
-                      {:else}
+                      <p>
+                      <p class="to-install-wallet">
+                        👉 We recommend using your smartphone for
+                        this. You'll also need to register separately
+                        for the wallet app, although you can use the
+                        same email address.
+                      </p>
+                    {:else}
+                      <p>
+                        To issue and hold any amount of your own
+                        currency, you first need to
                         install a digital wallet app!
-                      {/if}
-                    </p>
+                      </p>
+                    {/if}
                     <p class="to-make-payment">To fund your wallet:</p>
                     <ol>
                       <li>In the wallet app, create an account for your own currency.</li>
