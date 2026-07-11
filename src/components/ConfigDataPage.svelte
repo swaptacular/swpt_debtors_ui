@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { AppState, ConfigDataModel } from '../app-state'
-  import { DOWNLOADED_QR_COIN_KEY, REGISTER_ISSUER_URL, INSTALL_WALLET_URL } from '../app-state'
+  import { DOWNLOADED_QR_COIN_KEY, REGISTER_ISSUER_URL } from '../app-state'
   import { generatePr0Blob, IvalidPaymentData } from '../payment-requests'
   import { onDestroy } from 'svelte'
   import Fab, { Icon } from '@smui/fab';
@@ -164,15 +164,6 @@
                   to the public registry, making it easy for others to
                   find you, purchase your currency, and later redeem
                   it when paying for your goods and services.
-                </li>
-              {/if}
-              {#if INSTALL_WALLET_URL}
-                <li>
-                  <a href="{INSTALL_WALLET_URL}" target="_blank" rel="noreferrer">
-                    Install a wallet app
-                  </a>
-                  which allows you to hold and use digital currencies
-                  (including your own), and to buy and sell them.
                 </li>
               {/if}
               <li>
