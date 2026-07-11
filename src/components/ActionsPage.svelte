@@ -162,7 +162,7 @@
                         <a style="color: #00e" href="{INSTALL_WALLET_URL}" target="_blank" rel="noreferrer">
                           install a digital wallet app!
                         </a>
-                      <p>
+                      </p>
                       <p class="to-install-wallet">
                         👉 We recommend using your smartphone for
                         this. You'll also need to register separately
