@@ -54,3 +54,7 @@
    are preferably represented in the target language is different, you
    may change the implementation of the `amountToLocaleString`
    function in the `src/utils.ts` file.
+
+6. Make screenshots of the translated app and put them in the
+   `public/screenshots` directory, substituting the English
+   screenshots.
