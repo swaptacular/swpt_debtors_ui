@@ -165,9 +165,10 @@
                       </p>
                       <p class="to-install-wallet">
                         👉 We recommend opening the link above on your
-                        smartphone. You'll also need to register
-                        separately with the wallet app, although you
-                        can use the same email address.
+                        smartphone and installing the wallet app on
+                        it. You'll also need to register separately
+                        with the wallet app, although you can use the
+                        same email address.
                       </p>
                     {:else}
                       <p>
