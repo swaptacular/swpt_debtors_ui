@@ -8,6 +8,7 @@
   import { onDestroy } from 'svelte'
   import Fab, { Icon, Label } from '@smui/fab';
   import Banner, { Label as BannerLabel } from '@smui/banner'
+  import LayoutGrid, { Cell } from '@smui/layout-grid'
   import Button from '@smui/button'
   import PaymentInfo from './PaymentInfo.svelte'
   import Page from './Page.svelte'
@@ -167,6 +168,9 @@
     position: relative;
     overflow: hidden;
   }
+  strong {
+    font-weight: bold;
+  }
 
   @keyframes shake {
     0% { transform: translate(1px, 1px) rotate(0deg); }
@@ -223,6 +227,15 @@
           {dataUrl}
           unit={app.unit}
           />
+        <LayoutGrid>
+          <Cell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+            <strong>Legal notice:</strong> Tax reporting and payment
+            obligations may apply when issuing and transferring
+            vouchers to other persons, depending on the laws of your
+            jurisdiction. You are responsible for complying with any
+            applicable tax requirements.
+          </Cell>
+        </LayoutGrid>
       </form>
     </div>
 
