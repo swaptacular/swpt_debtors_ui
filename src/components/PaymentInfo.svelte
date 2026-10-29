@@ -35,18 +35,7 @@
   $: downloadNameShort = forbidAmountChange ? `Issue ${unitAmount} ${unit.slice(0, 10)} to ${name}` : `Issue money to ${name}`
   $: downloadName = payeeReference ? `${downloadNameShort} - ${payeeReference}` : downloadNameShort
   $: fileName = downloadName.slice(0, 120).replace(/[<>:"/|?*\\]/g, ' ') + '.pr0'
-
-  // NOTE: The payment request's description comes from an untrusted
-  // party. When its format marks it as an IRI, it is shown as a link.
-  // Svelte does not sanitize `href`, so a dangerous scheme (like
-  // "javascript:") would be a cross-site scripting vector. Only treat
-  // the content as a link when it is a valid HTTP(S) URL (see
-  // `toSafeHttpUrl`); otherwise it is shown as plain (auto-escaped)
-  // text.
-  $: descriptionIsLink = (
-    description.contentFormat === '.' || description.contentFormat === '-'
-  )
-  $: descriptionHref = descriptionIsLink ? toSafeHttpUrl(description.content) : undefined
+  $: descriptionHref = toSafeHttpUrl(description.content)
 </script>
 
 <style>
@@ -86,7 +75,7 @@
         </Wrapper>
       </Title>
       <Content>
-        {#if descriptionHref}
+        {#if description.contentFormat === '.' || description.contentFormat === '-'}
           <a href="{descriptionHref}" target="_blank" rel="noreferrer">{description.content}</a>
         {:else if description.content}
           <pre>{description.content}</pre>
